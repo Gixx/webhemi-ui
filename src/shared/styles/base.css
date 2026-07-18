@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: local("Fraunces");
+}
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: local("Source Sans 3"), local("SourceSans3");
+}
+
+@font-face {
+  font-family: "Literata";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: local("Literata");
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--wh-font-body);
+  color: var(--wh-color-ink);
+  background: var(--wh-color-canvas);
+  line-height: 1.5;
+}
+
+.wh-ui {
+  font-family: var(--wh-font-body);
+  color: var(--wh-color-ink);
+}

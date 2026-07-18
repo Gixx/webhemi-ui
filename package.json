@@ -24,7 +24,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsup && npm run build:css",
-    "build:css": "tailwindcss -i ./src/styles/tokens.css -o ./dist/index.css --minify",
+    "build:css": "tailwindcss -i ./src/styles/entry.css -o ./dist/index.css --minify",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit",
     "lint": "oxlint src",
     "storybook": "storybook dev -p 6006",

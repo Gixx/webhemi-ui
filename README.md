@@ -2,6 +2,20 @@
 
 WebHemi design system: React components built and reviewed in Storybook, published for both WebHemi.PHP (AssetMapper) and WebHemi.JS (Next.js).
 
+## Layout
+
+```text
+src/
+├── shared/          # atoms reusable by Admin + frontend themes
+├── admin/           # WebHemi Admin Theme (fixed CMS UI)
+├── themes/
+│   └── default/     # swappable frontend theme (site visitors)
+├── lib/             # utilities (cn, …)
+└── styles/entry.css # production CSS = shared base + Admin tokens
+```
+
+Storybook sidebar mirrors this: **Shared**, **Admin**, **Themes/Default**. Use the toolbar paintbrush to switch token sets.
+
 ## Develop
 
 ```bash
@@ -19,7 +33,7 @@ Outputs:
 
 - `dist/index.js` / `dist/index.cjs` — ESM/CJS bundles
 - `dist/index.d.ts` — TypeScript types
-- `dist/index.css` — design tokens + component styles
+- `dist/index.css` — Admin Theme tokens + base styles
 
 ## Publish
 

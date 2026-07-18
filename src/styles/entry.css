@@ -1,0 +1,3 @@
+/* Production CSS entry — Admin Theme (CMS UI). Frontend themes ship separately later. */
+@import "../shared/styles/base.css";
+@import "../admin/styles/tokens.css";

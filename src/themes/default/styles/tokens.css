@@ -1,0 +1,25 @@
+/* Default frontend theme — swappable public-site tokens */
+
+[data-wh-theme="default"] {
+  --wh-color-ink: #1c1917;
+  --wh-color-ink-soft: #44403c;
+  --wh-color-canvas: #fafaf9;
+  --wh-color-surface: #ffffff;
+  --wh-color-line: #d6d3d1;
+  --wh-color-accent: #0f766e;
+  --wh-color-accent-hot: #b45309;
+  --wh-color-success: #15803d;
+  --wh-color-danger: #b91c1c;
+  --wh-color-warning: #a16207;
+  --wh-color-muted: #78716c;
+  --wh-font-display: "Literata", "Georgia", serif;
+  --wh-font-body: "Source Sans 3", "Segoe UI", sans-serif;
+  --wh-radius-sm: 2px;
+  --wh-radius-md: 6px;
+  --wh-space-1: 0.25rem;
+  --wh-space-2: 0.5rem;
+  --wh-space-3: 0.75rem;
+  --wh-space-4: 1rem;
+  --wh-space-6: 1.5rem;
+  --wh-space-8: 2rem;
+}
