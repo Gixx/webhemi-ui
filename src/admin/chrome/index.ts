@@ -38,6 +38,9 @@ export {
   type SunkenPanelProps,
   type FieldBorderProps,
 } from './SunkenPanel';
+export { Scrollable, type ScrollableProps } from './Scrollable';
+export { useCustomScrollbar } from './useCustomScrollbar';
+export { attachCustomScrollbar, type DetachCustomScrollbar } from './attachCustomScrollbar';
 export { Table, TableRow, type TableProps, type TableRowProps } from './Table';
 export { useTableView } from './useTableView';
 export { Progress, type ProgressProps } from './Progress';

@@ -2,15 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, FieldRow } from '../chrome';
 import bannerWizardUrl from '../assets/demo/banner-wizard.gif';
 import {
-  resolveTitleBarIcon,
-  TITLE_BAR_ICON_OPTIONS,
-  type TitleBarIconOption,
-} from './PaneWindowShell';
+  pickShellArgs,
+  shellPropsFromArgs,
+  windowBrickShellArgs,
+  windowBrickShellArgTypes,
+  type WindowBrickShellArgs,
+} from './windowBrickStory';
 import { WizardWindow } from './WizardWindow';
 
-type StoryArgs = {
-  title: string;
-  titleIcon: TitleBarIconOption;
+type StoryArgs = WindowBrickShellArgs & {
   /** Banner image URL; empty string leaves the navy banner panel empty. */
   banner: string;
 };
@@ -19,21 +19,19 @@ const meta = {
   title: 'Admin/Bricks/WizardWindow',
   parameters: { layout: 'centered' },
   args: {
+    ...windowBrickShellArgs,
     title: 'WebHemi CMS Setup',
-    titleIcon: 'none' as TitleBarIconOption,
+    titleBarControls: [],
     banner: bannerWizardUrl,
   },
   argTypes: {
-    title: { control: 'text' },
-    titleIcon: { control: 'select', options: [...TITLE_BAR_ICON_OPTIONS] },
+    ...windowBrickShellArgTypes,
     banner: { control: 'text', description: 'Banner image URL (empty = no image)' },
   },
-  render: ({ title, titleIcon, banner }) => (
+  render: (args) => (
     <WizardWindow
-      title={title}
-      titleIcon={resolveTitleBarIcon(titleIcon)}
-      titleBarControls={null}
-      banner={banner ? <img src={banner} alt="" /> : undefined}
+      {...shellPropsFromArgs(pickShellArgs(args))}
+      banner={args.banner ? <img src={args.banner} alt="" /> : undefined}
       info={
         <>
           <h4>Welcome to the WebHemi CMS Setup Wizard</h4>

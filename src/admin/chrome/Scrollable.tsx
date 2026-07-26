@@ -2,14 +2,16 @@ import { useRef, type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import { useCustomScrollbar } from './useCustomScrollbar';
 
-export type ScrollableRegionProps = HTMLAttributes<HTMLDivElement> & {
+export type ScrollableProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
-  /** Optional style / className for the inner `.scrollable-viewport`. */
+  /** Optional className for the inner `.scrollable-viewport`. */
   viewportClassName?: string;
 };
 
 /**
- * Scroll host with Retro OS custom scrollbar chrome (admin98 scrollbar.js port).
+ * Scroll host with Retro OS custom scrollbar chrome.
+ * Prefer composing via {@link SunkenPanel}/{@link FieldBorder} `scrollable` prop when
+ * those surfaces are the host; use this directly for layout hosts (e.g. window panes).
  *
  * Structure:
  *   .scrollable[.has-custom-scrollbar]
@@ -17,12 +19,12 @@ export type ScrollableRegionProps = HTMLAttributes<HTMLDivElement> & {
  *       {children}
  *     .sb.sb-y / .sb.sb-x / .sb.sb-corner  (mounted by effect)
  */
-export function ScrollableRegion({
+export function Scrollable({
   className,
   children,
   viewportClassName,
   ...rest
-}: ScrollableRegionProps) {
+}: ScrollableProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   useCustomScrollbar(hostRef, viewportRef);

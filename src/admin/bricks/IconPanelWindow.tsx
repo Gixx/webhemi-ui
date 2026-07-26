@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { FieldBorder } from '../chrome/SunkenPanel';
 import { cn } from '../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from './PaneWindowShell';
-import { ScrollableRegion } from './ScrollableRegion';
 
 export type IconPanelWindowProps = Omit<PaneWindowShellProps, 'children'> & {
   /** Left info column (gradient). Hidden content when `infoUnselected`. */
@@ -36,13 +36,10 @@ export function IconPanelWindow({
       resizable={resizable}
       {...shell}
     >
-      <ScrollableRegion
-        className="window-pane icon-panel-layout field-border"
-        style={paneStyle}
-      >
+      <FieldBorder scrollable className="window-pane icon-panel-layout" style={paneStyle}>
         <div className={cn('panel info', infoUnselected && 'unselected')}>{info}</div>
         <div className="panel icon-list">{children}</div>
-      </ScrollableRegion>
+      </FieldBorder>
     </PaneWindowShell>
   );
 }

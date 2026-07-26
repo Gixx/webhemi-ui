@@ -5,11 +5,7 @@ export {
 } from './DialogWindow';
 export { IconPanelWindow, type IconPanelWindowProps } from './IconPanelWindow';
 export { WizardWindow, type WizardWindowProps } from './WizardWindow';
-export { HeadingPanelWindow, type HeadingPanelWindowProps } from './HeadingPanelWindow';
-export { ScrollableRegion, type ScrollableRegionProps } from './ScrollableRegion';
-export { DesktopIcon, type DesktopIconProps, type DesktopIconKind } from './DesktopIcon';
-export { useCustomScrollbar } from './useCustomScrollbar';
-export { attachCustomScrollbar, type DetachCustomScrollbar } from './attachCustomScrollbar';
+export { SystemIcon, type SystemIconProps, type SystemIconKind, type SystemIconLabelTone } from './SystemIcon';
 export {
   PaneWindowShell,
   TITLE_BAR_ICON_OPTIONS,

@@ -3,18 +3,17 @@ import { Button, FieldRow } from '../chrome';
 import bannerDialogUrl from '../assets/demo/banner-dialog.gif';
 import { DialogWindow, type DialogWindowType } from './DialogWindow';
 import {
-  resolveTitleBarIcon,
-  TITLE_BAR_ICON_OPTIONS,
-  type TitleBarIconOption,
-} from './PaneWindowShell';
+  pickShellArgs,
+  shellPropsFromArgs,
+  windowBrickShellArgs,
+  windowBrickShellArgTypes,
+  type WindowBrickShellArgs,
+} from './windowBrickStory';
 
 const DIALOG_TYPES: DialogWindowType[] = ['none', 'info', 'question', 'warning', 'error'];
 
-type StoryArgs = {
-  title: string;
-  inactive: boolean;
+type StoryArgs = WindowBrickShellArgs & {
   type: DialogWindowType;
-  titleIcon: TitleBarIconOption;
   /** Banner image URL; empty string hides the banner. */
   banner: string;
 };
@@ -23,27 +22,22 @@ const meta = {
   title: 'Admin/Bricks/DialogWindow',
   parameters: { layout: 'centered' },
   args: {
+    ...windowBrickShellArgs,
     title: 'Enter Password',
-    inactive: false,
+    titleBarControls: [],
     type: 'none' as DialogWindowType,
-    titleIcon: 'none' as TitleBarIconOption,
     banner: bannerDialogUrl,
   },
   argTypes: {
-    title: { control: 'text' },
-    inactive: { control: 'boolean' },
+    ...windowBrickShellArgTypes,
     type: { control: 'select', options: DIALOG_TYPES },
-    titleIcon: { control: 'select', options: [...TITLE_BAR_ICON_OPTIONS] },
     banner: { control: 'text', description: 'Banner image URL (empty = no banner)' },
   },
-  render: ({ title, inactive, type, titleIcon, banner }) => (
+  render: (args) => (
     <DialogWindow
-      title={title}
-      inactive={inactive}
-      type={type}
-      titleIcon={resolveTitleBarIcon(titleIcon)}
-      titleBarControls={null}
-      banner={banner ? <img className="login-banner" src={banner} alt="" /> : undefined}
+      {...shellPropsFromArgs(pickShellArgs(args))}
+      type={args.type}
+      banner={args.banner ? <img className="dialog-banner" src={args.banner} alt="" /> : undefined}
       actions={
         <FieldRow className="justify-end">
           <Button isDefault>
@@ -85,14 +79,13 @@ export const Message: Story = {
     title: 'Confirm',
     banner: '',
     type: 'warning',
+    titleBarControls: ['Close'],
   },
-  render: ({ title, inactive, type, titleIcon, banner }) => (
+  render: (args) => (
     <DialogWindow
-      title={title}
-      inactive={inactive}
-      type={type}
-      titleIcon={resolveTitleBarIcon(titleIcon)}
-      banner={banner ? <img className="login-banner" src={banner} alt="" /> : undefined}
+      {...shellPropsFromArgs(pickShellArgs(args))}
+      type={args.type}
+      banner={args.banner ? <img className="dialog-banner" src={args.banner} alt="" /> : undefined}
       actions={
         <FieldRow className="justify-center">
           <Button isDefault>OK</Button>

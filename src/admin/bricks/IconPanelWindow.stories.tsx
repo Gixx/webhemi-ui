@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
-import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../chrome';
-import { DesktopIcon, type DesktopIconKind } from './DesktopIcon';
+import { StatusBar, StatusBarField } from '../chrome';
+import { SystemIcon, type SystemIconKind } from './SystemIcon';
 import { IconPanelWindow } from './IconPanelWindow';
 import {
-  resolveTitleBarIcon,
-  TITLE_BAR_ICON_OPTIONS,
-  type TitleBarIconOption,
-} from './PaneWindowShell';
+  pickShellArgs,
+  shellPropsFromArgs,
+  windowBrickShellArgs,
+  windowBrickShellArgTypes,
+  type WindowBrickShellArgs,
+} from './windowBrickStory';
 
-const ICONS: { kind: DesktopIconKind; label: string; description: string }[] = [
+const ICONS: { kind: SystemIconKind; label: string; description: string }[] = [
   { kind: 'sites', label: 'Sites', description: 'Manage sites and their contents.' },
   { kind: 'hosts', label: 'Hosts', description: 'Add, remove and verify domains.' },
   { kind: 'roles', label: 'Roles', description: 'Add/remove custom roles.' },
@@ -20,28 +22,19 @@ const ICONS: { kind: DesktopIconKind; label: string; description: string }[] = [
   { kind: 'themes', label: 'Themes', description: 'Manage frontend themes.' },
 ];
 
-type StoryArgs = {
-  titleIcon: TitleBarIconOption;
+type StoryArgs = WindowBrickShellArgs & {
   width: number;
   paneHeight: number;
 };
 
-function ControlPanelDemo({ titleIcon, width, paneHeight }: StoryArgs) {
+function ControlPanelDemo(args: StoryArgs) {
   const [selected, setSelected] = useState<(typeof ICONS)[number] | null>(null);
 
   return (
     <IconPanelWindow
-      title="Control Panel"
-      titleIcon={resolveTitleBarIcon(titleIcon)}
-      titleBarControls={
-        <TitleBarControls>
-          <TitleBarControl action="Minimize" />
-          <TitleBarControl action="Maximize" />
-          <TitleBarControl action="Close" />
-        </TitleBarControls>
-      }
-      paneHeight={paneHeight}
-      width={width}
+      {...shellPropsFromArgs(pickShellArgs(args))}
+      paneHeight={args.paneHeight}
+      width={args.width}
       infoUnselected={!selected}
       info={
         selected ? (
@@ -61,10 +54,11 @@ function ControlPanelDemo({ titleIcon, width, paneHeight }: StoryArgs) {
       }
     >
       {ICONS.map((icon) => (
-        <DesktopIcon
+        <SystemIcon
           key={icon.kind}
           kind={icon.kind}
           label={icon.label}
+          labelTone="dark"
           description={icon.description}
           onActivate={() => setSelected(icon)}
         />
@@ -77,12 +71,15 @@ const meta = {
   title: 'Admin/Bricks/IconPanelWindow',
   parameters: { layout: 'centered' },
   args: {
-    titleIcon: 'none' as TitleBarIconOption,
+    ...windowBrickShellArgs,
+    title: 'Control Panel',
+    titleBarControls: ['Minimize', 'Maximize', 'Close'],
+    resizable: true,
     width: 600,
     paneHeight: 300,
   },
   argTypes: {
-    titleIcon: { control: 'select', options: [...TITLE_BAR_ICON_OPTIONS] },
+    ...windowBrickShellArgTypes,
     width: { control: { type: 'number', min: 320, max: 1200, step: 10 } },
     paneHeight: { control: { type: 'number', min: 120, max: 800, step: 10 } },
   },
