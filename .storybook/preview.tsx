@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import type { Preview, Decorator } from '@storybook/react-vite';
 import '../src/styles/platform.css';
 import '../src/admin/styles/fonts.css';
@@ -6,12 +6,30 @@ import '../src/admin/styles/tokens.css';
 import '../src/admin/styles/entry.scss';
 import '../src/themes/default/styles/tokens.css';
 
-const withTheme: Decorator = (Story, context) => {
-  const theme = (context.globals.theme as string) || 'admin';
+/**
+ * Theme scope follows the story tree.
+ *
+ * Admin chrome styles nest under [data-wh-theme="admin"] and restyle raw
+ * `button` / `input`. A sticky toolbar default of `admin` made Shared and
+ * Default stories look Win98 even though CSS scoping was correct.
+ *
+ * - Admin/** → admin
+ * - Shared/**, Themes/**, … → default
+ */
+function themeFromStoryTitle(title: string): 'admin' | 'default' {
+  return title.startsWith('Admin/') ? 'admin' : 'default';
+}
 
-  useEffect(() => {
+const withTheme: Decorator = (Story, context) => {
+  const theme = themeFromStoryTitle(context.title);
+
+  useLayoutEffect(() => {
     document.documentElement.setAttribute('data-wh-theme', theme);
   }, [theme]);
+
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-wh-theme', theme);
+  }
 
   return <Story />;
 };
@@ -19,7 +37,8 @@ const withTheme: Decorator = (Story, context) => {
 const preview: Preview = {
   globalTypes: {
     theme: {
-      description: 'Admin Theme vs frontend theme tokens',
+      description:
+        'Follows the sidebar section (Admin → admin, otherwise default). Toolbar mirrors intent; section wins on navigation.',
       toolbar: {
         title: 'Theme',
         icon: 'paintbrush',
@@ -32,7 +51,7 @@ const preview: Preview = {
     },
   },
   initialGlobals: {
-    theme: 'admin',
+    theme: 'default',
   },
   decorators: [withTheme],
   parameters: {
