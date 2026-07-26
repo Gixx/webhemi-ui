@@ -1,0 +1,24 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction" />
+
+# WebHemi UI
+
+Design system for WebHemi: React components reviewed in Storybook, published for WebHemi.PHP (AssetMapper) and WebHemi.JS (Next.js).
+
+## Trees in this Storybook
+
+- **Admin** — Retro OS chrome and product bricks (`Admin/Atoms`, `Admin/Bricks`, …). Theme scope: `data-wh-theme="admin"`.
+- **Themes / Default** — visitor-facing frontend theme. Theme scope: `data-wh-theme="default"`.
+- **Shared** — transitional shared atoms (moving into themes over time).
+
+The Storybook toolbar paintbrush mirrors the section: navigating into **Admin/** forces the admin theme; other sections use Default.
+
+## How to work here
+
+1. Pick a component in the sidebar and use **Controls** to explore props.
+2. Use **Viewport** in the toolbar for responsive checks.
+3. Run component / a11y / coverage tests from the testing widget (Vitest addon).
+4. Visual baselines run via Chromatic in CI.
+
+Autodocs pages (Docs tab) are generated for each CSF story file. This page is custom MDX.

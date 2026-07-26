@@ -1,5 +1,5 @@
 /*
- * WebHemi Admin Theme (Win98) design tokens.
+ * WebHemi Admin Theme (Retro OS) design tokens.
  * Scoped to [data-wh-theme="admin"] per Admin98 integration contract.
  * Consumed by owned chrome / product SCSS.
  */
@@ -33,7 +33,7 @@
   --range-track-height: 4px;
   --range-spacing: 10px;
 
-  /* Radio / checkbox layout math (from 98.css) */
+  /* Radio / checkbox layout math (checkbox/radio metrics) */
   --radio-total-width-precalc: var(--radio-width) + var(--radio-label-spacing);
   --radio-total-width: calc(var(--radio-total-width-precalc));
   --radio-left: calc(-1 * var(--radio-total-width-precalc));

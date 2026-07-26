@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../chrome';
 import { DesktopIcon, type DesktopIconKind } from './DesktopIcon';
 import { IconPanelWindow } from './IconPanelWindow';
@@ -95,5 +96,19 @@ type Story = StoryObj<typeof meta>;
 export const ControlPanel: Story = {
   args: {
     titleIcon: 'control-panel',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sites = ICONS[0];
+
+    await userEvent.click(canvas.getByRole('link', { name: sites.label }));
+
+    await expect(canvas.getByRole('heading', { name: sites.label })).toBeVisible();
+    await expect(
+      canvas.getByText(sites.description, { selector: '.info-description' }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(sites.description, { selector: '.status-bar-field.description' }),
+    ).toBeVisible();
   },
 };

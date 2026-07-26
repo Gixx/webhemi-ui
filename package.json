@@ -29,6 +29,9 @@
     "lint": "oxlint src",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "test-storybook": "vitest --project=storybook",
+    "test-storybook:coverage": "vitest --project=storybook --coverage",
+    "chromatic": "chromatic",
     "prepublishOnly": "npm run typecheck && npm run build"
   },
   "peerDependencies": {
@@ -42,6 +45,7 @@
     "@chromatic-com/storybook": "^5.2.1",
     "@storybook/addon-a11y": "^10.5.0",
     "@storybook/addon-docs": "^10.5.0",
+    "@storybook/addon-vitest": "^10.5.4",
     "@storybook/react-vite": "^10.5.0",
     "@tailwindcss/cli": "^4.3.2",
     "@tailwindcss/vite": "^4.3.2",
@@ -49,7 +53,11 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.10",
+    "chromatic": "^18.1.0",
     "oxlint": "^1.71.0",
+    "playwright": "^1.62.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "sass": "^1.102.0",
@@ -57,7 +65,8 @@
     "tailwindcss": "^4.3.2",
     "tsup": "^8.5.1",
     "typescript": "~5.8.3",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
   },
   "publishConfig": {
     "access": "public"

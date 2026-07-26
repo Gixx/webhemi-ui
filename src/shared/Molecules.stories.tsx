@@ -12,6 +12,7 @@ import { Pagination } from '../admin/components/Pagination/Pagination';
 
 const meta = {
   title: 'Shared/Molecules',
+  tags: ['!autodocs'],
 } satisfies Meta;
 
 export default meta;

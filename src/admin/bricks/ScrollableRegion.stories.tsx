@@ -17,7 +17,7 @@ const meta = {
             98 scrollbars used arrow buttons, a checkerboard track, and a raised thumb.
           </p>
           <p>
-            The native browser scrollbar is hidden; useCustomScrollbar paints the Win98 chrome and
+            The native browser scrollbar is hidden; useCustomScrollbar paints the Retro OS chrome and
             keeps it in sync with scrollTop / scrollLeft.
           </p>
           <p>

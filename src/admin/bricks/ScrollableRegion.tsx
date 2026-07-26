@@ -9,7 +9,7 @@ export type ScrollableRegionProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 /**
- * Scroll host with Win98 custom scrollbar chrome (admin98 scrollbar.js port).
+ * Scroll host with Retro OS custom scrollbar chrome (admin98 scrollbar.js port).
  *
  * Structure:
  *   .scrollable[.has-custom-scrollbar]

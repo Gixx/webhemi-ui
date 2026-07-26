@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from 'react';
 import { attachCustomScrollbar } from './attachCustomScrollbar';
 
 /**
- * Mount Win98 custom scrollbar chrome on a host/viewport pair.
+ * Mount Retro OS custom scrollbar chrome on a host/viewport pair.
  * Safe to call when refs are not yet populated (no-op until both exist).
  */
 export function useCustomScrollbar(

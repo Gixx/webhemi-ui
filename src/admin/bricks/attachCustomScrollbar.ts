@@ -1,5 +1,5 @@
 /**
- * Win98-style scrollbar chrome for a host that already has a `.scrollable-viewport`
+ * Retro OS–style scrollbar chrome for a host that already has a `.scrollable-viewport`
  * (React owns the viewport + children; this only mounts `.sb-*` rails).
  *
  * Port of admin98 `assets/script/scrollbar.js`, adapted for React-owned DOM.
@@ -60,7 +60,7 @@ function buildAxis(axis: Axis): AxisChrome {
 export type DetachCustomScrollbar = () => void;
 
 /**
- * Attach Win98 scrollbar chrome to `host`. Expects `viewport` to already be a
+ * Attach Retro OS scrollbar chrome to `host`. Expects `viewport` to already be a
  * child of `host` with class `scrollable-viewport`.
  */
 export function attachCustomScrollbar(

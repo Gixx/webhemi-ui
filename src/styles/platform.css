@@ -1,6 +1,6 @@
 /*
  * Platform CSS: Tailwind theme + utilities only (no Preflight).
- * Preflight fights Win98 chrome; themes own their resets.
+ * Preflight fights Retro OS chrome; themes own their resets.
  */
 
 @layer theme, base, components, utilities;

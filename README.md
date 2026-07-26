@@ -6,7 +6,7 @@ WebHemi design system: React components built and reviewed in Storybook, publish
 
 ```text
 src/
-├── admin/                 # Admin Theme (Win98) — rewrite in progress
+├── admin/                 # Admin Theme (Retro OS) — rewrite in progress
 │   ├── styles/            # tokens, chrome/, product/, entry.scss
 │   ├── assets/            # fonts + icons (inlined into dist CSS)
 │   └── …                  # legacy pages (throwaway until Phase 4+)

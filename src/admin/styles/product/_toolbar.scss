@@ -211,7 +211,7 @@
   display: none;
 }
 
-/* Sticky pressed look for the active window's task button (98.css :active inset). */
+/* Sticky pressed look for the active window's task button (pressed :active inset). */
 #toolbar .task-buttons > .task.active,
 #toolbar .task-buttons > .task[aria-pressed="true"] {
   box-shadow: inset -1px -1px #fff, inset 1px 1px #0a0a0a, inset -2px -2px #dfdfdf, inset 2px 2px grey;

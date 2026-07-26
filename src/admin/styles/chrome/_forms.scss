@@ -1,4 +1,4 @@
-// Ported from 98.css (MIT) — https://github.com/jdan/98.css
+// Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
 // Tokens: abstract/tokens.css; icons: ./icon/*.svg
 input[type="radio"],
 input[type="checkbox"] {
@@ -227,7 +227,7 @@ select:focus option {
 /*
  * While the list is open, keep the closed control light so Firefox does not
  * infer a dark OS popup from the navy focus face (see Firefox bug 1825958).
- * Win98 list itself is white; navy highlight is on the selected row.
+ * Retro OS list itself is white; navy highlight is on the selected row.
  */
 select:open {
   color: var(--text-color);

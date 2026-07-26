@@ -2,13 +2,13 @@ import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** 98.css `.default` — primary Enter action */
+  /** Chrome `.default` — primary Enter action */
   isDefault?: boolean;
   loading?: boolean;
   children?: ReactNode;
 };
 
-/** Win98 chrome button — class contract from owned chrome SCSS. */
+/** Retro OS chrome button — class contract from owned chrome SCSS. */
 export function Button({
   isDefault = false,
   loading = false,

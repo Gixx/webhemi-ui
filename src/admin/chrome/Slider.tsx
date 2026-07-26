@@ -2,7 +2,7 @@ import type { InputHTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
 
 export type SliderProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
-  /** 98.css `.has-box-indicator` */
+  /** Chrome `.has-box-indicator` */
   boxIndicator?: boolean;
   /** Wrap in `.is-vertical` for vertical orientation */
   vertical?: boolean;

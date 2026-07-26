@@ -5,6 +5,7 @@ import { Button } from '../../shared/components/Button/Button';
 
 const meta = {
   title: 'Themes/Default/Introduction',
+  tags: ['!autodocs'],
   parameters: {
     layout: 'fullscreen',
     globals: { theme: 'default' },
@@ -19,9 +20,9 @@ export const Overview: StoryObj = {
       <SiteHeader
         siteName="WebHemi"
         navItems={[
-          { label: 'Home', href: '#', active: true },
-          { label: 'Blog', href: '#' },
-          { label: 'About', href: '#' },
+          { label: 'Home', href: '#home', active: true },
+          { label: 'Blog', href: '#blog' },
+          { label: 'About', href: '#about' },
         ]}
       />
       <Hero

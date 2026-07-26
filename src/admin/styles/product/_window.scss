@@ -231,7 +231,7 @@ html.is-window-resizing * {
 
 /*
  * Bleed content to the window chrome inside .window-body
- * (98.css uses margin: 8px on .window-body). Prefer layout-encoded bleed;
+ * (classic chrome used margin: 8px on .window-body). Prefer layout-encoded bleed;
  * keep .stretched for one-off cases.
  */
 .stretched {

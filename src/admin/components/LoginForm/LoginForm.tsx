@@ -16,7 +16,7 @@ export interface LoginFormProps {
 }
 
 /**
- * Win98 login dialog composed from DialogWindow + chrome form atoms.
+ * Retro OS login dialog composed from DialogWindow + chrome form atoms.
  */
 export function LoginForm({
   action = '/login',
