@@ -108,3 +108,64 @@ input[type="range"]::-moz-range-track {
 .is-vertical > input[type="range"].has-box-indicator::-moz-range-thumb {
   transform: translateY(0px) scaleX(-1);
 }
+
+/* Disabled: muted track + disabled thumb glyphs (native range has no inherent face). */
+input[type="range"]:disabled {
+  cursor: default;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background: url("./icon/indicator-horizontal-disabled.svg");
+}
+
+input[type="range"].has-box-indicator:disabled::-webkit-slider-thumb {
+  background: url("./icon/indicator-rectangle-horizontal-disabled.svg");
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  background: url("./icon/indicator-horizontal-disabled.svg");
+}
+
+input[type="range"].has-box-indicator:disabled::-moz-range-thumb {
+  background: url("./icon/indicator-rectangle-horizontal-disabled.svg");
+}
+
+input[type="range"]:disabled::-webkit-slider-runnable-track {
+  background: var(--button-shadow);
+  border-right: 1px solid var(--button-face);
+  border-bottom: 1px solid var(--button-face);
+  box-shadow: 1px 0 0 var(--button-highlight), 1px 1px 0 var(--button-highlight),
+    0 1px 0 var(--button-highlight), -1px 0 0 var(--button-shadow),
+    -1px -1px 0 var(--button-shadow), 0 -1px 0 var(--button-shadow),
+    -1px 1px 0 var(--button-highlight), 1px -1px var(--button-shadow);
+}
+
+input[type="range"]:disabled::-moz-range-track {
+  background: var(--button-shadow);
+  border-right: 1px solid var(--button-face);
+  border-bottom: 1px solid var(--button-face);
+  box-shadow: 1px 0 0 var(--button-highlight), 1px 1px 0 var(--button-highlight),
+    0 1px 0 var(--button-highlight), -1px 0 0 var(--button-shadow),
+    -1px -1px 0 var(--button-shadow), 0 -1px 0 var(--button-shadow),
+    -1px 1px 0 var(--button-highlight), 1px -1px var(--button-shadow);
+}
+
+.is-vertical > input[type="range"]:disabled::-webkit-slider-runnable-track {
+  border-left: 1px solid var(--button-face);
+  border-right: 0;
+  border-bottom: 1px solid var(--button-face);
+  box-shadow: -1px 0 0 var(--button-highlight), -1px 1px 0 var(--button-highlight),
+    0 1px 0 var(--button-highlight), 1px 0 0 var(--button-shadow),
+    1px -1px 0 var(--button-shadow), 0 -1px 0 var(--button-shadow),
+    1px 1px 0 var(--button-highlight), -1px -1px var(--button-shadow);
+}
+
+.is-vertical > input[type="range"]:disabled::-moz-range-track {
+  border-left: 1px solid var(--button-face);
+  border-right: 0;
+  border-bottom: 1px solid var(--button-face);
+  box-shadow: -1px 0 0 var(--button-highlight), -1px 1px 0 var(--button-highlight),
+    0 1px 0 var(--button-highlight), 1px 0 0 var(--button-shadow),
+    1px -1px 0 var(--button-shadow), 0 -1px 0 var(--button-shadow),
+    1px 1px 0 var(--button-highlight), -1px -1px var(--button-shadow);
+}

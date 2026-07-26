@@ -241,6 +241,26 @@ select:active {
   background-image: url("./icon/button-down-active.svg");
 }
 
+select:disabled {
+  background-color: var(--surface);
+  background-image: url("./icon/button-down-disabled.svg");
+  background-position: top 2px right 2px;
+  background-repeat: no-repeat;
+  color: var(--button-shadow);
+  cursor: default;
+}
+
+/* Keep the disabled face if the control still receives focus/active styles. */
+select:disabled:focus,
+select:disabled:open,
+select:disabled:active {
+  color: var(--button-shadow);
+  background-color: var(--surface);
+  background-image: url("./icon/button-down-disabled.svg");
+  background-position: top 2px right 2px;
+  background-repeat: no-repeat;
+}
+
 /*
  * Customizable select (Chromium / supporting engines): style the real picker
  * instead of the OS menu. Progressive enhancement — classic path above remains.
