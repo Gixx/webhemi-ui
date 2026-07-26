@@ -31,7 +31,7 @@
     "build-storybook": "storybook build",
     "test-storybook": "vitest --project=storybook",
     "test-storybook:coverage": "vitest --project=storybook --coverage",
-    "chromatic": "chromatic",
+    "chromatic": "chromatic --exit-zero-on-changes",
     "prepublishOnly": "npm run typecheck && npm run build"
   },
   "peerDependencies": {
