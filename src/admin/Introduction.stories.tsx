@@ -1,33 +1,30 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button, Window, TitleBar, TitleBarText, WindowBody } from './chrome';
 
 const meta = {
   title: 'Admin/Introduction',
-  parameters: { globals: { theme: 'admin' } },
 } satisfies Meta;
 
 export default meta;
 
-export const Tokens: StoryObj = {
+export const Overview: StoryObj = {
   render: () => (
-    <div className="wh-ui space-y-4 p-4">
-      <h1 className="font-[family-name:var(--wh-font-display)] text-4xl">WebHemi Admin Theme</h1>
-      <p className="max-w-xl text-[var(--wh-color-muted)]">
-        Fixed CMS control-panel UI. Every installation gets this Admin Theme; frontend themes under{' '}
-        <code>Themes/*</code> are swappable for site visitors.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        {[
-          ['Ink', 'var(--wh-color-ink)'],
-          ['Canvas', 'var(--wh-color-canvas)'],
-          ['Accent', 'var(--wh-color-accent)'],
-          ['Hot', 'var(--wh-color-accent-hot)'],
-        ].map(([label, color]) => (
-          <div key={label} className="w-28">
-            <div className="h-16 rounded-[var(--wh-radius-md)] border" style={{ background: color }} />
-            <p className="mt-1 text-sm">{label}</p>
+    <div style={{ padding: 24 }}>
+      <Window style={{ width: 420 }}>
+        <TitleBar>
+          <TitleBarText>WebHemi Admin Theme</TitleBarText>
+        </TitleBar>
+        <WindowBody>
+          <p style={{ marginTop: 0 }}>
+            Win98-inspired CMS UI. Chrome atoms live under <code>src/admin/chrome/</code>. Frontend
+            themes under <code>Themes/*</code> are separate and self-contained.
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button isDefault>OK</Button>
+            <Button>Cancel</Button>
           </div>
-        ))}
-      </div>
+        </WindowBody>
+      </Window>
     </div>
   ),
 };
