@@ -6,15 +6,20 @@ WebHemi design system: React components built and reviewed in Storybook, publish
 
 ```text
 src/
-├── shared/          # atoms reusable by Admin + frontend themes
-├── admin/           # WebHemi Admin Theme (fixed CMS UI)
+├── admin/                 # Admin Theme (Win98) — rewrite in progress
+│   ├── styles/            # tokens, chrome/, product/, entry.scss
+│   ├── assets/            # fonts + icons (inlined into dist CSS)
+│   └── …                  # legacy pages (throwaway until Phase 4+)
 ├── themes/
-│   └── default/     # swappable frontend theme (site visitors)
-├── lib/             # utilities (cn, …)
-└── styles/entry.css # production CSS = shared base + Admin tokens
+│   └── default/           # self-contained frontend theme
+├── shared/                # transitional (atoms → themes/default; no long-term shared UI)
+├── lib/                   # non-UI helpers (cn / clsx)
+└── styles/
+    ├── platform.css       # Tailwind theme+utilities (no Preflight)
+    └── entry.js           # production CSS entry (Vite + Sass)
 ```
 
-Storybook sidebar mirrors this: **Shared**, **Admin**, **Themes/Default**. Use the toolbar paintbrush to switch token sets.
+Themes are self-contained. Storybook toolbar (`data-wh-theme`) switches Admin vs Default. Smoke: **Admin / Foundations / CatalogSmoke**.
 
 ## Develop
 
@@ -29,11 +34,8 @@ npm run storybook
 npm run build
 ```
 
-Outputs:
-
-- `dist/index.js` / `dist/index.cjs` — ESM/CJS bundles
-- `dist/index.d.ts` — TypeScript types
-- `dist/index.css` — Admin Theme tokens + base styles
+- `tsup` → `dist/index.js` / `.cjs` / `.d.ts`
+- `vite build --config vite.css.config.ts` → `dist/index.css` (Sass chrome/product + Tailwind utilities; `cssMinify: false`)
 
 ## Publish
 

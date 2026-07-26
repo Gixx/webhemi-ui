@@ -10,4 +10,8 @@ export default defineConfig({
       '@webhemi/ui': path.resolve(__dirname, 'src/index.ts'),
     },
   },
+  build: {
+    // Owned chrome uses `@media (not (hover))`; lightningcss minify can reject it.
+    cssMinify: false,
+  },
 });

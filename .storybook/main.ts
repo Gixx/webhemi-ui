@@ -13,6 +13,9 @@ const config: StorybookConfig = {
   async viteFinal(config) {
     return mergeConfig(config, {
       plugins: [tailwindcss()],
+      build: {
+        cssMinify: false,
+      },
     });
   },
 };

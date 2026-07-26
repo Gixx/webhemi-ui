@@ -1,42 +1,91 @@
-/* WebHemi Admin Theme — fixed CMS control-panel tokens */
+/*
+ * WebHemi Admin Theme (Win98) design tokens.
+ * Scoped to [data-wh-theme="admin"] per Admin98 integration contract.
+ * Consumed by owned chrome / product SCSS.
+ */
 
-@theme {
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
-  --color-wh-ink: #14212b;
-  --color-wh-ink-soft: #2a3a47;
-  --color-wh-canvas: #e8edf1;
-  --color-wh-surface: #f5f7f9;
-  --color-wh-line: #c5d0d8;
-  --color-wh-accent: #0a7a72;
-  --color-wh-accent-hot: #c45c26;
-  --color-wh-success: #1f7a4c;
-  --color-wh-danger: #b42318;
-  --color-wh-warning: #a15c07;
-  --color-wh-muted: #5c6b78;
-}
-
-:root,
 [data-wh-theme="admin"] {
-  --wh-color-ink: #14212b;
-  --wh-color-ink-soft: #2a3a47;
-  --wh-color-canvas: #e8edf1;
-  --wh-color-surface: #f5f7f9;
-  --wh-color-line: #c5d0d8;
-  --wh-color-accent: #0a7a72;
-  --wh-color-accent-hot: #c45c26;
-  --wh-color-success: #1f7a4c;
-  --wh-color-danger: #b42318;
-  --wh-color-warning: #a15c07;
-  --wh-color-muted: #5c6b78;
-  --wh-font-display: "Fraunces", "Georgia", serif;
-  --wh-font-body: "Source Sans 3", "Segoe UI", sans-serif;
-  --wh-radius-sm: 4px;
-  --wh-radius-md: 8px;
-  --wh-space-1: 0.25rem;
-  --wh-space-2: 0.5rem;
-  --wh-space-3: 0.75rem;
-  --wh-space-4: 1rem;
-  --wh-space-6: 1.5rem;
-  --wh-space-8: 2rem;
+  /* Color */
+  --text-color: #222222;
+  --surface: #c0c0c0;
+  --button-highlight: #ffffff;
+  --button-face: #dfdfdf;
+  --button-shadow: #808080;
+  --window-frame: #0a0a0a;
+  --dialog-blue: #000080;
+  --dialog-blue-light: #1084d0;
+  --dialog-gray: #808080;
+  --dialog-gray-light: #b5b5b5;
+  --link-blue: #0000ff;
+  --desktop: #008284;
+
+  /* Typography */
+  --font-chrome: "WebHemi Sans Serif", "Segoe UI", Tahoma, sans-serif;
+  --font-size-chrome: 12px;
+
+  /* Spacing */
+  --element-spacing: 8px;
+  --grouped-button-spacing: 4px;
+  --grouped-element-spacing: 6px;
+  --radio-width: 12px;
+  --checkbox-width: 13px;
+  --radio-label-spacing: 6px;
+  --range-track-height: 4px;
+  --range-spacing: 10px;
+
+  /* Radio / checkbox layout math (from 98.css) */
+  --radio-total-width-precalc: var(--radio-width) + var(--radio-label-spacing);
+  --radio-total-width: calc(var(--radio-total-width-precalc));
+  --radio-left: calc(-1 * var(--radio-total-width-precalc));
+  --radio-dot-width: 4px;
+  --radio-dot-top: calc(var(--radio-width) / 2 - var(--radio-dot-width) / 2);
+  --radio-dot-left: calc(
+    -1 * (var(--radio-total-width-precalc)) + var(--radio-width) / 2 - var(--radio-dot-width) / 2
+  );
+
+  --checkbox-total-width-precalc: var(--checkbox-width) + var(--radio-label-spacing);
+  --checkbox-total-width: calc(var(--checkbox-total-width-precalc));
+  --checkbox-left: calc(-1 * var(--checkbox-total-width-precalc));
+  --checkmark-width: 7px;
+  --checkmark-left: 3px;
+
+  /* Border width unit */
+  --border-width: 1px;
+
+  /* Raised / sunken / field / window / tab bevels (box-shadow recipes) */
+  --border-raised-outer: inset -1px -1px var(--window-frame), inset 1px 1px var(--button-highlight);
+  --border-raised-inner: inset -2px -2px var(--button-shadow), inset 2px 2px var(--button-face);
+  --border-sunken-outer: inset -1px -1px var(--button-highlight), inset 1px 1px var(--window-frame);
+  --border-sunken-inner: inset -2px -2px var(--button-face), inset 2px 2px var(--button-shadow);
+
+  --default-button-border-raised-outer: inset -2px -2px var(--window-frame),
+    inset 1px 1px var(--window-frame);
+  --default-button-border-raised-inner: inset 2px 2px var(--button-highlight),
+    inset -3px -3px var(--button-shadow), inset 3px 3px var(--button-face);
+  --default-button-border-sunken-outer: inset 2px 2px var(--window-frame),
+    inset -1px -1px var(--window-frame);
+  --default-button-border-sunken-inner: inset -2px -2px var(--button-highlight),
+    inset 3px 3px var(--button-shadow), inset -3px -3px var(--button-face);
+
+  --border-window-outer: inset -1px -1px var(--window-frame), inset 1px 1px var(--button-face);
+  --border-window-inner: inset -2px -2px var(--button-shadow), inset 2px 2px var(--button-highlight);
+
+  --border-field: inset -1px -1px var(--button-highlight), inset 1px 1px var(--button-shadow),
+    inset -2px -2px var(--button-face), inset 2px 2px var(--window-frame);
+  --border-status-field: inset -1px -1px var(--button-face), inset 1px 1px var(--button-shadow);
+
+  --border-tab: inset -1px 0 var(--window-frame), inset 1px 1px var(--button-face),
+    inset -2px 0 var(--button-shadow), inset 2px 2px var(--button-highlight);
+
+  /* Window size scale (also exposed via Tailwind @theme in platform.css) */
+  --width-window-2xs: 175px;
+  --width-window-xs: 220px;
+  --width-window-sm: 332px;
+  --width-window-md: 550px;
+  --width-window-lg: 750px;
+  --width-window-xl: 1024px;
+  --max-height-window-sm: 240px;
+  --max-height-window-md: 250px;
+  --max-height-window-lg: 500px;
+  --min-height-window-md: 500px;
 }

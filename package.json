@@ -24,7 +24,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsup && npm run build:css",
-    "build:css": "tailwindcss -i ./src/styles/entry.css -o ./dist/index.css --minify",
+    "build:css": "vite build --config vite.css.config.ts && rm -f dist/css-entry.js dist/css-entry.js.map",
     "typecheck": "tsc -p tsconfig.lib.json --noEmit",
     "lint": "oxlint src",
     "storybook": "storybook dev -p 6006",
@@ -52,6 +52,7 @@
     "oxlint": "^1.71.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "sass": "^1.102.0",
     "storybook": "^10.5.0",
     "tailwindcss": "^4.3.2",
     "tsup": "^8.5.1",

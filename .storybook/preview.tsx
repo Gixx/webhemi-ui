@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import type { Preview, Decorator } from '@storybook/react-vite';
-import '../src/shared/styles/base.css';
+import '../src/styles/platform.css';
+import '../src/admin/styles/fonts.css';
 import '../src/admin/styles/tokens.css';
+import '../src/admin/styles/entry.scss';
 import '../src/themes/default/styles/tokens.css';
 
 const withTheme: Decorator = (Story, context) => {
@@ -45,6 +47,7 @@ const preview: Preview = {
       options: {
         canvas: { name: 'Canvas', value: 'var(--wh-color-canvas)' },
         ink: { name: 'Ink', value: 'var(--wh-color-ink)' },
+        desktop: { name: 'Desktop', value: 'var(--desktop, #008284)' },
       },
     },
     a11y: {

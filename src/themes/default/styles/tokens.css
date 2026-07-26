@@ -23,3 +23,12 @@
   --wh-space-6: 1.5rem;
   --wh-space-8: 2rem;
 }
+
+/* Theme-owned document face (no shared Preflight) */
+[data-wh-theme="default"] body {
+  margin: 0;
+  font-family: var(--wh-font-body);
+  color: var(--wh-color-ink);
+  background: var(--wh-color-canvas);
+  line-height: 1.5;
+}

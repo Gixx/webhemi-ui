@@ -1,0 +1,47 @@
+/* Product: document shell under Admin Theme (no body.dashboard contract).
+ * Loaded via meta.load-css inside [data-wh-theme="admin"].
+ * Font face lives in fonts.css (must stay unscoped).
+ */
+
+body {
+  margin: 0;
+  padding: 20px 20px 44px;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--desktop, #008284);
+  color: #222;
+  font-family: var(--font-chrome), "Segoe UI", Tahoma, sans-serif;
+  /* Pixelated MS Sans was 11px; WebHemi glyphs read ~9–14% shorter at the same size. */
+  font-size: 12px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-ligatures: no-common-ligatures;
+  font-feature-settings: "kern", "liga" 0, "clig" 0;
+  scroll-behavior: smooth;
+}
+
+/* Chrome control font (WebHemi); size tuned vs classic 11px pixel face. */
+.title-bar,
+.window,
+button,
+input,
+label,
+legend,
+li[role="tab"],
+option,
+select,
+table,
+textarea,
+ul.tree-view {
+  font-family: var(--font-chrome), "Segoe UI", Tahoma, sans-serif;
+  font-size: 12px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus {
+  outline: none;
+}

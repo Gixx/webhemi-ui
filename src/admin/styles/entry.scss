@@ -1,0 +1,43 @@
+/*
+ * Admin Theme style entry: owned Win98 chrome + product shell/layouts.
+ * Sass meta.load-css nests selectors under [data-wh-theme="admin"] so Default
+ * frontend stories never inherit global button/input chrome.
+ *
+ * Compile with Vite (+ sass), not via Tailwind CSS @import.
+ */
+
+@use "sass:meta";
+
+html[data-wh-theme="admin"] {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+}
+
+[data-wh-theme="admin"] {
+  /* Chrome atoms (98-compatible markup contract) */
+  @include meta.load-css("chrome/typography");
+  @include meta.load-css("chrome/button");
+  @include meta.load-css("chrome/window");
+  @include meta.load-css("chrome/grouping");
+  @include meta.load-css("chrome/forms");
+  @include meta.load-css("chrome/slider");
+  @include meta.load-css("chrome/tree-view");
+  @include meta.load-css("chrome/code");
+  @include meta.load-css("chrome/scrollbar");
+  @include meta.load-css("chrome/tabs");
+  @include meta.load-css("chrome/surfaces");
+  @include meta.load-css("chrome/progress");
+
+  /* Product bricks (shell + layouts; CSS only in Phase 1) */
+  @include meta.load-css("product/base");
+  @include meta.load-css("product/desktop");
+  @include meta.load-css("product/toolbar");
+  @include meta.load-css("product/window");
+  @include meta.load-css("product/layouts");
+  @include meta.load-css("product/primitives");
+  @include meta.load-css("product/scrollbar");
+}
