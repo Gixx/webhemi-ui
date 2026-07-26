@@ -16,6 +16,7 @@
   z-index: 0;
   background-position: top center;
   background-repeat: no-repeat;
+  background-size: 48px;
 }
 
 .dashboard [draggable="true"] {
@@ -67,41 +68,41 @@
 /*}*/
 
 .icon.control-panel {
-  background-image: url("../../assets/icons/48x48/control_panel.gif");
+  background-image: url("../../assets/icons/control_panel.svg");
 }
 
 .icon.site {
-  background-image: url("../../assets/icons/48x48/site.gif");
+  background-image: url("../../assets/icons/site.svg");
 }
 
 .icon.network-neighborhood {
-  background-image: url("../../assets/icons/48x48/network_heighborhood.gif");
+  background-image: url("../../assets/icons/network_neighborhood.svg");
 }
 
 .icon.users {
-  background-image: url("../../assets/icons/48x48/users.gif");
+  background-image: url("../../assets/icons/users.svg");
 }
 
 .icon.roles {
-  background-image: url("../../assets/icons/48x48/roles.gif");
+  background-image: url("../../assets/icons/roles.svg");
 }
 
 .icon.permissions {
-  background-image: url("../../assets/icons/48x48/permissions.gif");
+  background-image: url("../../assets/icons/permissions.svg");
 }
 
 .icon.hosts {
-  background-image: url("../../assets/icons/48x48/hosts.gif");
+  background-image: url("../../assets/icons/hosts.svg");
 }
 
 .icon.sites {
-  background-image: url("../../assets/icons/48x48/sites.gif");
+  background-image: url("../../assets/icons/sites.svg");
 }
 
 .icon.settings {
-  background-image: url("../../assets/icons/48x48/settings.gif");
+  background-image: url("../../assets/icons/settings.svg");
 }
 
 .icon.themes {
-  background-image: url("../../assets/icons/48x48/themes.gif");
+  background-image: url("../../assets/icons/themes.svg");
 }

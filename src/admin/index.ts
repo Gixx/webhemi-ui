@@ -1,4 +1,5 @@
 export * from './chrome';
+export * from './bricks';
 export { FlashList, type FlashMap } from './components/FlashList/FlashList';
 export { DataTable, type DataTableProps, type DataTableColumn } from './components/DataTable/DataTable';
 export { Pagination, type PaginationProps } from './components/Pagination/Pagination';

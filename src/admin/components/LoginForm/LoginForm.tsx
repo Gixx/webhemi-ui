@@ -1,14 +1,6 @@
 import type { FormEvent } from 'react';
-import {
-  Button,
-  Checkbox,
-  FieldRow,
-  TextBox,
-  TitleBar,
-  TitleBarText,
-  Window,
-  WindowBody,
-} from '../../chrome';
+import { Button, Checkbox, FieldRow, TextBox } from '../../chrome';
+import { DialogWindow } from '../../bricks';
 import { cn } from '../../../lib/cn';
 
 export interface LoginFormProps {
@@ -24,7 +16,7 @@ export interface LoginFormProps {
 }
 
 /**
- * Win98 login dialog composed from chrome atoms + product dialog-panel-layout.
+ * Win98 login dialog composed from DialogWindow + chrome form atoms.
  */
 export function LoginForm({
   action = '/login',
@@ -51,61 +43,55 @@ export function LoginForm({
   };
 
   return (
-    <Window className={cn('w-window-sm', className)}>
-      <TitleBar>
-        <TitleBarText>Sign in — WebHemi</TitleBarText>
-      </TitleBar>
-      <WindowBody>
-        <form action={action} method={method} onSubmit={handleSubmit}>
-          {csrfToken ? <input type="hidden" name={csrfFieldName} value={csrfToken} /> : null}
-          <div className="window-pane dialog-panel-layout">
-            <div className="panel">
-              {error ? (
-                <p role="alert" style={{ marginTop: 0, marginBottom: 10, color: '#800000' }}>
-                  {error}
-                </p>
-              ) : null}
-              <FieldRow>
-                <label htmlFor="email">
-                  <u>E</u>mail:
-                </label>
-                <TextBox
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  defaultValue={emailDefault}
-                  required
-                  className="w-window-xs"
-                />
-              </FieldRow>
-              <FieldRow>
-                <label htmlFor="password">
-                  <u>P</u>assword:
-                </label>
-                <TextBox
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="w-window-xs"
-                />
-              </FieldRow>
-              <FieldRow>
-                <Checkbox id="remember" name="remember" label="Remember me" />
-              </FieldRow>
-            </div>
-            <div className="panel actions">
-              <FieldRow className="justify-end">
-                <Button type="submit" isDefault loading={loading}>
-                  Sign in
-                </Button>
-              </FieldRow>
-            </div>
-          </div>
-        </form>
-      </WindowBody>
-    </Window>
+    <form action={action} method={method} onSubmit={handleSubmit} className={cn(className)}>
+      {csrfToken ? <input type="hidden" name={csrfFieldName} value={csrfToken} /> : null}
+      <DialogWindow
+        title="Sign in — WebHemi"
+        titleBarControls={null}
+        actions={
+          <FieldRow className="justify-end">
+            <Button type="submit" isDefault loading={loading}>
+              Sign in
+            </Button>
+          </FieldRow>
+        }
+      >
+        {error ? (
+          <p role="alert" style={{ marginTop: 0, marginBottom: 10, color: '#800000' }}>
+            {error}
+          </p>
+        ) : null}
+        <FieldRow>
+          <label htmlFor="email">
+            <u>E</u>mail:
+          </label>
+          <TextBox
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="username"
+            defaultValue={emailDefault}
+            required
+            className="w-window-xs"
+          />
+        </FieldRow>
+        <FieldRow>
+          <label htmlFor="password">
+            <u>P</u>assword:
+          </label>
+          <TextBox
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            className="w-window-xs"
+          />
+        </FieldRow>
+        <FieldRow>
+          <Checkbox id="remember" name="remember" label="Remember me" />
+        </FieldRow>
+      </DialogWindow>
+    </form>
   );
 }

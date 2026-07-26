@@ -161,7 +161,15 @@ html.is-window-resizing * {
 }
 
 .title-bar-text.control-panel,
-.title-bar-text.settings {
+.title-bar-text.site,
+.title-bar-text.network-neighborhood,
+.title-bar-text.users,
+.title-bar-text.roles,
+.title-bar-text.permissions,
+.title-bar-text.hosts,
+.title-bar-text.sites,
+.title-bar-text.settings,
+.title-bar-text.themes {
   padding-left: 22px;
   background-repeat: no-repeat;
   background-position: 2px center;
@@ -169,11 +177,43 @@ html.is-window-resizing * {
 }
 
 .title-bar-text.control-panel {
-  background-image: url("../../assets/icons/48x48/control_panel.gif");
+  background-image: url("../../assets/icons/control_panel.svg");
+}
+
+.title-bar-text.site {
+  background-image: url("../../assets/icons/site.svg");
+}
+
+.title-bar-text.network-neighborhood {
+  background-image: url("../../assets/icons/network_neighborhood.svg");
+}
+
+.title-bar-text.users {
+  background-image: url("../../assets/icons/users.svg");
+}
+
+.title-bar-text.roles {
+  background-image: url("../../assets/icons/roles.svg");
+}
+
+.title-bar-text.permissions {
+  background-image: url("../../assets/icons/permissions.svg");
+}
+
+.title-bar-text.hosts {
+  background-image: url("../../assets/icons/hosts.svg");
+}
+
+.title-bar-text.sites {
+  background-image: url("../../assets/icons/sites.svg");
 }
 
 .title-bar-text.settings {
-  background-image: url("../../assets/icons/48x48/settings.gif");
+  background-image: url("../../assets/icons/settings.svg");
+}
+
+.title-bar-text.themes {
+  background-image: url("../../assets/icons/themes.svg");
 }
 
 .status-bar .status-bar-field {

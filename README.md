@@ -19,7 +19,7 @@ src/
     └── entry.js           # production CSS entry (Vite + Sass)
 ```
 
-Themes are self-contained. Storybook toolbar (`data-wh-theme`) switches Admin vs Default. Smoke: **Admin / Foundations / CatalogSmoke**.
+Themes are self-contained. Storybook toolbar (`data-wh-theme`) switches Admin vs Default.
 
 ## Develop
 

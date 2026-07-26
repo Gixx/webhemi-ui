@@ -219,6 +219,30 @@
   padding-top: 10px;
 }
 
+/* Message-box layout: icon left, content indented; actions stay full width. */
+.dialog-panel-layout > .panel.dialog-typed {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-icon {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body > :first-child {
+  margin-top: 0;
+}
+
 .dialog-panel-layout > .panel .field-row label {
   min-width: 75px;
 }

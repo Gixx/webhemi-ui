@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
+  resolveTitleBarIcon,
+  TITLE_BAR_ICON_OPTIONS,
+  type TitleBarIconOption,
+} from '../bricks/PaneWindowShell';
+import {
   Window,
   TitleBar,
   TitleBarText,
@@ -15,6 +20,7 @@ type WindowStoryArgs = {
   body: string;
   inactive: boolean;
   status: string;
+  titleIcon: TitleBarIconOption;
   showMinimize: boolean;
   showMaximize: boolean;
   showRestore: boolean;
@@ -32,6 +38,7 @@ const meta = {
     body: 'Window body content.',
     inactive: false,
     status: 'Ready',
+    titleIcon: 'none' as TitleBarIconOption,
     showMinimize: true,
     showMaximize: true,
     showRestore: false,
@@ -45,6 +52,7 @@ const meta = {
     body: { control: 'text' },
     inactive: { control: 'boolean' },
     status: { control: 'text' },
+    titleIcon: { control: 'select', options: [...TITLE_BAR_ICON_OPTIONS] },
     showMinimize: { control: 'boolean' },
     showMaximize: { control: 'boolean' },
     showRestore: { control: 'boolean' },
@@ -56,7 +64,7 @@ const meta = {
   render: (args) => (
     <Window style={{ width: args.width }}>
       <TitleBar inactive={args.inactive}>
-        <TitleBarText>{args.title}</TitleBarText>
+        <TitleBarText className={resolveTitleBarIcon(args.titleIcon)}>{args.title}</TitleBarText>
         <TitleBarControls>
           {args.showMinimize ? <TitleBarControl action="Minimize" /> : null}
           {args.showMaximize ? (
