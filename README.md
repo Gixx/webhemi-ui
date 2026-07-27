@@ -1,6 +1,14 @@
-# @webhemi/ui
+# WebHemi.UI
 
 WebHemi design system: React components built and reviewed in Storybook, published for both WebHemi.PHP (AssetMapper) and WebHemi.JS (Next.js).
+
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-blue.svg)](https://nodejs.org/)
+[![Email](https://img.shields.io/badge/email-navig80@gmail.com-blue.svg?style=flat-square)](mailto:navig80@gmail.com)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
+
+[![CI](https://github.com/Gixx/webhemi-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/Gixx/webhemi-ui/actions/workflows/ci.yml)
+[![Chromatic](https://github.com/Gixx/webhemi-ui/actions/workflows/chromatic.yml/badge.svg)](https://github.com/Gixx/webhemi-ui/actions/workflows/chromatic.yml)
+[![Stoybook](https://img.shields.io/badge/Storybook-_Link-ff4785.svg?style=flat-square)](https://main--6a6654ecf8e18e6141834dee.chromatic.com)
 
 ## Layout
 
