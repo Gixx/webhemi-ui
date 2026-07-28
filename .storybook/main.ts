@@ -8,9 +8,11 @@ const config: StorybookConfig = {
     '@chromatic-com/storybook',
     '@storybook/addon-a11y',
     '@storybook/addon-docs',
-    '@storybook/addon-vitest'
+    '@storybook/addon-vitest',
   ],
   framework: '@storybook/react-vite',
+  /** Manager logo / favicon — src/admin/assets/logo/webhemi.svg */
+  staticDirs: [{ from: '../src/admin/assets/logo', to: '/brand' }],
   async viteFinal(config) {
     return mergeConfig(config, {
       plugins: [tailwindcss()],
