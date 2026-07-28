@@ -30,7 +30,7 @@ export {
   type TabProps,
   type TabPanelProps,
 } from './Tabs';
-export { promoteTabRow } from './promoteTabRow';
+export { promoteTabRow } from './_lib/promoteTabRow';
 export { TreeView, type TreeViewProps } from './TreeView';
 export {
   SunkenPanel,
@@ -39,8 +39,8 @@ export {
   type FieldBorderProps,
 } from './SunkenPanel';
 export { Scrollable, type ScrollableProps } from './Scrollable';
-export { useCustomScrollbar } from './useCustomScrollbar';
-export { attachCustomScrollbar, type DetachCustomScrollbar } from './attachCustomScrollbar';
+export { useCustomScrollbar } from './_lib/useCustomScrollbar';
+export { attachCustomScrollbar, type DetachCustomScrollbar } from './_lib/attachCustomScrollbar';
 export { Table, TableRow, type TableProps, type TableRowProps } from './Table';
-export { useTableView } from './useTableView';
+export { useTableView } from './_lib/useTableView';
 export { Progress, type ProgressProps } from './Progress';

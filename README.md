@@ -15,6 +15,10 @@ WebHemi design system: React components built and reviewed in Storybook, publish
 ```text
 src/
 ├── admin/                 # Admin Theme (Retro OS) — rewrite in progress
+│   ├── chrome/            # atoms — one folder each (Button/, FieldRow/, …)
+│   │   └── _lib/          # shared helpers (accessKey, scrollbar, table view, …)
+│   ├── bricks/            # product bricks — one folder each
+│   │   └── _lib/          # PaneWindowShell, windowBrickStory
 │   ├── styles/            # tokens, chrome/, product/, entry.scss
 │   ├── assets/            # fonts + icons (inlined into dist CSS)
 │   └── …                  # legacy pages (throwaway until Phase 4+)

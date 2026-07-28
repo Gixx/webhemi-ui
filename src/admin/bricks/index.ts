@@ -13,4 +13,4 @@ export {
   type PaneWindowShellProps,
   type TitleBarIconKind,
   type TitleBarIconOption,
-} from './PaneWindowShell';
+} from './_lib/PaneWindowShell';
