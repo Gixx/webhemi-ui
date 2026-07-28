@@ -185,6 +185,59 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    options: {
+      /**
+       * Stable sidebar order (avoids glob / HMR reshuffles).
+       * Nested arrays match title segments: Admin/Atoms/Button → Admin → Atoms → Button.
+       * `*` = remaining items in that group, alphabetical.
+       */
+      storySort: {
+        method: 'alphabetical',
+        order: [
+          'Introduction',
+          'Admin',
+          [
+            'Atoms',
+            [
+              'Button',
+              'TextBox',
+              'TextArea',
+              'Checkbox',
+              'Radio',
+              'Select',
+              'Slider',
+              'FieldRow',
+              'Progress',
+              'Table',
+              'Tabs',
+              'TreeView',
+              'SunkenPanel',
+              'Window',
+              '*',
+            ],
+            'Bricks',
+            [
+              'SystemIcon',
+              'DialogWindow',
+              'IconPanelWindow',
+              'WizardWindow',
+              '*',
+            ],
+            'Components',
+            'Foundations',
+            '*',
+          ],
+          'Themes',
+          [
+            'Default',
+            ['Introduction', 'SiteHeader', 'Hero', '*'],
+          ],
+          'Shared',
+          ['Atoms', 'Molecules', '*'],
+          '*',
+        ],
+      },
+    },
     layout: 'padded',
     backgrounds: {
       options: {

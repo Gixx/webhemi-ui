@@ -12,6 +12,8 @@ Design system for WebHemi: React components reviewed in Storybook, published for
 - **Themes / Default** — visitor-facing frontend theme. Theme scope: `data-wh-theme="default"`.
 - **Shared** — transitional shared atoms (moving into themes over time).
 
+Sidebar order is fixed in `.storybook/preview.tsx` (`storySort`): Introduction → Admin (Atoms → Bricks → …) → Themes → Shared.
+
 The Storybook toolbar paintbrush mirrors the section: navigating into **Admin/** forces the admin theme; other sections use Default.
 
 ## How to work here
