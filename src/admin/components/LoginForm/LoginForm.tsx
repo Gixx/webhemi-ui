@@ -61,10 +61,8 @@ export function LoginForm({
             {error}
           </p>
         ) : null}
-        <FieldRow>
-          <label htmlFor="email">
-            <u>E</u>mail:
-          </label>
+        <FieldRow accessKey="e">
+          <label htmlFor="email">Email:</label>
           <TextBox
             id="email"
             name="email"
@@ -75,10 +73,8 @@ export function LoginForm({
             className="w-window-xs"
           />
         </FieldRow>
-        <FieldRow>
-          <label htmlFor="password">
-            <u>P</u>assword:
-          </label>
+        <FieldRow accessKey="p">
+          <label htmlFor="password">Password:</label>
           <TextBox
             id="password"
             name="password"

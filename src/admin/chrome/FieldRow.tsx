@@ -1,7 +1,15 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
+import { applyAccessKeyToControl, applyAccessKeyToLabel } from './underlineAccessKey';
 
-export type FieldRowProps = HTMLAttributes<HTMLDivElement> & {
+export type FieldRowProps = Omit<HTMLAttributes<HTMLDivElement>, 'accessKey'> & {
+  /**
+   * Keyboard access key for this row’s form control (not the wrapper `div`).
+   * Underlines the first case-insensitive match in plain `<label>` text and sets
+   * `accessKey` on the first `input` / `select` / `textarea` (or TextBox / Select / TextArea).
+   * Button-only rows: ignore — each Button owns its own key.
+   */
+  accessKey?: string;
   /**
    * `.field-row-stacked` — lay this row’s children vertically (label above control).
    * Default is horizontal (label beside control).
@@ -14,10 +22,22 @@ export type FieldRowProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
 };
 
-export function FieldRow({ stacked = false, className, children, ...rest }: FieldRowProps) {
+export function FieldRow({
+  stacked = false,
+  className,
+  children,
+  accessKey,
+  ...rest
+}: FieldRowProps) {
+  let content = children;
+  if (accessKey) {
+    content = applyAccessKeyToLabel(content, accessKey);
+    content = applyAccessKeyToControl(content, accessKey);
+  }
+
   return (
     <div className={cn(stacked ? 'field-row-stacked' : 'field-row', className)} {...rest}>
-      {children}
+      {content}
     </div>
   );
 }

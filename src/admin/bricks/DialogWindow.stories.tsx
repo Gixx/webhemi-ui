@@ -12,26 +12,73 @@ import {
 
 const DIALOG_TYPES: DialogWindowType[] = ['none', 'info', 'question', 'warning', 'error'];
 
+const accessKeyArgType = {
+  control: 'text' as const,
+  table: {
+    category: 'Accessibility',
+    type: { summary: 'string' },
+  },
+};
+
 type StoryArgs = WindowBrickShellArgs & {
   type: DialogWindowType;
   /** Banner image URL; empty string hides the banner. */
   banner: string;
+  okAccessKey: string;
+  cancelAccessKey: string;
+  registerAccessKey: string;
+  userAccessKey: string;
+  passwordAccessKey: string;
 };
 
 const meta = {
   title: 'Admin/Bricks/DialogWindow',
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Dialog layout brick. Form rows and action buttons accept `accessKey` (see Controls → Accessibility).',
+      },
+    },
+  },
   args: {
     ...windowBrickShellArgs,
     title: 'Enter Password',
     titleBarControls: [],
     type: 'none' as DialogWindowType,
     banner: bannerDialogUrl,
+    okAccessKey: 'o',
+    cancelAccessKey: 'c',
+    registerAccessKey: 'r',
+    userAccessKey: 'u',
+    passwordAccessKey: 'p',
   },
   argTypes: {
     ...windowBrickShellArgTypes,
     type: { control: 'select', options: DIALOG_TYPES },
     banner: { control: 'text', description: 'Banner image URL (empty = no banner)' },
+    okAccessKey: { ...accessKeyArgType, name: 'OK accessKey', description: 'Button access key' },
+    cancelAccessKey: {
+      ...accessKeyArgType,
+      name: 'Cancel accessKey',
+      description: 'Button access key',
+    },
+    registerAccessKey: {
+      ...accessKeyArgType,
+      name: 'Register accessKey',
+      description: 'Button access key',
+    },
+    userAccessKey: {
+      ...accessKeyArgType,
+      name: 'User name accessKey',
+      description: 'FieldRow access key (control + label underline)',
+    },
+    passwordAccessKey: {
+      ...accessKeyArgType,
+      name: 'Password accessKey',
+      description: 'FieldRow access key (control + label underline)',
+    },
   },
   render: (args) => (
     <DialogWindow
@@ -40,28 +87,22 @@ const meta = {
       banner={args.banner ? <img className="dialog-banner" src={args.banner} alt="" /> : undefined}
       actions={
         <FieldRow className="justify-end">
-          <Button isDefault>
-            <u>O</u>K
+          <Button isDefault accessKey={args.okAccessKey || undefined}>
+            OK
           </Button>
-          <Button disabled>
-            <u>C</u>ancel
+          <Button disabled accessKey={args.cancelAccessKey || undefined}>
+            Cancel
           </Button>
-          <Button>
-            <u>R</u>egister
-          </Button>
+          <Button accessKey={args.registerAccessKey || undefined}>Register</Button>
         </FieldRow>
       }
     >
-      <FieldRow>
-        <label htmlFor="dlg-user">
-          <u>U</u>ser name:
-        </label>
+      <FieldRow accessKey={args.userAccessKey || undefined}>
+        <label htmlFor="dlg-user">User name:</label>
         <input id="dlg-user" className="w-window-xs" type="text" />
       </FieldRow>
-      <FieldRow>
-        <label htmlFor="dlg-pass">
-          <u>P</u>assword:
-        </label>
+      <FieldRow accessKey={args.passwordAccessKey || undefined}>
+        <label htmlFor="dlg-pass">Password:</label>
         <input id="dlg-pass" className="w-window-xs" type="password" />
       </FieldRow>
     </DialogWindow>
@@ -80,6 +121,13 @@ export const Message: Story = {
     banner: '',
     type: 'warning',
     titleBarControls: ['Close'],
+  },
+  argTypes: {
+    okAccessKey: { table: { disable: true }, control: false },
+    cancelAccessKey: { table: { disable: true }, control: false },
+    registerAccessKey: { table: { disable: true }, control: false },
+    userAccessKey: { table: { disable: true }, control: false },
+    passwordAccessKey: { table: { disable: true }, control: false },
   },
   render: (args) => (
     <DialogWindow

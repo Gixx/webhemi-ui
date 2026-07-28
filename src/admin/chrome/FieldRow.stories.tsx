@@ -10,17 +10,42 @@ type FieldRowStoryArgs = {
   value: string;
   disabled: boolean;
   className: string;
+  accessKey: string;
+};
+
+const accessKeyArgType = {
+  control: 'text' as const,
+  description:
+    'Applied to the form control (not the wrapper). Underlines the first match in plain label text.',
+  table: {
+    category: 'Accessibility',
+    type: { summary: 'string' },
+    defaultValue: { summary: 'undefined' },
+  },
 };
 
 const meta = {
   title: 'Admin/Atoms/FieldRow',
-  parameters: { layout: 'centered' },
+  component: FieldRow,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Form row layout. Optional `accessKey` sets the key on the control and underlines matching plain label text.',
+      },
+    },
+    controls: {
+      include: ['stacked', 'label', 'value', 'disabled', 'className', 'accessKey'],
+    },
+  },
   args: {
     stacked: false,
     label: 'Occupation',
     value: 'Developer',
     disabled: false,
     className: '',
+    accessKey: 'o',
   },
   argTypes: {
     stacked: { control: 'boolean' },
@@ -28,9 +53,15 @@ const meta = {
     value: { control: 'text' },
     disabled: { control: 'boolean' },
     className: { control: 'text' },
+    accessKey: accessKeyArgType,
+    children: { table: { disable: true }, control: false },
   },
   render: (args) => (
-    <FieldRow stacked={args.stacked} className={args.className || undefined}>
+    <FieldRow
+      stacked={args.stacked}
+      className={args.className || undefined}
+      accessKey={args.accessKey || undefined}
+    >
       <label htmlFor="field-row-demo">{args.label}</label>
       <TextBox
         id="field-row-demo"
@@ -48,7 +79,11 @@ type Story = StoryObj<FieldRowStoryArgs>;
 export const LabelBeside: Story = {
   render: (args) => (
     <>
-      <FieldRow stacked={args.stacked} className={args.className || undefined}>
+      <FieldRow
+        stacked={args.stacked}
+        className={args.className || undefined}
+        accessKey={args.accessKey || undefined}
+      >
         <label htmlFor="row-occupation">{args.label}</label>
         <TextBox
           id="row-occupation"
@@ -57,7 +92,7 @@ export const LabelBeside: Story = {
           className="w-window-xs"
         />
       </FieldRow>
-      <FieldRow stacked={args.stacked}>
+      <FieldRow stacked={args.stacked} accessKey="c">
         <label htmlFor="row-company">Company</label>
         <TextBox id="row-company" disabled={args.disabled} className="w-window-xs" />
       </FieldRow>
@@ -66,14 +101,14 @@ export const LabelBeside: Story = {
 };
 
 export const Stacked: Story = {
-  args: { stacked: true, label: 'Name', value: '' },
+  args: { stacked: true, label: 'Name', value: '', accessKey: 'n' },
   render: (args) => (
     <div style={{ width: 220 }}>
-      <FieldRow stacked={args.stacked}>
+      <FieldRow stacked={args.stacked} accessKey={args.accessKey || undefined}>
         <label htmlFor="stack-name">{args.label}</label>
         <TextBox id="stack-name" defaultValue={args.value} disabled={args.disabled} />
       </FieldRow>
-      <FieldRow stacked={args.stacked}>
+      <FieldRow stacked={args.stacked} accessKey="c">
         <label htmlFor="stack-city">City</label>
         <TextBox id="stack-city" disabled={args.disabled} />
       </FieldRow>
@@ -84,6 +119,8 @@ export const Stacked: Story = {
 type ButtonRowArgs = {
   okLabel: string;
   cancelLabel: string;
+  okAccessKey: string;
+  cancelAccessKey: string;
   isDefault: boolean;
   disabled: boolean;
 };
@@ -92,21 +129,42 @@ export const Buttons: StoryObj<ButtonRowArgs> = {
   args: {
     okLabel: 'OK',
     cancelLabel: 'Cancel',
+    okAccessKey: 'o',
+    cancelAccessKey: 'c',
     isDefault: true,
     disabled: false,
+  },
+  parameters: {
+    controls: {
+      include: ['okLabel', 'cancelLabel', 'okAccessKey', 'cancelAccessKey', 'isDefault', 'disabled'],
+    },
   },
   argTypes: {
     okLabel: { control: 'text' },
     cancelLabel: { control: 'text' },
+    okAccessKey: {
+      ...accessKeyArgType,
+      name: 'OK accessKey',
+    },
+    cancelAccessKey: {
+      ...accessKeyArgType,
+      name: 'Cancel accessKey',
+    },
     isDefault: { control: 'boolean' },
     disabled: { control: 'boolean' },
   },
   render: (args) => (
     <FieldRow className="justify-end">
-      <Button isDefault={args.isDefault} disabled={args.disabled}>
+      <Button
+        isDefault={args.isDefault}
+        disabled={args.disabled}
+        accessKey={args.okAccessKey || undefined}
+      >
         {args.okLabel}
       </Button>
-      <Button disabled={args.disabled}>{args.cancelLabel}</Button>
+      <Button disabled={args.disabled} accessKey={args.cancelAccessKey || undefined}>
+        {args.cancelLabel}
+      </Button>
     </FieldRow>
   ),
 };
@@ -128,6 +186,9 @@ export const InFieldColumn: StoryObj<FieldColumnArgs> = {
     legend: { control: 'text' },
     selected: { control: 'select', options: ['581', '582', 'def'] },
     disabled: { control: 'boolean' },
+  },
+  parameters: {
+    controls: { include: ['legend', 'selected', 'disabled'] },
   },
   render: (args) => (
     <GroupBox legend={args.legend} style={{ width: 320 }}>
@@ -184,6 +245,9 @@ export const GroupBoxVertical: StoryObj<GroupBoxArgs> = {
     optionOne: { control: 'text' },
     optionTwo: { control: 'text' },
     disabled: { control: 'boolean' },
+  },
+  parameters: {
+    controls: { include: ['legend', 'optionOne', 'optionTwo', 'disabled'] },
   },
   render: (args) => (
     <GroupBox legend={args.legend} style={{ width: 260 }}>
