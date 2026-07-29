@@ -1,11 +1,12 @@
 export { Button, VerticalBar, type ButtonProps } from './Button';
-export { TextBox, type TextBoxProps } from './TextBox';
-export { TextArea, type TextAreaProps } from './TextArea';
+export { TextBox, type TextBoxProps, type FieldLabelPosition } from './TextBox';
+export { TextArea, type TextAreaProps, type TextAreaResizable } from './TextArea';
 export { Checkbox, type CheckboxProps } from './Checkbox';
 export { Radio, type RadioProps } from './Radio';
 export { Select, type SelectProps } from './Select';
 export { Slider, type SliderProps } from './Slider';
-export { FieldRow, FieldColumn, GroupBox, type FieldRowProps, type FieldColumnProps, type GroupBoxProps } from './FieldRow';
+export { FieldRow, type FieldRowProps } from './FieldRow';
+export { GroupBox, type GroupBoxProps } from './GroupBox';
 export {
   Window,
   TitleBar,

@@ -1,27 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '../Button';
-import { FieldColumn, FieldRow, GroupBox } from './FieldRow';
-import { Radio } from '../Radio';
+import { Checkbox } from '../Checkbox';
+import { FieldRow } from './FieldRow';
 import { TextBox } from '../TextBox';
+import { fieldAccessKeyArgType } from '../_lib/fieldBoxStory';
 
 type FieldRowStoryArgs = {
-  stacked: boolean;
   label: string;
   value: string;
   disabled: boolean;
   className: string;
   accessKey: string;
-};
-
-const accessKeyArgType = {
-  control: 'text' as const,
-  description:
-    'Applied to the form control (not the wrapper). Underlines the first match in plain label text.',
-  table: {
-    category: 'Accessibility',
-    type: { summary: 'string' },
-    defaultValue: { summary: 'undefined' },
-  },
 };
 
 const meta = {
@@ -32,15 +21,14 @@ const meta = {
     docs: {
       description: {
         component:
-          'Form row layout. Optional `accessKey` sets the key on the control and underlines matching plain label text.',
+          'Horizontal form row. Recommended children: Button, TextBox, TextArea, Checkbox, Radio, Select, Slider. Sibling FieldRows stack vertically. Put captions on the atoms (`label` / `accessKey`), not on FieldRow.',
       },
     },
     controls: {
-      include: ['stacked', 'label', 'value', 'disabled', 'className', 'accessKey'],
+      include: ['label', 'value', 'disabled', 'className', 'accessKey'],
     },
   },
   args: {
-    stacked: false,
     label: 'Occupation',
     value: 'Developer',
     disabled: false,
@@ -48,26 +36,22 @@ const meta = {
     accessKey: 'o',
   },
   argTypes: {
-    stacked: { control: 'boolean' },
     label: { control: 'text' },
     value: { control: 'text' },
     disabled: { control: 'boolean' },
     className: { control: 'text' },
-    accessKey: accessKeyArgType,
+    accessKey: fieldAccessKeyArgType,
     children: { table: { disable: true }, control: false },
   },
   render: (args) => (
-    <FieldRow
-      stacked={args.stacked}
-      className={args.className || undefined}
-      accessKey={args.accessKey || undefined}
-    >
-      <label htmlFor="field-row-demo">{args.label}</label>
+    <FieldRow className={args.className || undefined}>
       <TextBox
         id="field-row-demo"
+        label={args.label}
+        accessKey={args.accessKey || undefined}
         defaultValue={args.value}
         disabled={args.disabled}
-        className={args.stacked ? undefined : 'w-window-xs'}
+        className="w-window-xs"
       />
     </FieldRow>
   ),
@@ -76,41 +60,82 @@ const meta = {
 export default meta;
 type Story = StoryObj<FieldRowStoryArgs>;
 
-export const LabelBeside: Story = {
+export const SingleField: Story = {};
+
+export const StackedRows: Story = {
+  name: 'Stacked rows',
   render: (args) => (
     <>
-      <FieldRow
-        stacked={args.stacked}
-        className={args.className || undefined}
-        accessKey={args.accessKey || undefined}
-      >
-        <label htmlFor="row-occupation">{args.label}</label>
+      <FieldRow className={args.className || undefined}>
         <TextBox
           id="row-occupation"
+          label={args.label}
+          accessKey={args.accessKey || undefined}
           defaultValue={args.value}
           disabled={args.disabled}
           className="w-window-xs"
         />
       </FieldRow>
-      <FieldRow stacked={args.stacked} accessKey="c">
-        <label htmlFor="row-company">Company</label>
-        <TextBox id="row-company" disabled={args.disabled} className="w-window-xs" />
+      <FieldRow>
+        <TextBox
+          id="row-company"
+          label="Company"
+          accessKey="c"
+          disabled={args.disabled}
+          className="w-window-xs"
+        />
+      </FieldRow>
+      <FieldRow>
+        <Checkbox id="row-active" label="Active" disabled={args.disabled} />
       </FieldRow>
     </>
   ),
 };
 
-export const Stacked: Story = {
-  args: { stacked: true, label: 'Name', value: '', accessKey: 'n' },
+export const SideBySide: Story = {
+  name: 'Side by side',
+  args: { accessKey: '' },
+  render: (args) => (
+    <FieldRow className={args.className || undefined}>
+      <TextBox
+        id="row-first"
+        label="First"
+        defaultValue={args.value}
+        disabled={args.disabled}
+        className="w-window-xs"
+      />
+      <TextBox
+        id="row-last"
+        label="Last"
+        disabled={args.disabled}
+        className="w-window-xs"
+      />
+    </FieldRow>
+  ),
+};
+
+export const LabelAbove: Story = {
+  args: { label: 'Name', value: '', accessKey: 'n' },
   render: (args) => (
     <div style={{ width: 220 }}>
-      <FieldRow stacked={args.stacked} accessKey={args.accessKey || undefined}>
-        <label htmlFor="stack-name">{args.label}</label>
-        <TextBox id="stack-name" defaultValue={args.value} disabled={args.disabled} />
+      <FieldRow>
+        <TextBox
+          id="stack-name"
+          label={args.label}
+          accessKey={args.accessKey || undefined}
+          defaultValue={args.value}
+          disabled={args.disabled}
+          labelPosition="above"
+        />
       </FieldRow>
-      <FieldRow stacked={args.stacked} accessKey="c">
-        <label htmlFor="stack-city">City</label>
-        <TextBox id="stack-city" disabled={args.disabled} />
+      <FieldRow>
+        <TextBox
+          id="stack-city"
+          label="City"
+          accessKey="c"
+          disabled={args.disabled}
+          labelPosition="above"
+        />
       </FieldRow>
     </div>
   ),
@@ -143,11 +168,11 @@ export const Buttons: StoryObj<ButtonRowArgs> = {
     okLabel: { control: 'text' },
     cancelLabel: { control: 'text' },
     okAccessKey: {
-      ...accessKeyArgType,
+      ...fieldAccessKeyArgType,
       name: 'OK accessKey',
     },
     cancelAccessKey: {
-      ...accessKeyArgType,
+      ...fieldAccessKeyArgType,
       name: 'Cancel accessKey',
     },
     isDefault: { control: 'boolean' },
@@ -166,97 +191,5 @@ export const Buttons: StoryObj<ButtonRowArgs> = {
         {args.cancelLabel}
       </Button>
     </FieldRow>
-  ),
-};
-
-type FieldColumnArgs = {
-  legend: string;
-  selected: '581' | '582' | 'def';
-  disabled: boolean;
-};
-
-export const InFieldColumn: StoryObj<FieldColumnArgs> = {
-  name: 'FieldColumn (horizontal)',
-  args: {
-    legend: 'COMCTL32',
-    selected: '581',
-    disabled: false,
-  },
-  argTypes: {
-    legend: { control: 'text' },
-    selected: { control: 'select', options: ['581', '582', 'def'] },
-    disabled: { control: 'boolean' },
-  },
-  parameters: {
-    controls: { include: ['legend', 'selected', 'disabled'] },
-  },
-  render: (args) => (
-    <GroupBox legend={args.legend} style={{ width: 320 }}>
-      <FieldColumn key={args.selected}>
-        <FieldRow>
-          <Radio
-            id="ser581"
-            name="comctl32"
-            label="5.81 Series"
-            defaultChecked={args.selected === '581'}
-            disabled={args.disabled}
-          />
-        </FieldRow>
-        <FieldRow>
-          <Radio
-            id="ser582"
-            name="comctl32"
-            label="5.82 Series"
-            defaultChecked={args.selected === '582'}
-            disabled={args.disabled}
-          />
-        </FieldRow>
-        <FieldRow>
-          <Radio
-            id="serdef"
-            name="comctl32"
-            label="Default"
-            defaultChecked={args.selected === 'def'}
-            disabled={args.disabled}
-          />
-        </FieldRow>
-      </FieldColumn>
-    </GroupBox>
-  ),
-};
-
-type GroupBoxArgs = {
-  legend: string;
-  optionOne: string;
-  optionTwo: string;
-  disabled: boolean;
-};
-
-export const GroupBoxVertical: StoryObj<GroupBoxArgs> = {
-  name: 'GroupBox (vertical rows)',
-  args: {
-    legend: 'Options',
-    optionOne: 'One',
-    optionTwo: 'Two',
-    disabled: false,
-  },
-  argTypes: {
-    legend: { control: 'text' },
-    optionOne: { control: 'text' },
-    optionTwo: { control: 'text' },
-    disabled: { control: 'boolean' },
-  },
-  parameters: {
-    controls: { include: ['legend', 'optionOne', 'optionTwo', 'disabled'] },
-  },
-  render: (args) => (
-    <GroupBox legend={args.legend} style={{ width: 260 }}>
-      <FieldRow>
-        <Radio id="g1" name="grp" label={args.optionOne} defaultChecked disabled={args.disabled} />
-      </FieldRow>
-      <FieldRow>
-        <Radio id="g2" name="grp" label={args.optionTwo} disabled={args.disabled} />
-      </FieldRow>
-    </GroupBox>
   ),
 };

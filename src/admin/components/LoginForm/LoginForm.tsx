@@ -61,24 +61,26 @@ export function LoginForm({
             {error}
           </p>
         ) : null}
-        <FieldRow accessKey="e">
-          <label htmlFor="email">Email:</label>
+        <FieldRow>
           <TextBox
             id="email"
             name="email"
             type="email"
+            label="Email:"
+            accessKey="e"
             autoComplete="username"
             defaultValue={emailDefault}
             required
             className="w-window-xs"
           />
         </FieldRow>
-        <FieldRow accessKey="p">
-          <label htmlFor="password">Password:</label>
+        <FieldRow>
           <TextBox
             id="password"
             name="password"
             type="password"
+            label="Password:"
+            accessKey="p"
             autoComplete="current-password"
             required
             className="w-window-xs"

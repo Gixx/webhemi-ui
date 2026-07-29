@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button, FieldRow } from '../../chrome';
+import { Button, FieldRow, TextBox } from '../../chrome';
 import bannerDialogUrl from '../../assets/demo/banner-dialog.gif';
 import { DialogWindow, type DialogWindowType } from './DialogWindow';
 import {
@@ -38,7 +38,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Dialog layout brick. Form rows and action buttons accept `accessKey` (see Controls → Accessibility).',
+          'Dialog layout brick. Form fields and action buttons accept `accessKey` on the atoms (see Controls → Accessibility).',
       },
     },
   },
@@ -72,12 +72,12 @@ const meta = {
     userAccessKey: {
       ...accessKeyArgType,
       name: 'User name accessKey',
-      description: 'FieldRow access key (control + label underline)',
+      description: 'TextBox access key (control + label underline)',
     },
     passwordAccessKey: {
       ...accessKeyArgType,
       name: 'Password accessKey',
-      description: 'FieldRow access key (control + label underline)',
+      description: 'TextBox access key (control + label underline)',
     },
   },
   render: (args) => (
@@ -97,13 +97,23 @@ const meta = {
         </FieldRow>
       }
     >
-      <FieldRow accessKey={args.userAccessKey || undefined}>
-        <label htmlFor="dlg-user">User name:</label>
-        <input id="dlg-user" className="w-window-xs" type="text" />
+      <FieldRow>
+        <TextBox
+          id="dlg-user"
+          label="User name:"
+          accessKey={args.userAccessKey || undefined}
+          className="w-window-xs"
+          type="text"
+        />
       </FieldRow>
-      <FieldRow accessKey={args.passwordAccessKey || undefined}>
-        <label htmlFor="dlg-pass">Password:</label>
-        <input id="dlg-pass" className="w-window-xs" type="password" />
+      <FieldRow>
+        <TextBox
+          id="dlg-pass"
+          label="Password:"
+          accessKey={args.passwordAccessKey || undefined}
+          className="w-window-xs"
+          type="password"
+        />
       </FieldRow>
     </DialogWindow>
   ),

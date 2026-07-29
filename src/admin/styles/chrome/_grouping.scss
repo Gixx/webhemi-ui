@@ -24,12 +24,24 @@ legend {
   margin-left: var(--grouped-element-spacing);
 }
 
-.field-row-stacked {
-  display: flex;
-  flex-direction: column;
+/* Labeled form atom: keeps caption + control as one FieldRow child. */
+.field-box {
+  display: inline-flex;
+  align-items: center;
 }
 
-.field-row-stacked * + * {
+/* Text-like: gap between label and control. Checkbox/Radio skip — chrome `input + label` owns spacing. */
+.field-box:not(.field-box-control-first):not(.field-box-above) > * + * {
+  margin-left: var(--grouped-element-spacing);
+}
+
+.field-box-above {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.field-box-above > * + * {
+  margin-left: 0;
   margin-top: var(--grouped-element-spacing);
 }
 

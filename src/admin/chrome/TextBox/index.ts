@@ -1,1 +1,1 @@
-export { TextBox, type TextBoxProps } from "./TextBox";
+export { TextBox, type TextBoxProps, type FieldLabelPosition } from "./TextBox";

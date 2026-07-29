@@ -1,4 +1,4 @@
-/* Product: columns/stack/field-column, sunken defaults.
+/* Product: columns/stack, sunken defaults.
  * Window size / justify utilities live in Tailwind @theme (main.css).
  */
 
@@ -34,27 +34,6 @@
   width: 100%;
   height: auto;
   box-sizing: border-box;
-}
-
-/*
- * Horizontal group of .field-row items (radios, checkboxes, etc.).
- * Chrome .field-row is the label+control pair; this lays those pairs in a row.
- */
-.field-column {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-}
-
-.field-column > .field-row {
-  margin-top: 0;
-  margin-left: 12px;
-}
-
-.field-column > .field-row > * + * {
-  margin-left: 6px;
 }
 
 /* Chrome .sunken-panel defaults to white; keep surface gray unless asked. */

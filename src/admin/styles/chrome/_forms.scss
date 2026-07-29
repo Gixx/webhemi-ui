@@ -123,6 +123,11 @@ textarea {
   border-radius: 0;
 }
 
+textarea {
+  /* Browser default is often both/vertical; chrome fields stay fixed unless opted in. */
+  resize: none;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="email"],

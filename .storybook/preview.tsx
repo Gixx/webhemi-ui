@@ -207,6 +207,7 @@ const preview: Preview = {
               'Select',
               'Slider',
               'FieldRow',
+              'GroupBox',
               'Progress',
               'Table',
               'Tabs',
