@@ -35,10 +35,9 @@ export { promoteTabRow } from './_lib/promoteTabRow';
 export { TreeView, type TreeViewProps } from './TreeView';
 export {
   SunkenPanel,
-  FieldBorder,
   type SunkenPanelProps,
-  type FieldBorderProps,
 } from './SunkenPanel';
+export { FieldBorder, type FieldBorderProps } from './FieldBorder';
 export { Scrollable, type ScrollableProps } from './Scrollable';
 export { useCustomScrollbar } from './_lib/useCustomScrollbar';
 export { attachCustomScrollbar, type DetachCustomScrollbar } from './_lib/attachCustomScrollbar';

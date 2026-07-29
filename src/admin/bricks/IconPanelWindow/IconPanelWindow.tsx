@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { FieldBorder } from '../../chrome/SunkenPanel';
+import { FieldBorder } from '../../chrome/FieldBorder';
 import { cn } from '../../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 

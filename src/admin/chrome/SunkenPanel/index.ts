@@ -1,1 +1,1 @@
-export { SunkenPanel, FieldBorder, type SunkenPanelProps, type FieldBorderProps } from "./SunkenPanel";
+export { SunkenPanel, type SunkenPanelProps } from "./SunkenPanel";

@@ -42,9 +42,15 @@
   display: none !important;
 }
 
-.sunken-panel.scrollable .scrollable-viewport {
+.sunken-panel > .scrollable-viewport {
   padding: 10px;
   min-height: 100px;
+}
+
+/* List/table hosts stay flush to the sunken edge. */
+.sunken-panel > .scrollable-viewport:has(> table) {
+  padding: 0;
+  min-height: 0;
 }
 
 .icon-panel-layout.has-custom-scrollbar > .scrollable-viewport {

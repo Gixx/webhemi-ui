@@ -1,71 +1,74 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SunkenPanel } from './SunkenPanel';
+import { FieldBorder } from './FieldBorder';
 
-type PanelArgs = {
+type BorderArgs = {
   children: string;
   width: number;
   height: number;
+  disabled: boolean;
   scrollable: boolean;
 };
 
 const meta = {
-  title: 'Admin/Atoms/SunkenPanel',
-  component: SunkenPanel,
+  title: 'Admin/Atoms/FieldBorder',
+  component: FieldBorder,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
-          'Sunken white panel. Always wraps children in `.scrollable-viewport`. Optional `scrollable` adds Retro OS scrollbar chrome.',
+          'Inset field surface (`.field-border`). Optional `scrollable` adds Retro OS scrollbar chrome.',
       },
     },
-    controls: { include: ['children', 'width', 'height', 'scrollable'] },
+    controls: { include: ['children', 'width', 'height', 'disabled', 'scrollable'] },
   },
   args: {
-    children: 'Sunken panel content',
-    width: 280,
-    height: 120,
+    children: 'Field border',
+    width: 200,
+    height: 40,
+    disabled: false,
     scrollable: false,
   },
   argTypes: {
     children: { control: 'text' },
     width: { control: { type: 'number', min: 80, max: 600 } },
-    height: { control: { type: 'number', min: 40, max: 400 } },
+    height: { control: { type: 'number', min: 24, max: 400 } },
+    disabled: { control: 'boolean' },
     scrollable: { control: 'boolean' },
   },
   render: (args) => (
-    <SunkenPanel
+    <FieldBorder
+      disabled={args.disabled}
       scrollable={args.scrollable}
       style={{ width: args.width, height: args.height }}
     >
       {args.children}
-    </SunkenPanel>
+    </FieldBorder>
   ),
-} satisfies Meta<PanelArgs>;
+} satisfies Meta<BorderArgs>;
 
 export default meta;
-type Story = StoryObj<PanelArgs>;
+type Story = StoryObj<BorderArgs>;
 
-export const Panel: Story = {};
+export const Default: Story = {};
 
-/** Sunken panel with Retro OS scrollbar (atom `scrollable` prop). */
+export const Disabled: Story = {
+  args: { disabled: true, children: 'Disabled field border' },
+};
+
+/** Field border with Retro OS scrollbar (atom `scrollable` prop). */
 export const Scrollable: Story = {
   args: {
     scrollable: true,
-    height: 160,
-    width: 320,
+    height: 140,
+    width: 280,
   },
   parameters: {
-    controls: { include: ['width', 'height', 'scrollable'] },
-    docs: {
-      description: {
-        story:
-          'Markup is real JSX children (edit in the story file, not as an HTML string in Controls).',
-      },
-    },
+    controls: { include: ['width', 'height', 'disabled', 'scrollable'] },
   },
   render: (args) => (
-    <SunkenPanel
+    <FieldBorder
+      disabled={args.disabled}
       scrollable={args.scrollable}
       style={{ width: args.width, height: args.height }}
     >
@@ -79,7 +82,6 @@ export const Scrollable: Story = {
         keeps it in sync with scrollTop / scrollLeft.
       </p>
       <p>More content to force overflow on the vertical axis.</p>
-      <p>Still more content for a usable thumb.</p>
-    </SunkenPanel>
+    </FieldBorder>
   ),
 };

@@ -213,6 +213,7 @@ const preview: Preview = {
               'Tabs',
               'TreeView',
               'SunkenPanel',
+              'FieldBorder',
               'Window',
               '*',
             ],

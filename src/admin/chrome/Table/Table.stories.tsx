@@ -43,7 +43,7 @@ const meta = {
     highlightFirst: { control: 'boolean' },
   },
   render: (args) => (
-    <SunkenPanel style={{ width: args.width, height: args.height, overflow: 'auto' }}>
+    <SunkenPanel style={{ width: args.width, height: args.height }}>
       <Table interactive={args.interactive}>
         <thead>
           <tr>
