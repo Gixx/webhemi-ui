@@ -4,6 +4,7 @@ import { expect, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField } from '../../chrome';
 import { SystemIcon, type SystemIconKind } from '../SystemIcon';
 import { IconPanelWindow } from './IconPanelWindow';
+import { IconPanelSelectionInfo } from './IconPanelSelectionInfo';
 import {
   pickShellArgs,
   shellPropsFromArgs,
@@ -38,11 +39,11 @@ function ControlPanelDemo(args: StoryArgs) {
       infoUnselected={!selected}
       info={
         selected ? (
-          <>
-            <h1 className="info-title">{selected.label}</h1>
-            <hr className="info-separator" />
-            <p className="info-description">{selected.description}</p>
-          </>
+          <IconPanelSelectionInfo
+            kind={selected.kind}
+            label={selected.label}
+            description={selected.description}
+          />
         ) : null
       }
       statusBar={
@@ -101,6 +102,7 @@ export const ControlPanel: Story = {
     await userEvent.click(canvas.getByRole('link', { name: sites.label }));
 
     await expect(canvas.getByRole('heading', { name: sites.label })).toBeVisible();
+    await expect(canvasElement.querySelector('.panel.info .info-icon')).toBeTruthy();
     await expect(
       canvas.getByText(sites.description, { selector: '.info-description' }),
     ).toBeVisible();

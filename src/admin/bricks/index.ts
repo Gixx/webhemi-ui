@@ -4,6 +4,10 @@ export {
   type DialogWindowType,
 } from './DialogWindow';
 export { IconPanelWindow, type IconPanelWindowProps } from './IconPanelWindow';
+export {
+  IconPanelSelectionInfo,
+  type IconPanelSelectionInfoProps,
+} from './IconPanelWindow/IconPanelSelectionInfo';
 export { WizardWindow, type WizardWindowProps } from './WizardWindow';
 export { SystemIcon, type SystemIconProps, type SystemIconKind, type SystemIconLabelTone } from './SystemIcon';
 export {

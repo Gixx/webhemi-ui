@@ -20,8 +20,9 @@ src/
 │   ├── bricks/            # product bricks — one folder each
 │   │   └── _lib/          # PaneWindowShell, windowBrickStory
 │   ├── styles/            # tokens, chrome/, product/, entry.scss
-│   ├── assets/            # fonts + icons (inlined into dist CSS)
-│   └── …                  # legacy pages (throwaway until Phase 4+)
+│   ├── assets/            # system/ icons/ fonts/ logo/ chrome/ — synced as files (never inlined)
+│   ├── lib/               # adminAsset() URL helpers
+│   └── …                  # pages / components
 ├── themes/
 │   └── default/           # self-contained frontend theme
 ├── shared/                # transitional (atoms → themes/default; no long-term shared UI)
@@ -47,7 +48,7 @@ npm run build
 ```
 
 - `tsup` → `dist/index.js` / `.cjs` / `.d.ts`
-- `vite build --config vite.css.config.ts` → `dist/index.css` (Sass chrome/product + Tailwind utilities; `cssMinify: false`)
+- `vite build --config vite.css.config.ts` → `dist/index.css` (Sass chrome/product + Tailwind utilities; `cssMinify: false`; **no** base64-inlined images — graphics use `/assets/admin/...`)
 
 ## Publish
 

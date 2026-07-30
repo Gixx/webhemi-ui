@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
-import { Button, Checkbox, FieldRow, TextBox } from '../../chrome';
+import { Button, FieldRow, TextBox } from '../../chrome';
 import { DialogWindow } from '../../bricks';
+import { adminAsset } from '../../lib/assetPaths';
 import { cn } from '../../../lib/cn';
 
 export interface LoginFormProps {
@@ -11,6 +12,11 @@ export interface LoginFormProps {
   error?: string;
   loading?: boolean;
   emailDefault?: string;
+  /**
+   * Digested AssetMapper URL from Twig (`asset('admin/system/...')`).
+   * Storybook falls back to `adminAsset(...)` (staticDirs).
+   */
+  bannerUrl?: string;
   onSubmit?: (payload: { email: string; password: string; remember: boolean }) => void;
   className?: string;
 }
@@ -26,6 +32,7 @@ export function LoginForm({
   error,
   loading = false,
   emailDefault = '',
+  bannerUrl,
   onSubmit,
   className,
 }: LoginFormProps) {
@@ -42,16 +49,19 @@ export function LoginForm({
     });
   };
 
+  const bannerSrc = bannerUrl || adminAsset('system/banner-dialog-login.gif');
+
   return (
     <form action={action} method={method} onSubmit={handleSubmit} className={cn(className)}>
       {csrfToken ? <input type="hidden" name={csrfFieldName} value={csrfToken} /> : null}
       <DialogWindow
-        title="Sign in — WebHemi"
+        title="Sign in — WebHemi CMS Admin"
         titleBarControls={null}
+        banner={<img alt="" className="dialog-banner" src={bannerSrc} />}
         actions={
           <FieldRow className="justify-end">
             <Button type="submit" isDefault loading={loading}>
-              Sign in
+              OK
             </Button>
           </FieldRow>
         }
@@ -85,9 +95,6 @@ export function LoginForm({
             required
             className="w-window-xs"
           />
-        </FieldRow>
-        <FieldRow>
-          <Checkbox id="remember" name="remember" label="Remember me" />
         </FieldRow>
       </DialogWindow>
     </form>

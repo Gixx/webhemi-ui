@@ -26,7 +26,7 @@
 
 #toolbar button.menu {
   background-color: silver;
-  background-image: url("../../assets/icons/menu.svg");
+  background-image: url("/assets/admin/icons/menu.svg");
   background-repeat: no-repeat;
   background-position: 4px center;
   background-size: 16px 16px;
@@ -135,27 +135,27 @@
 }
 
 #toolbar .start-menu-list .start-item.uploads {
-  background-image: url("../../assets/icons/upload.svg");
+  background-image: url("/assets/admin/icons/upload.svg");
 }
 
 #toolbar .start-menu-list .start-item.control-panel {
-  background-image: url("../../assets/icons/control_panel.svg");
+  background-image: url("/assets/admin/icons/control_panel.svg");
 }
 
 #toolbar .start-menu-list .start-item.search {
-  background-image: url("../../assets/icons/search.svg");
+  background-image: url("/assets/admin/icons/search.svg");
 }
 
 #toolbar .start-menu-list .start-item.logs {
-  background-image: url("../../assets/icons/logs.svg");
+  background-image: url("/assets/admin/icons/logs.svg");
 }
 
 #toolbar .start-menu-list .start-item.about {
-  background-image: url("../../assets/icons/about.svg");
+  background-image: url("/assets/admin/icons/about.svg");
 }
 
 #toolbar .start-menu-list .start-item.logout {
-  background-image: url("../../assets/icons/logout.svg");
+  background-image: url("/assets/admin/icons/logout.svg");
 }
 
 #toolbar .task-buttons {
@@ -184,18 +184,18 @@
   overflow: hidden;
   text-align: left;
   background-color: silver;
-  background-image: url("../../assets/icons/general_app.svg");
+  background-image: url("/assets/admin/icons/general_app.svg");
   background-repeat: no-repeat;
   background-position: 3px center;
   background-size: 16px 16px;
 }
 
 #toolbar .task-buttons > .task.control-panel {
-  background-image: url("../../assets/icons/control_panel.svg");
+  background-image: url("/assets/admin/icons/control_panel.svg");
 }
 
 #toolbar .task-buttons > .task.settings {
-  background-image: url("../../assets/icons/settings.svg");
+  background-image: url("/assets/admin/icons/settings.svg");
 }
 
 #toolbar .task-buttons > .task > .task-title {

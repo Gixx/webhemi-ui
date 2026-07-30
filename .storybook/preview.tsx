@@ -226,6 +226,7 @@ const preview: Preview = {
               '*',
             ],
             'Components',
+            ['AdminDesktop', '*'],
             'Foundations',
             '*',
           ],

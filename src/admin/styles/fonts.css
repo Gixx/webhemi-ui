@@ -1,8 +1,11 @@
-/* Admin Theme font — must stay at CSS root (not nested under [data-wh-theme]). */
+/* Admin Theme font — must stay at CSS root (not nested under [data-wh-theme]).
+ * Filename must not contain spaces: Symfony AssetMapper CSS url() rewriter
+ * stops at whitespace and would leave a non-digested path (404 → system fallback).
+ */
 
 @font-face {
   font-family: "WebHemi Sans Serif";
-  src: url("../assets/fonts/WebHemi Sans Serif.woff") format("woff");
+  src: url("/assets/admin/fonts/WebHemiSansSerif.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;

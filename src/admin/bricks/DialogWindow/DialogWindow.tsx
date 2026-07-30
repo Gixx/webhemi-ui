@@ -1,25 +1,15 @@
 import type { ReactNode } from 'react';
 import { cn } from '../../../lib/cn';
-import dialogErrorUrl from '../../assets/icons/dialog_error.svg';
-import dialogInfoUrl from '../../assets/icons/dialog_info.svg';
-import dialogQuestionUrl from '../../assets/icons/dialog_question.svg';
-import dialogWarningUrl from '../../assets/icons/dialog_warning.svg';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 
 export type DialogWindowType = 'none' | 'info' | 'question' | 'warning' | 'error';
-
-const DIALOG_ICONS: Record<Exclude<DialogWindowType, 'none'>, string> = {
-  info: dialogInfoUrl,
-  question: dialogQuestionUrl,
-  warning: dialogWarningUrl,
-  error: dialogErrorUrl,
-};
 
 export type DialogWindowProps = Omit<PaneWindowShellProps, 'children' | 'type'> & {
   /** Optional top banner (image). */
   banner?: ReactNode;
   /**
    * Message-box glyph beside the content. `none` (default) = no icon.
+   * Glyph is CSS background (digested via AssetMapper); not an `<img src>`.
    * Actions stay full width; only the content panel is indented.
    */
   type?: DialogWindowType;
@@ -40,16 +30,16 @@ export function DialogWindow({
   className,
   ...shell
 }: DialogWindowProps) {
-  const iconSrc = type === 'none' ? null : DIALOG_ICONS[type];
+  const typed = type !== 'none';
 
   return (
     <PaneWindowShell className={cn('w-window-sm', className)} {...shell}>
       <div className="window-pane dialog-panel-layout">
         {banner ? <div className="panel banner">{banner}</div> : null}
-        <div className={cn('panel', iconSrc && 'dialog-typed')}>
-          {iconSrc ? (
+        <div className={cn('panel', typed && 'dialog-typed')}>
+          {typed ? (
             <>
-              <img className="dialog-icon" src={iconSrc} alt="" width={32} height={32} />
+              <span className={cn('dialog-icon', `dialog-icon--${type}`)} aria-hidden />
               <div className="dialog-body">{children}</div>
             </>
           ) : (

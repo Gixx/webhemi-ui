@@ -48,10 +48,12 @@
 }
 
 .icon-panel-layout > .panel.info > img,
+.icon-panel-layout > .panel.info > .info-icon,
 .icon-panel-layout > .panel.info > h1,
 .icon-panel-layout > .panel.info > hr,
 .icon-panel-layout > .panel.info > p,
 .icon-panel-layout > .scrollable-viewport > .panel.info > img,
+.icon-panel-layout > .scrollable-viewport > .panel.info > .info-icon,
 .icon-panel-layout > .scrollable-viewport > .panel.info > h1,
 .icon-panel-layout > .scrollable-viewport > .panel.info > hr,
 .icon-panel-layout > .scrollable-viewport > .panel.info > p {
@@ -59,10 +61,12 @@
 }
 
 .icon-panel-layout > .panel.info.unselected > img,
+.icon-panel-layout > .panel.info.unselected > .info-icon,
 .icon-panel-layout > .panel.info.unselected > h1,
 .icon-panel-layout > .panel.info.unselected > hr,
 .icon-panel-layout > .panel.info.unselected > p,
 .icon-panel-layout > .scrollable-viewport > .panel.info.unselected > img,
+.icon-panel-layout > .scrollable-viewport > .panel.info.unselected > .info-icon,
 .icon-panel-layout > .scrollable-viewport > .panel.info.unselected > h1,
 .icon-panel-layout > .scrollable-viewport > .panel.info.unselected > hr,
 .icon-panel-layout > .scrollable-viewport > .panel.info.unselected > p {
@@ -72,6 +76,9 @@
 .icon-panel-layout .panel.info > .info-icon {
   width: 48px;
   height: 48px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 48px 48px;
 }
 
 .icon-panel-layout .panel.info > .info-title {
@@ -232,6 +239,25 @@
   width: 32px;
   height: 32px;
   display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 32px 32px;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-icon--info {
+  background-image: url("/assets/admin/icons/dialog_info.svg");
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-icon--question {
+  background-image: url("/assets/admin/icons/dialog_question.svg");
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-icon--warning {
+  background-image: url("/assets/admin/icons/dialog_warning.svg");
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-icon--error {
+  background-image: url("/assets/admin/icons/dialog_error.svg");
 }
 
 .dialog-panel-layout > .panel.dialog-typed > .dialog-body {

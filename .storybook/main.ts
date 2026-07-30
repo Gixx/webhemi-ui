@@ -11,13 +11,18 @@ const config: StorybookConfig = {
     '@storybook/addon-vitest',
   ],
   framework: '@storybook/react-vite',
-  /** Manager logo / favicon — src/admin/assets/logo/webhemi.svg */
-  staticDirs: [{ from: '../src/admin/assets/logo', to: '/brand' }],
+  staticDirs: [
+    /** Manager logo / favicon */
+    { from: '../src/admin/assets/logo', to: '/brand' },
+    /** Same URL space as PHP AssetMapper (`assets/admin/` → `/assets/admin/`) */
+    { from: '../src/admin/assets', to: '/assets/admin' },
+  ],
   async viteFinal(config) {
     return mergeConfig(config, {
       plugins: [tailwindcss()],
       build: {
         cssMinify: false,
+        assetsInlineLimit: 0,
       },
     });
   },

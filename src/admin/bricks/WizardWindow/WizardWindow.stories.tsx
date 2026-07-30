@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, FieldRow } from '../../chrome';
-import bannerWizardUrl from '../../assets/demo/banner-wizard.gif';
+import { adminAsset } from '../../lib/assetPaths';
 import {
   pickShellArgs,
   shellPropsFromArgs,
@@ -22,7 +22,7 @@ const meta = {
     ...windowBrickShellArgs,
     title: 'WebHemi CMS Setup',
     titleBarControls: [],
-    banner: bannerWizardUrl,
+    banner: adminAsset('system/banner-wizard.gif'),
   },
   argTypes: {
     ...windowBrickShellArgTypes,

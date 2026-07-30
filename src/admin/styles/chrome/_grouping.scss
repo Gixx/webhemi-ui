@@ -1,7 +1,7 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
-// Tokens: abstract/tokens.css; icons: ./icon/*.svg
+// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/icon/*.svg
 fieldset {
-  border-image: url("./icon/groupbox-border.svg") 2;
+  border-image: url("/assets/admin/chrome/icon/groupbox-border.svg") 2;
   padding: calc(2 * var(--border-width) + var(--element-spacing));
   padding-block-start: var(--element-spacing);
   margin: 0;

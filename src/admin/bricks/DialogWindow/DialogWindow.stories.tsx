@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button, FieldRow, TextBox } from '../../chrome';
-import bannerDialogUrl from '../../assets/demo/banner-dialog.gif';
+import { adminAsset } from '../../lib/assetPaths';
 import { DialogWindow, type DialogWindowType } from './DialogWindow';
 import {
   pickShellArgs,
@@ -47,7 +47,7 @@ const meta = {
     title: 'Enter Password',
     titleBarControls: [],
     type: 'none' as DialogWindowType,
-    banner: bannerDialogUrl,
+    banner: adminAsset('system/banner-dialog-login.gif'),
     okAccessKey: 'o',
     cancelAccessKey: 'c',
     registerAccessKey: 'r',

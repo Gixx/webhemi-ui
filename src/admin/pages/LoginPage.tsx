@@ -6,6 +6,8 @@ export type LoginPageProps = {
   csrfFieldName?: string;
   emailDefault?: string;
   error?: string | null;
+  /** Digested Admin banner URL from Twig `asset(...)`. */
+  bannerUrl?: string;
 };
 
 export function LoginPage({
@@ -14,6 +16,7 @@ export function LoginPage({
   csrfFieldName,
   emailDefault,
   error,
+  bannerUrl,
 }: LoginPageProps) {
   return (
     <LoginForm
@@ -22,6 +25,7 @@ export function LoginPage({
       csrfFieldName={csrfFieldName}
       emailDefault={emailDefault || ''}
       error={error || undefined}
+      bannerUrl={bannerUrl}
     />
   );
 }

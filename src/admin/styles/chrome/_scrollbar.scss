@@ -1,5 +1,5 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
-// Tokens: abstract/tokens.css; icons: ./icon/*.svg
+// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/icon/*.svg
 ::-webkit-scrollbar {
   width: 16px;
 }
@@ -12,7 +12,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background-image: url("./icon/scrollbar-background.svg");
+  background-image: url("/assets/admin/chrome/icon/scrollbar-background.svg");
 }
 
 ::-webkit-scrollbar-thumb {
@@ -29,17 +29,17 @@
 
 ::-webkit-scrollbar-button:vertical:start {
   height: 17px;
-  background-image: url("./icon/button-up.svg");
+  background-image: url("/assets/admin/chrome/icon/button-up.svg");
 }
 ::-webkit-scrollbar-button:vertical:end {
   height: 17px;
-  background-image: url("./icon/button-down.svg");
+  background-image: url("/assets/admin/chrome/icon/button-down.svg");
 }
 ::-webkit-scrollbar-button:horizontal:start {
   width: 16px;
-  background-image: url("./icon/button-left.svg");
+  background-image: url("/assets/admin/chrome/icon/button-left.svg");
 }
 ::-webkit-scrollbar-button:horizontal:end {
   width: 16px;
-  background-image: url("./icon/button-right.svg");
+  background-image: url("/assets/admin/chrome/icon/button-right.svg");
 }

@@ -1,6 +1,10 @@
-/* Product: desktop icons. */
+/* Product: desktop icons + floating windows (Phase 4; WM in Phase 5). */
 
-/* --- Desktop icons --- */
+.dashboard {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - 40px);
+}
 
 .dashboard > .icon-list {
   position: static;
@@ -8,6 +12,11 @@
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: flex-start;
+  max-height: calc(100vh - 40px);
+}
+
+.dashboard > .desktop-window {
+  position: absolute;
 }
 
 .icon {
@@ -74,42 +83,52 @@
 /*  color: #ffffff;*/
 /*}*/
 
-.icon.control-panel {
-  background-image: url("../../assets/icons/control_panel.svg");
+.icon.control-panel,
+.panel.info > .info-icon.control-panel {
+  background-image: url("/assets/admin/icons/control_panel.svg");
 }
 
-.icon.site {
-  background-image: url("../../assets/icons/site.svg");
+.icon.site,
+.panel.info > .info-icon.site {
+  background-image: url("/assets/admin/icons/site.svg");
 }
 
-.icon.network-neighborhood {
-  background-image: url("../../assets/icons/network_neighborhood.svg");
+.icon.network-neighborhood,
+.panel.info > .info-icon.network-neighborhood {
+  background-image: url("/assets/admin/icons/network_neighborhood.svg");
 }
 
-.icon.users {
-  background-image: url("../../assets/icons/users.svg");
+.icon.users,
+.panel.info > .info-icon.users {
+  background-image: url("/assets/admin/icons/users.svg");
 }
 
-.icon.roles {
-  background-image: url("../../assets/icons/roles.svg");
+.icon.roles,
+.panel.info > .info-icon.roles {
+  background-image: url("/assets/admin/icons/roles.svg");
 }
 
-.icon.permissions {
-  background-image: url("../../assets/icons/permissions.svg");
+.icon.permissions,
+.panel.info > .info-icon.permissions {
+  background-image: url("/assets/admin/icons/permissions.svg");
 }
 
-.icon.hosts {
-  background-image: url("../../assets/icons/hosts.svg");
+.icon.hosts,
+.panel.info > .info-icon.hosts {
+  background-image: url("/assets/admin/icons/hosts.svg");
 }
 
-.icon.sites {
-  background-image: url("../../assets/icons/sites.svg");
+.icon.sites,
+.panel.info > .info-icon.sites {
+  background-image: url("/assets/admin/icons/sites.svg");
 }
 
-.icon.settings {
-  background-image: url("../../assets/icons/settings.svg");
+.icon.settings,
+.panel.info > .info-icon.settings {
+  background-image: url("/assets/admin/icons/settings.svg");
 }
 
-.icon.themes {
-  background-image: url("../../assets/icons/themes.svg");
+.icon.themes,
+.panel.info > .info-icon.themes {
+  background-image: url("/assets/admin/icons/themes.svg");
 }
