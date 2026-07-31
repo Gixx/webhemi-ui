@@ -50,52 +50,138 @@
   color: #ffffff;
 }
 
+/* --- System glyphs (`icons/system/`) --- */
+
 .icon.control-panel,
-.panel.info > .info-icon.control-panel {
-  background-image: url("/assets/admin/icons/control_panel.svg");
+.panel.info > .info-icon.control-panel,
+.explorer-glyph.control-panel {
+  background-image: url("/assets/admin/icons/system/control_panel.svg");
 }
 
 .icon.site,
-.panel.info > .info-icon.site {
-  background-image: url("/assets/admin/icons/site.svg");
-}
-
-.icon.network-neighborhood,
-.panel.info > .info-icon.network-neighborhood {
-  background-image: url("/assets/admin/icons/network_neighborhood.svg");
+.panel.info > .info-icon.site,
+.explorer-glyph.site {
+  background-image: url("/assets/admin/icons/system/site.svg");
 }
 
 .icon.users,
-.panel.info > .info-icon.users {
-  background-image: url("/assets/admin/icons/users.svg");
+.panel.info > .info-icon.users,
+.explorer-glyph.users {
+  background-image: url("/assets/admin/icons/system/users.svg");
 }
 
 .icon.roles,
-.panel.info > .info-icon.roles {
-  background-image: url("/assets/admin/icons/roles.svg");
+.panel.info > .info-icon.roles,
+.explorer-glyph.roles {
+  background-image: url("/assets/admin/icons/system/roles.svg");
 }
 
 .icon.permissions,
-.panel.info > .info-icon.permissions {
-  background-image: url("/assets/admin/icons/permissions.svg");
+.panel.info > .info-icon.permissions,
+.explorer-glyph.permissions {
+  background-image: url("/assets/admin/icons/system/permissions.svg");
 }
 
 .icon.hosts,
-.panel.info > .info-icon.hosts {
-  background-image: url("/assets/admin/icons/hosts.svg");
+.panel.info > .info-icon.hosts,
+.explorer-glyph.hosts {
+  background-image: url("/assets/admin/icons/system/hosts.svg");
 }
 
 .icon.sites,
-.panel.info > .info-icon.sites {
-  background-image: url("/assets/admin/icons/sites.svg");
+.panel.info > .info-icon.sites,
+.explorer-glyph.sites {
+  background-image: url("/assets/admin/icons/system/sites.svg");
 }
 
 .icon.settings,
-.panel.info > .info-icon.settings {
-  background-image: url("/assets/admin/icons/settings.svg");
+.panel.info > .info-icon.settings,
+.explorer-glyph.settings {
+  background-image: url("/assets/admin/icons/system/settings.svg");
 }
 
 .icon.themes,
-.panel.info > .info-icon.themes {
-  background-image: url("/assets/admin/icons/themes.svg");
+.panel.info > .info-icon.themes,
+.explorer-glyph.themes {
+  background-image: url("/assets/admin/icons/system/themes.svg");
+}
+
+.icon.website,
+.panel.info > .info-icon.website,
+.explorer-glyph.website {
+  background-image: url("/assets/admin/icons/system/website.svg");
+}
+
+.icon.trash,
+.panel.info > .info-icon.trash,
+.explorer-glyph.trash {
+  background-image: url("/assets/admin/icons/system/trash.svg");
+}
+
+.icon.trash-empty,
+.panel.info > .info-icon.trash-empty,
+.explorer-glyph.trash-empty {
+  background-image: url("/assets/admin/icons/system/trash_empty.svg");
+}
+
+/* --- Explorer glyphs (`icons/explorer/`) --- */
+
+.icon.folder,
+.panel.info > .info-icon.folder,
+.explorer-glyph.folder {
+  background-image: url("/assets/admin/icons/explorer/folder.svg");
+}
+
+.icon.folder-open,
+.panel.info > .info-icon.folder-open,
+.explorer-glyph.folder-open {
+  background-image: url("/assets/admin/icons/explorer/folder_open.svg");
+}
+
+.icon.folder-documents,
+.panel.info > .info-icon.folder-documents,
+.explorer-glyph.folder-documents {
+  background-image: url("/assets/admin/icons/explorer/folder_documents.svg");
+}
+
+.icon.folder-gallery,
+.panel.info > .info-icon.folder-gallery,
+.explorer-glyph.folder-gallery {
+  background-image: url("/assets/admin/icons/explorer/folder_gallery.svg");
+}
+
+.icon.file-document,
+.panel.info > .info-icon.file-document,
+.explorer-glyph.file-document {
+  background-image: url("/assets/admin/icons/explorer/file_document.svg");
+}
+
+.icon.file-draft,
+.panel.info > .info-icon.file-draft,
+.explorer-glyph.file-draft {
+  background-image: url("/assets/admin/icons/explorer/file_draft.svg");
+}
+
+.icon.file-image,
+.panel.info > .info-icon.file-image,
+.explorer-glyph.file-image {
+  background-image: url("/assets/admin/icons/explorer/file_image.svg");
+}
+
+.icon.file-audio,
+.panel.info > .info-icon.file-audio,
+.explorer-glyph.file-audio {
+  background-image: url("/assets/admin/icons/explorer/file_audio.svg");
+}
+
+.icon.file-video,
+.panel.info > .info-icon.file-video,
+.explorer-glyph.file-video {
+  background-image: url("/assets/admin/icons/explorer/file_video.svg");
+}
+
+.icon.general-app,
+.panel.info > .info-icon.general-app,
+.explorer-glyph.general-app {
+  background-image: url("/assets/admin/icons/explorer/general_app.svg");
 }

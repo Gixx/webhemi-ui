@@ -162,14 +162,14 @@ html.is-window-resizing * {
 
 .title-bar-text.control-panel,
 .title-bar-text.site,
-.title-bar-text.network-neighborhood,
 .title-bar-text.users,
 .title-bar-text.roles,
 .title-bar-text.permissions,
 .title-bar-text.hosts,
 .title-bar-text.sites,
 .title-bar-text.settings,
-.title-bar-text.themes {
+.title-bar-text.themes,
+.title-bar-text.folder {
   padding-left: 22px;
   background-repeat: no-repeat;
   background-position: 2px center;
@@ -177,43 +177,43 @@ html.is-window-resizing * {
 }
 
 .title-bar-text.control-panel {
-  background-image: url("/assets/admin/icons/control_panel.svg");
+  background-image: url("/assets/admin/icons/system/control_panel.svg");
 }
 
 .title-bar-text.site {
-  background-image: url("/assets/admin/icons/site.svg");
-}
-
-.title-bar-text.network-neighborhood {
-  background-image: url("/assets/admin/icons/network_neighborhood.svg");
+  background-image: url("/assets/admin/icons/system/site.svg");
 }
 
 .title-bar-text.users {
-  background-image: url("/assets/admin/icons/users.svg");
+  background-image: url("/assets/admin/icons/system/users.svg");
 }
 
 .title-bar-text.roles {
-  background-image: url("/assets/admin/icons/roles.svg");
+  background-image: url("/assets/admin/icons/system/roles.svg");
 }
 
 .title-bar-text.permissions {
-  background-image: url("/assets/admin/icons/permissions.svg");
+  background-image: url("/assets/admin/icons/system/permissions.svg");
 }
 
 .title-bar-text.hosts {
-  background-image: url("/assets/admin/icons/hosts.svg");
+  background-image: url("/assets/admin/icons/system/hosts.svg");
 }
 
 .title-bar-text.sites {
-  background-image: url("/assets/admin/icons/sites.svg");
+  background-image: url("/assets/admin/icons/system/sites.svg");
 }
 
 .title-bar-text.settings {
-  background-image: url("/assets/admin/icons/settings.svg");
+  background-image: url("/assets/admin/icons/system/settings.svg");
 }
 
 .title-bar-text.themes {
-  background-image: url("/assets/admin/icons/themes.svg");
+  background-image: url("/assets/admin/icons/system/themes.svg");
+}
+
+.title-bar-text.folder {
+  background-image: url("/assets/admin/icons/explorer/folder.svg");
 }
 
 .status-bar .status-bar-field {

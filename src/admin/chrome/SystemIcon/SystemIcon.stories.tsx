@@ -4,7 +4,6 @@ import { SystemIcon, type SystemIconKind, type SystemIconLabelTone } from './Sys
 const KINDS: SystemIconKind[] = [
   'control-panel',
   'site',
-  'network-neighborhood',
   'users',
   'roles',
   'permissions',
@@ -12,6 +11,19 @@ const KINDS: SystemIconKind[] = [
   'sites',
   'settings',
   'themes',
+  'website',
+  'trash',
+  'trash-empty',
+  'folder',
+  'folder-open',
+  'folder-documents',
+  'folder-gallery',
+  'file-document',
+  'file-draft',
+  'file-image',
+  'file-audio',
+  'file-video',
+  'general-app',
 ];
 
 type IconEntry = { kind: SystemIconKind; label: string; labelTone?: SystemIconLabelTone };
@@ -42,7 +54,27 @@ const withDesktopSurface: Decorator = (Story, context) => {
 const meta = {
   title: 'Admin/Atoms/SystemIcon',
   component: SystemIcon,
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Desktop / icon-panel glyph + label. Item metadata stays on the parent list model — not on this atom.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { SystemIcon } from '@webhemi/ui';
+
+<SystemIcon
+  kind="users"
+  label="Users"
+  labelTone="light"
+  onActivate={() => {}}
+  onOpen={() => {}}
+/>`,
+      },
+    },
+  },
   decorators: [withDesktopSurface],
   args: {
     kind: 'users' as SystemIconKind,

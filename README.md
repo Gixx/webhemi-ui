@@ -20,7 +20,7 @@ src/
 │   ├── bricks/            # product bricks — one folder each
 │   │   └── _lib/          # PaneWindowShell, windowBrickStory
 │   ├── styles/            # tokens, chrome/, product/, entry.scss
-│   ├── assets/            # system/ icons/ fonts/ logo/ chrome/ — synced as files (never inlined)
+│   ├── assets/            # chrome/ icons/{system,explorer,toolbar}/ system/ fonts/ logo/ — synced as files (never inlined)
 │   ├── lib/               # adminAsset() URL helpers
 │   └── …                  # pages / components
 ├── themes/

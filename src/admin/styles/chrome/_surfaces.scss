@@ -1,9 +1,9 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
-// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/icon/*.svg
+// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/*.svg
 .sunken-panel {
   box-sizing: border-box;
   border: 2px groove transparent;
-  border-image: url("/assets/admin/chrome/icon/sunken-panel-border.svg") 2;
+  border-image: url("/assets/admin/chrome/sunken-panel-border.svg") 2;
   /* Overflow lives on `.scrollable-viewport` (React atom always wraps children). */
   overflow: hidden;
   background-color: #fff;

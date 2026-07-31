@@ -126,23 +126,23 @@
 }
 
 .scrollable > .sb-y .sb-dec {
-  background-image: url("/assets/admin/chrome/icon/button-up.svg");
+  background-image: url("/assets/admin/chrome/button-up.svg");
 }
 
 .scrollable > .sb-y .sb-inc {
-  background-image: url("/assets/admin/chrome/icon/button-down.svg");
+  background-image: url("/assets/admin/chrome/button-down.svg");
 }
 
 .scrollable > .sb-x .sb-dec {
-  background-image: url("/assets/admin/chrome/icon/button-left.svg");
+  background-image: url("/assets/admin/chrome/button-left.svg");
 }
 
 .scrollable > .sb-x .sb-inc {
-  background-image: url("/assets/admin/chrome/icon/button-right.svg");
+  background-image: url("/assets/admin/chrome/button-right.svg");
 }
 
 .scrollable > .sb-y .sb-dec:disabled {
-  background-image: url("/assets/admin/chrome/icon/button-up-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-up-disabled.svg");
   box-shadow:
     inset -1px -1px #808080,
     inset 1px 1px #fff,
@@ -151,7 +151,7 @@
 }
 
 .scrollable > .sb-y .sb-inc:disabled {
-  background-image: url("/assets/admin/chrome/icon/button-down-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-down-disabled.svg");
   box-shadow:
     inset -1px -1px #808080,
     inset 1px 1px #fff,
@@ -160,7 +160,7 @@
 }
 
 .scrollable > .sb-x .sb-dec:disabled {
-  background-image: url("/assets/admin/chrome/icon/button-left-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-left-disabled.svg");
   box-shadow:
     inset -1px -1px #808080,
     inset 1px 1px #fff,
@@ -169,7 +169,7 @@
 }
 
 .scrollable > .sb-x .sb-inc:disabled {
-  background-image: url("/assets/admin/chrome/icon/button-right-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-right-disabled.svg");
   box-shadow:
     inset -1px -1px #808080,
     inset 1px 1px #fff,
@@ -203,7 +203,7 @@
   min-height: 0;
   min-width: 0;
   background-color: #dfdfdf;
-  background-image: url("/assets/admin/chrome/icon/scrollbar-track.svg");
+  background-image: url("/assets/admin/chrome/scrollbar-track.svg");
 }
 
 .scrollable > .sb .sb-thumb {

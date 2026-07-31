@@ -5,6 +5,14 @@
  * Prefer CSS `url("/assets/admin/...")` (rewritten to relative `./` at CSS build
  * so PHP AssetMapper digests them). For React `<img>`, pass Twig `asset(...)`
  * props — bare `/assets/admin/...` paths 404 on PHP (digest-only DevServer).
+ *
+ * Layout:
+ * - `chrome/` — window chrome SVGs (buttons, scrollbar, form chrome)
+ * - `icons/system/` — CMS / desktop system glyphs
+ * - `icons/explorer/` — file explorer glyphs
+ * - `icons/toolbar/` — explorer toolbar tools
+ * - `system/` — banners / misc product bitmaps
+ * - `fonts/`, `logo/`
  */
 export const ADMIN_ASSETS_BASE = '/assets/admin';
 
@@ -15,5 +23,6 @@ export function adminAsset(path: string): string {
 
 /** @deprecated Prefer CSS backgrounds or Twig `asset()` props — not digest-safe on PHP. */
 export function adminIconAsset(kind: string): string {
-  return adminAsset(`icons/${kind.replace(/-/g, '_')}.svg`);
+  const file = kind.replace(/-/g, '_');
+  return adminAsset(`icons/system/${file}.svg`);
 }

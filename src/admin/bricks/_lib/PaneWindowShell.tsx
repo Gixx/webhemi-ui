@@ -13,21 +13,20 @@ import { cn } from '../../../lib/cn';
 export type TitleBarIconKind =
   | 'control-panel'
   | 'site'
-  | 'network-neighborhood'
   | 'users'
   | 'roles'
   | 'permissions'
   | 'hosts'
   | 'sites'
   | 'settings'
-  | 'themes';
+  | 'themes'
+  | 'folder';
 
 /** Storybook select options: `none` maps to no `titleIcon`. */
 export const TITLE_BAR_ICON_OPTIONS = [
   'none',
   'control-panel',
   'site',
-  'network-neighborhood',
   'users',
   'roles',
   'permissions',
@@ -35,6 +34,7 @@ export const TITLE_BAR_ICON_OPTIONS = [
   'sites',
   'settings',
   'themes',
+  'folder',
 ] as const satisfies ReadonlyArray<'none' | TitleBarIconKind>;
 
 export type TitleBarIconOption = (typeof TITLE_BAR_ICON_OPTIONS)[number];

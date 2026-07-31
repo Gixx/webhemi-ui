@@ -10,14 +10,26 @@ import { cn } from '../../../lib/cn';
 export type SystemIconKind =
   | 'control-panel'
   | 'site'
-  | 'network-neighborhood'
   | 'users'
   | 'roles'
   | 'permissions'
   | 'hosts'
   | 'sites'
   | 'settings'
-  | 'themes';
+  | 'themes'
+  | 'website'
+  | 'trash'
+  | 'trash-empty'
+  | 'folder'
+  | 'folder-open'
+  | 'folder-documents'
+  | 'folder-gallery'
+  | 'file-document'
+  | 'file-draft'
+  | 'file-image'
+  | 'file-audio'
+  | 'file-video'
+  | 'general-app';
 
 /** Label contrast: `light` = white (desktop), `dark` = black (icon panels). */
 export type SystemIconLabelTone = 'light' | 'dark';

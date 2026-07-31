@@ -1,5 +1,5 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
-// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/icon/*.svg
+// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/*.svg
 input[type="radio"],
 input[type="checkbox"] {
   appearance: none;
@@ -31,11 +31,11 @@ input[type="radio"] + label::before {
   width: var(--radio-width);
   height: var(--radio-width);
   margin-right: var(--radio-label-spacing);
-  background: url("/assets/admin/chrome/icon/radio-border.svg");
+  background: url("/assets/admin/chrome/radio-border.svg");
 }
 
 input[type="radio"]:active + label::before {
-  background: url("/assets/admin/chrome/icon/radio-border-disabled.svg");
+  background: url("/assets/admin/chrome/radio-border-disabled.svg");
 }
 
 input[type="radio"]:checked + label::after {
@@ -46,7 +46,7 @@ input[type="radio"]:checked + label::after {
   top: var(--radio-dot-top);
   left: var(--radio-dot-left);
   position: absolute;
-  background: url("/assets/admin/chrome/icon/radio-dot.svg");
+  background: url("/assets/admin/chrome/radio-dot.svg");
 }
 
 input[type="radio"]:focus + label,
@@ -55,11 +55,11 @@ input[type="checkbox"]:focus + label {
 }
 
 input[type="radio"][disabled] + label::before {
-  background: url("/assets/admin/chrome/icon/radio-border-disabled.svg");
+  background: url("/assets/admin/chrome/radio-border-disabled.svg");
 }
 
 input[type="radio"][disabled]:checked + label::after {
-  background: url("/assets/admin/chrome/icon/radio-dot-disabled.svg");
+  background: url("/assets/admin/chrome/radio-dot-disabled.svg");
 }
 
 input[type="checkbox"] + label {
@@ -92,7 +92,7 @@ input[type="checkbox"]:checked + label::after {
   left: calc(
     -1 * (var(--checkbox-total-width-precalc)) + var(--checkmark-left)
   );
-  background: url("/assets/admin/chrome/icon/checkmark.svg");
+  background: url("/assets/admin/chrome/checkmark.svg");
 }
 
 input[type="checkbox"][disabled] + label::before {
@@ -100,7 +100,7 @@ input[type="checkbox"][disabled] + label::before {
 }
 
 input[type="checkbox"][disabled]:checked + label::after {
-  background: url("/assets/admin/chrome/icon/checkmark-disabled.svg");
+  background: url("/assets/admin/chrome/checkmark-disabled.svg");
 }
 
 input[type="text"],
@@ -186,7 +186,7 @@ select {
   position: relative;
   padding-right: 32px;
   background-color: var(--button-highlight);
-  background-image: url("/assets/admin/chrome/icon/button-down.svg");
+  background-image: url("/assets/admin/chrome/button-down.svg");
   background-position: top 2px right 2px;
   background-repeat: no-repeat;
   border-radius: 0;
@@ -219,7 +219,7 @@ textarea:focus {
 select:focus {
   color: var(--button-highlight);
   background-color: var(--dialog-blue);
-  background-image: url("/assets/admin/chrome/icon/button-down.svg");
+  background-image: url("/assets/admin/chrome/button-down.svg");
   background-position: top 2px right 2px;
   background-repeat: no-repeat;
 }
@@ -237,18 +237,18 @@ select:focus option {
 select:open {
   color: var(--text-color);
   background-color: var(--button-highlight);
-  background-image: url("/assets/admin/chrome/icon/button-down.svg");
+  background-image: url("/assets/admin/chrome/button-down.svg");
   background-position: top 2px right 2px;
   background-repeat: no-repeat;
 }
 
 select:active {
-  background-image: url("/assets/admin/chrome/icon/button-down-active.svg");
+  background-image: url("/assets/admin/chrome/button-down-active.svg");
 }
 
 select:disabled {
   background-color: var(--surface);
-  background-image: url("/assets/admin/chrome/icon/button-down-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-down-disabled.svg");
   background-position: top 2px right 2px;
   background-repeat: no-repeat;
   color: var(--button-shadow);
@@ -261,7 +261,7 @@ select:disabled:open,
 select:disabled:active {
   color: var(--button-shadow);
   background-color: var(--surface);
-  background-image: url("/assets/admin/chrome/icon/button-down-disabled.svg");
+  background-image: url("/assets/admin/chrome/button-down-disabled.svg");
   background-position: top 2px right 2px;
   background-repeat: no-repeat;
 }
