@@ -213,6 +213,7 @@ const preview: Preview = {
               'DialogWindow',
               'IconPanelWindow',
               'WizardWindow',
+              'FileExplorerWindow',
               '*',
             ],
             'Components',

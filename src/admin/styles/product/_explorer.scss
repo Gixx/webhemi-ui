@@ -1,0 +1,247 @@
+/* Product: FileExplorerWindow layout, toolbar, list/details content. */
+@use "../abstract/bevel" as *;
+
+.window.file-explorer-window > .window-body {
+  margin: 2px;
+}
+
+.explorer-panel-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.explorer-panel-layout > .panel.explorer-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--surface, #c0c0c0);
+}
+
+.explorer-panel-layout > .explorer-split {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 4px;
+  padding: 0 2px 2px;
+
+  .explorer-tree-inner {
+    padding: 0;
+  }
+
+  .tree-view {
+    box-shadow: none;
+  }
+}
+
+.explorer-panel-layout > .explorer-split > .panel.explorer-tree {
+  flex: 0 0 200px;
+  width: 200px;
+  min-width: 140px;
+  min-height: 0;
+  background: #fff;
+}
+
+.explorer-panel-layout > .explorer-split > .panel.explorer-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+}
+
+/* --- Toolbar icon buttons --- */
+
+.explorer-toolbar button.tool {
+  min-width: 23px;
+  width: 23px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  color: transparent;
+  text-shadow: none;
+  background-color: var(--surface, #c0c0c0);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.explorer-toolbar button.tool[aria-pressed="true"] {
+  @include bevel-sunken;
+}
+
+.explorer-toolbar button.tool.level-up {
+  background-image: url("/assets/admin/icons/toolbar/explorer_level_up.svg");
+}
+
+.explorer-toolbar button.tool.cut {
+  background-image: url("/assets/admin/icons/toolbar/explorer_cut.svg");
+}
+
+.explorer-toolbar button.tool.copy {
+  background-image: url("/assets/admin/icons/toolbar/explorer_copy.svg");
+}
+
+.explorer-toolbar button.tool.paste {
+  background-image: url("/assets/admin/icons/toolbar/explorer_paste.svg");
+}
+
+.explorer-toolbar button.tool.undo {
+  background-image: url("/assets/admin/icons/toolbar/explorer_undo.svg");
+}
+
+.explorer-toolbar button.tool.delete {
+  background-image: url("/assets/admin/icons/toolbar/explorer_delete.svg");
+}
+
+.explorer-toolbar button.tool.properties {
+  background-image: url("/assets/admin/icons/toolbar/explorer_properties.svg");
+}
+
+.explorer-toolbar button.tool.large-icons {
+  background-image: url("/assets/admin/icons/toolbar/explorer_large_icons.svg");
+}
+
+.explorer-toolbar button.tool.list {
+  background-image: url("/assets/admin/icons/toolbar/explorer_list.svg");
+}
+
+.explorer-toolbar button.tool.details {
+  background-image: url("/assets/admin/icons/toolbar/explorer_details.svg");
+}
+
+.explorer-toolbar .vertical-bar {
+  margin: 0 4px;
+}
+
+/* --- Compact glyphs (list / details / tree) --- */
+
+.explorer-glyph {
+  display: inline-block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  vertical-align: middle;
+}
+
+/* --- Large icons content --- */
+
+.explorer-content-inner.large-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+}
+
+.explorer-content-inner .icon.is-hidden,
+.explorer-list-item.is-hidden,
+.explorer-details tr.is-hidden {
+  opacity: 0.5;
+}
+
+/* Selection only via .is-selected — not :focus (that looked like single-click activate). */
+.explorer-content-inner .icon > a:focus > span {
+  outline: none;
+  background-color: transparent;
+  color: inherit;
+}
+
+.explorer-content-inner .icon.is-selected > a > span {
+  outline: 1px dotted #880000;
+  background-color: #000080;
+  color: #ffffff;
+}
+
+/* --- List view --- */
+
+.explorer-content-inner.list {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  max-height: 100%;
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+
+.explorer-list-item {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: 160px;
+  max-width: 100%;
+  padding: 1px 2px;
+  text-decoration: none;
+  font-family: var(--font-chrome);
+  font-size: var(--font-size-chrome);
+  text-align: left;
+  cursor: default;
+  color: var(--text-color, #222);
+  box-sizing: border-box;
+}
+
+.explorer-list-item:focus {
+  outline: none;
+}
+
+.explorer-list-item.is-selected {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+.explorer-list-item > .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* --- Details view --- */
+
+.explorer-content-inner.details {
+  padding: 0;
+}
+
+.explorer-details {
+  width: 100%;
+}
+
+.explorer-details td.name-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.explorer-tree-inner .tree-view {
+  width: 100%;
+}
+
+.explorer-tree-node {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.explorer-tree-node.is-disabled,
+.explorer-tree-leaf.is-disabled,
+.explorer-tree-inner .tree-view li.is-disabled {
+  color: var(--button-shadow, #808080);
+  text-shadow: 1px 1px 0 var(--button-highlight, #fff);
+  cursor: default;
+}

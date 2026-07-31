@@ -41,4 +41,5 @@ html[data-wh-theme="admin"] {
   @include meta.load-css("product/layouts");
   @include meta.load-css("product/primitives");
   @include meta.load-css("product/scrollbar");
+  @include meta.load-css("product/explorer");
 }
