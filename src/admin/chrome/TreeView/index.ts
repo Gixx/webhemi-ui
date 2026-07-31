@@ -1,1 +1,1 @@
-export { TreeView, type TreeViewProps } from "./TreeView";
+export { TreeView, TreeToggle, type TreeViewProps, type TreeToggleProps } from "./TreeView";

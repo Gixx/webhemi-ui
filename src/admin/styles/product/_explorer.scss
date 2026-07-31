@@ -219,6 +219,12 @@
   width: 100%;
 }
 
+/* Taller than chrome `table` (14px) so 16px glyphs have breathing room. */
+.explorer-details > tbody > tr > * {
+  height: 20px;
+  vertical-align: middle;
+}
+
 .explorer-details td.name-cell {
   display: flex;
   flex-direction: row;
@@ -236,6 +242,7 @@
   flex-direction: row;
   align-items: center;
   gap: 4px;
+  vertical-align: middle;
 }
 
 .explorer-tree-node.is-disabled,

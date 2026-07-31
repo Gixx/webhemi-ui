@@ -1,6 +1,6 @@
+import { useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ComponentType } from 'react';
-import { TreeView } from './TreeView';
+import { TreeToggle, TreeView } from './TreeView';
 
 type TreeStoryArgs = {
   rootLabel: string;
@@ -14,6 +14,40 @@ type TreeStoryArgs = {
   openDetails: boolean;
 };
 
+/** Controlled branch: toggle only via TreeToggle; label stays independently focusable. */
+function TreeBranch({
+  label,
+  defaultOpen = false,
+  children,
+}: {
+  label: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <details open={open}>
+      <summary
+        tabIndex={-1}
+        onClick={(event) => {
+          event.preventDefault();
+        }}
+      >
+        <TreeToggle
+          expanded={open}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setOpen((value) => !value);
+          }}
+        />
+        {label}
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 const meta = {
   title: 'Admin/Atoms/TreeView',
   component: TreeView as unknown as ComponentType<TreeStoryArgs>,
@@ -21,11 +55,33 @@ const meta = {
     layout: 'centered',
     docs: {
       description: {
-        component: '`ul.tree-view` — nest lists and `<details>` for expandable branches.',
+        component:
+          '`ul.tree-view` — nest lists and `<details>` for expandable branches. Use `TreeToggle` inside `<summary>`; call `preventDefault` on summary clicks so expand/collapse is only on the [+]/[-] control (Win98 Explorer).',
       },
       source: {
         language: 'tsx',
-        code: `import { TreeView } from '@webhemi/ui';
+        code: `import { useState } from 'react';
+import { TreeToggle, TreeView } from '@webhemi/ui';
+
+function Branch({ label, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <details open={open}>
+      <summary tabIndex={-1} onClick={(e) => e.preventDefault()}>
+        <TreeToggle
+          expanded={open}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen((v) => !v);
+          }}
+        />
+        {label}
+      </summary>
+      {children}
+    </details>
+  );
+}
 
 <TreeView style={{ width: 200 }}>
   <li>Table of Contents</li>
@@ -34,13 +90,12 @@ const meta = {
     <ul>
       <li>Section 1.1</li>
       <li>
-        <details open>
-          <summary>Section 1.2</summary>
+        <Branch label={<a href="#"><span className="tree-view-label">Section 1.2</span></a>} defaultOpen>
           <ul>
-            <li>Item A</li>
-            <li>Item B</li>
+            <li><a href="#"><span className="tree-view-label">Item A</span></a></li>
+            <li><a href="#"><span className="tree-view-label">Item B</span></a></li>
           </ul>
-        </details>
+        </Branch>
       </li>
     </ul>
   </li>
@@ -73,23 +128,49 @@ const meta = {
   },
   render: (args) => (
     <TreeView style={{ width: args.width }}>
-      <li>{args.rootLabel}</li>
+      <li>
+        <a href="#" onClick={(e) => e.preventDefault()}>
+          <span className="tree-view-label">{args.rootLabel}</span>
+        </a>
+      </li>
       <li>
         {args.chapterOne}
         <ul>
-          <li>{args.sectionOne}</li>
           <li>
-            <details open={args.openDetails}>
-              <summary>{args.sectionTwo}</summary>
+            <a href="#" onClick={(e) => e.preventDefault()}>
+              <span className="tree-view-label">{args.sectionOne}</span>
+            </a>
+          </li>
+          <li>
+            <TreeBranch
+              defaultOpen={args.openDetails}
+              label={
+                <a href="#" onClick={(e) => e.preventDefault()}>
+                  <span className="tree-view-label">{args.sectionTwo}</span>
+                </a>
+              }
+            >
               <ul>
-                <li>{args.itemA}</li>
-                <li>{args.itemB}</li>
+                <li>
+                  <a href="#" onClick={(e) => e.preventDefault()}>
+                    <span className="tree-view-label">{args.itemA}</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#" onClick={(e) => e.preventDefault()}>
+                    <span className="tree-view-label">{args.itemB}</span>
+                  </a>
+                </li>
               </ul>
-            </details>
+            </TreeBranch>
           </li>
         </ul>
       </li>
-      <li>{args.chapterTwo}</li>
+      <li>
+        <a href="#" onClick={(e) => e.preventDefault()}>
+          <span className="tree-view-label">{args.chapterTwo}</span>
+        </a>
+      </li>
     </TreeView>
   ),
 } satisfies Meta<TreeStoryArgs>;

@@ -1,6 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { FieldBorder } from '../../chrome/FieldBorder';
-import { TreeView } from '../../chrome/TreeView';
+import { TreeToggle, TreeView } from '../../chrome/TreeView';
 import { cn } from '../../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 import { ExplorerContent } from './ExplorerContent';
@@ -39,11 +39,76 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   treeWidth?: number | string;
 };
 
-function treeGlyphKind(node: ExplorerItem, expandableKids: boolean): ExplorerItem['kind'] {
-  if ((node.kind === 'folder' || node.role === 'folder') && expandableKids) {
+function treeGlyphKind(node: ExplorerItem, expanded: boolean): ExplorerItem['kind'] {
+  if ((node.kind === 'folder' || node.role === 'folder') && expanded) {
     return 'folder-open';
   }
   return node.kind;
+}
+
+function TreeNodeLabel({
+  node,
+  expanded = false,
+}: {
+  node: ExplorerItem;
+  expanded?: boolean;
+}) {
+  return (
+    <span className={cn('explorer-tree-node', node.disabled && 'is-disabled')}>
+      <span className={cn('explorer-glyph', treeGlyphKind(node, expanded))} aria-hidden />
+      <span className="tree-view-label">{node.label}</span>
+    </span>
+  );
+}
+
+function ExplorerTreeBranch({
+  node,
+  onTreeSelect,
+}: {
+  node: ExplorerItem;
+  onTreeSelect?: (item: ExplorerItem) => void;
+}) {
+  const kids = explorerTreeChildren(node);
+  const [open, setOpen] = useState(node.role === 'site');
+
+  return (
+    <li>
+      <details open={open}>
+        <summary
+          tabIndex={-1}
+          onClick={(event) => {
+            event.preventDefault();
+          }}
+        >
+          <TreeToggle
+            expanded={open}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setOpen((value) => !value);
+            }}
+          />
+          {node.disabled ? (
+            <span className="explorer-tree-leaf is-disabled" aria-disabled="true">
+              <TreeNodeLabel node={node} expanded={open} />
+            </span>
+          ) : (
+            <a
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onTreeSelect?.(node);
+              }}
+            >
+              <TreeNodeLabel node={node} expanded={open} />
+            </a>
+          )}
+        </summary>
+        <ul>{renderTreeNodes(kids, onTreeSelect)}</ul>
+      </details>
+    </li>
+  );
 }
 
 function renderTreeNodes(
@@ -51,40 +116,17 @@ function renderTreeNodes(
   onTreeSelect?: (item: ExplorerItem) => void,
 ): ReactNode {
   return nodes.map((node) => {
-    const kids = explorerTreeChildren(node);
     const canExpand = isExplorerTreeExpandable(node);
-    const label = (
-      <span className={cn('explorer-tree-node', node.disabled && 'is-disabled')}>
-        <span className={cn('explorer-glyph', treeGlyphKind(node, kids.length > 0))} aria-hidden />
-        {' '}
-        {node.label}
-      </span>
-    );
 
     if (canExpand) {
-      return (
-        <li key={node.id}>
-          <details open={node.role === 'site'}>
-            <summary
-              onClick={() => {
-                if (!node.disabled) {
-                  onTreeSelect?.(node);
-                }
-              }}
-            >
-              {label}
-            </summary>
-            <ul>{renderTreeNodes(kids, onTreeSelect)}</ul>
-          </details>
-        </li>
-      );
+      return <ExplorerTreeBranch key={node.id} node={node} onTreeSelect={onTreeSelect} />;
     }
 
     return (
       <li key={node.id} className={cn(node.disabled && 'is-disabled')}>
         {node.disabled ? (
           <span className="explorer-tree-leaf is-disabled" aria-disabled="true">
-            {label}
+            <TreeNodeLabel node={node} />
           </span>
         ) : (
           <a
@@ -94,7 +136,7 @@ function renderTreeNodes(
               onTreeSelect?.(node);
             }}
           >
-            {label}
+            <TreeNodeLabel node={node} />
           </a>
         )}
       </li>

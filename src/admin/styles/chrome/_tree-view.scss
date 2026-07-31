@@ -1,5 +1,5 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
-// Tokens: abstract/tokens.css; icons: /assets/admin/chrome/*.svg
+// Tokens: abstract/tokens.css; icons: /assets/admin/icons/system/tree_*.svg
 ul.tree-view {
   display: block;
   background: var(--button-highlight);
@@ -17,9 +17,17 @@ ul.tree-view a {
   color: #000;
 }
 
+/* Selection highlights the label only (Win98), not the row / glyph / toggle. */
 ul.tree-view a:focus {
+  outline: none;
+  background: transparent;
+  color: inherit;
+}
+
+ul.tree-view a:focus .tree-view-label {
   background-color: var(--dialog-blue);
   color: var(--button-highlight);
+  outline: 1px dotted #000000;
 }
 
 ul.tree-view ul,
@@ -37,12 +45,13 @@ ul.tree-view ul {
 ul.tree-view ul > li {
   position: relative;
 }
+
 ul.tree-view ul > li::before {
   content: "";
   display: block;
   position: absolute;
   left: -16px;
-  top: 6px;
+  top: 8px;
   width: 12px;
   border-bottom: 1px dotted #808080;
 }
@@ -53,8 +62,8 @@ ul.tree-view ul > li:last-child::after {
   display: block;
   position: absolute;
   left: -20px;
-  top: 7px;
-  bottom: 0px;
+  top: 9px;
+  bottom: 0;
   width: 8px;
   background: var(--button-highlight);
 }
@@ -67,31 +76,84 @@ ul.tree-view details[open] summary {
   margin-bottom: 0;
 }
 
-ul.tree-view ul details > summary:before {
+ul.tree-view details > summary {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: default;
+  list-style: none;
+}
+
+ul.tree-view details > summary::marker,
+ul.tree-view details > summary::-webkit-details-marker {
+  display: none;
+  content: "";
+}
+
+ul.tree-view details > summary:focus {
+  outline: none;
+}
+
+/* Explicit toggle — SVG [+] / [-]; must beat global `button` chrome */
+ul.tree-view button.tree-toggle {
+  box-sizing: border-box;
+  flex: 0 0 9px;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  min-width: 9px;
+  min-height: 9px;
+  margin: 0 5px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: url("/assets/admin/icons/system/tree_expand.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 9px;
+  box-shadow: none;
+  color: transparent;
+  text-shadow: none;
+  font-size: 0;
+  line-height: 0;
+  cursor: default;
+  vertical-align: middle;
+}
+
+ul.tree-view button.tree-toggle:focus {
+  outline: 1px dotted #000000;
+  outline-offset: 1px;
+}
+
+ul.tree-view button.tree-toggle:not(:disabled):active,
+ul.tree-view button.tree-toggle:not(:disabled):hover {
+  box-shadow: none;
+  text-shadow: none;
+  background-color: transparent;
+  background-image: url("/assets/admin/icons/system/tree_expand.svg");
+}
+
+ul.tree-view details[open] > summary > button.tree-toggle,
+ul.tree-view button.tree-toggle[aria-expanded="true"] {
+  background-image: url("/assets/admin/icons/system/tree_collapse.svg");
+}
+
+ul.tree-view details[open] > summary > button.tree-toggle:not(:disabled):active,
+ul.tree-view details[open] > summary > button.tree-toggle:not(:disabled):hover,
+ul.tree-view button.tree-toggle[aria-expanded="true"]:not(:disabled):active,
+ul.tree-view button.tree-toggle[aria-expanded="true"]:not(:disabled):hover {
+  background-image: url("/assets/admin/icons/system/tree_collapse.svg");
+}
+
+/* Sit the toggle on the dotted junction for nested branches */
+ul.tree-view ul details > summary > button.tree-toggle {
   margin-left: -22px;
   position: relative;
   z-index: 1;
 }
 
-ul.tree-view details > summary:before {
-  text-align: center;
-  display: block;
-  float: left;
-  content: "+";
-  border: 1px solid #808080;
-  width: 8px;
-  height: 9px;
-  line-height: 8px;
-  margin-right: 5px;
-  padding-left: 1px;
-  background-color: #fff;
-}
-
-ul.tree-view details[open] > summary:before {
-  content: "-";
-}
-
-ul.tree-view details > summary::marker,
-ul.tree-view details > summary::-webkit-details-marker {
-  content: "";
+ul.tree-view .tree-view-label {
+  display: inline;
+  padding: 0 1px;
 }
