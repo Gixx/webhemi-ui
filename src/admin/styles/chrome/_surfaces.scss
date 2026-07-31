@@ -30,10 +30,6 @@ table > thead > tr > * {
   padding: 0 var(--grouped-element-spacing);
 }
 
-table.interactive > tbody > tr {
-  cursor: pointer;
-}
-
 table > tbody > tr.highlighted {
   color: #fff;
   background-color: var(--dialog-blue);

@@ -14,6 +14,31 @@
   box-sizing: border-box;
 }
 
+/*
+ * Arrow cursor by default across the design system.
+ * UA styles use `pointer` on links/buttons — override those explicitly.
+ * Set `cursor` only where interaction needs another shape (resize, move, …).
+ */
+*,
+*::before,
+*::after,
+a,
+a:any-link,
+button,
+label,
+summary,
+select,
+option,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"] {
+  cursor: default;
+}
+
+
 /* Admin Theme Tailwind bridge — window scale + desktop utilities */
 @theme {
   --color-desktop: #008284;

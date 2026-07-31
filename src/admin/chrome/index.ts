@@ -32,7 +32,7 @@ export {
   type TabPanelProps,
 } from './Tabs';
 export { promoteTabRow } from './_lib/promoteTabRow';
-export { TreeView, type TreeViewProps } from './TreeView';
+export { TreeView, TreeToggle, type TreeViewProps, type TreeToggleProps } from './TreeView';
 export {
   SunkenPanel,
   type SunkenPanelProps,
