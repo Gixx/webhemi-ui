@@ -116,7 +116,6 @@ export function AdminDesktop({ sites = [], className }: AdminDesktopProps) {
             kind="site"
             label={site.name}
             labelTone="light"
-            description={site.slug ? `Site: ${site.slug}` : undefined}
             onOpen={() => openSite(site)}
           />
         ))}
@@ -124,7 +123,6 @@ export function AdminDesktop({ sites = [], className }: AdminDesktopProps) {
           kind="control-panel"
           label="Control Panel"
           labelTone="light"
-          description="Configure WebHemi administration."
           onOpen={openControlPanel}
         />
       </div>

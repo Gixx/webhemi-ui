@@ -28,7 +28,6 @@ export type SystemIconProps = Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> & 
   /** Label text color tone (not inferred from parent CSS). Default: `light`. */
   labelTone?: SystemIconLabelTone;
   href?: string;
-  description?: string;
   draggable?: boolean;
   /** Activate (single click / Enter). Double-click also fires this then `onOpen`. */
   onActivate?: () => void;
@@ -40,13 +39,13 @@ export type SystemIconProps = Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> & 
 /**
  * System icon for desktop or icon-panel surfaces: glyph (CSS background) + label.
  * Chrome atom — OS desktop-icon primitive (activate / open).
+ * Item metadata (description, dates, …) lives on the parent list/selection model.
  */
 export function SystemIcon({
   kind,
   label,
   labelTone = 'light',
   href = '#',
-  description,
   draggable = false,
   onActivate,
   onOpen,
@@ -82,12 +81,7 @@ export function SystemIcon({
       onDoubleClick={handleDoubleClick}
       {...rest}
     >
-      <a
-        href={href}
-        data-description={description}
-        {...linkProps}
-        onClick={handleClick}
-      >
+      <a href={href} {...linkProps} onClick={handleClick}>
         <span>{label}</span>
       </a>
     </div>

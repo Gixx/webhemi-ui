@@ -60,7 +60,6 @@ function ControlPanelDemo(args: StoryArgs) {
           kind={icon.kind}
           label={icon.label}
           labelTone="dark"
-          description={icon.description}
           onActivate={() => setSelected(icon)}
         />
       ))}
