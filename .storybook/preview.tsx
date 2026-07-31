@@ -85,10 +85,11 @@ const withTheme: Decorator = (Story, context) => {
  * In-window atoms sit on silver chrome surface (`--surface`), not the teal desktop.
  * Window stories keep the desktop so the full `.window` chrome is visible.
  * Use block layout (not a row flex) so sibling FieldRows stack vertically.
- * Docs: compact surface — no 100vh shell (that fights the docs scroll container).
+ * Compact surface in Canvas and Docs — no 100vh shell (Storybook `layout: 'centered'`
+ * handles placement; a full-viewport shell made Canvas look taller than Docs).
  */
 const withAdminAtomSurface: Decorator = (Story, context) => {
-  const { title, viewMode } = context;
+  const { title } = context;
   const isInWindowAtom =
     title.startsWith('Admin/Atoms/') && !title.startsWith('Admin/Atoms/Window');
 
@@ -96,24 +97,11 @@ const withAdminAtomSurface: Decorator = (Story, context) => {
     return <Story />;
   }
 
-  const isDocs = viewMode === 'docs';
-
   return (
     <div
       style={{
         boxSizing: 'border-box',
-        ...(isDocs
-          ? { padding: 16 }
-          : {
-              minHeight: '100vh',
-              width: '100%',
-              margin: 0,
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }),
+        padding: 16,
         background: 'var(--surface, #c0c0c0)',
         color: 'var(--text-color, #222)',
         fontFamily: 'var(--font-chrome)',
