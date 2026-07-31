@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentType } from 'react';
 import { Button, FieldRow } from '../../chrome';
 import { adminAsset } from '../../lib/assetPaths';
 import {
@@ -17,7 +18,36 @@ type StoryArgs = WindowBrickShellArgs & {
 
 const meta = {
   title: 'Admin/Bricks/WizardWindow',
-  parameters: { layout: 'centered' },
+  component: WizardWindow as unknown as ComponentType<StoryArgs>,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component: 'Setup / wizard layout brick: banner | info, actions below.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { Button, FieldRow, WizardWindow } from '@webhemi/ui';
+
+<WizardWindow
+  title="WebHemi CMS Setup"
+  banner={<img src="/assets/admin/system/banner-wizard.gif" alt="" />}
+  info={
+    <>
+      <h4>Welcome</h4>
+      <p>Click Next to continue.</p>
+    </>
+  }
+  actions={
+    <FieldRow className="justify-center">
+      <Button disabled>&lt; Back</Button>
+      <Button>Next &gt;</Button>
+    </FieldRow>
+  }
+/>`,
+      },
+    },
+  },
   args: {
     ...windowBrickShellArgs,
     title: 'WebHemi CMS Setup',

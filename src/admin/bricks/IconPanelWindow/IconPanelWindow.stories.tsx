@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField } from '../../chrome';
@@ -67,9 +67,78 @@ function ControlPanelDemo(args: StoryArgs) {
   );
 }
 
+/** Docs “Show code” — copy-pasteable usage (not the story wrapper). */
+const DOCS_SOURCE = `import { useState } from 'react';
+import {
+  IconPanelWindow,
+  IconPanelSelectionInfo,
+  StatusBar,
+  StatusBarField,
+  SystemIcon,
+  type SystemIconKind,
+} from '@webhemi/ui';
+
+const ICONS: { kind: SystemIconKind; label: string; description: string }[] = [
+  { kind: 'sites', label: 'Sites', description: 'Manage sites and their contents.' },
+  { kind: 'hosts', label: 'Hosts', description: 'Add, remove and verify domains.' },
+];
+
+function ControlPanel() {
+  const [selected, setSelected] = useState<(typeof ICONS)[number] | null>(null);
+
+  return (
+    <IconPanelWindow
+      title="Control Panel"
+      titleIcon="control-panel"
+      width={600}
+      paneHeight={300}
+      infoUnselected={!selected}
+      info={
+        selected ? (
+          <IconPanelSelectionInfo
+            kind={selected.kind}
+            label={selected.label}
+            description={selected.description}
+          />
+        ) : null
+      }
+      statusBar={
+        <StatusBar>
+          <StatusBarField>{ICONS.length} items</StatusBarField>
+          <StatusBarField className="description">{selected?.description ?? ''}</StatusBarField>
+          <StatusBarField />
+        </StatusBar>
+      }
+    >
+      {ICONS.map((icon) => (
+        <SystemIcon
+          key={icon.kind}
+          kind={icon.kind}
+          label={icon.label}
+          labelTone="dark"
+          onActivate={() => setSelected(icon)}
+        />
+      ))}
+    </IconPanelWindow>
+  );
+}`;
+
 const meta = {
   title: 'Admin/Bricks/IconPanelWindow',
-  parameters: { layout: 'centered' },
+  component: IconPanelWindow as unknown as ComponentType<StoryArgs>,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Control-panel style brick: info column + icon grid. Selection state and icon list live in the parent; pass `info` / `children` / `statusBar`.',
+      },
+      source: {
+        language: 'tsx',
+        code: DOCS_SOURCE,
+      },
+    },
+  },
   args: {
     ...windowBrickShellArgs,
     title: 'Control Panel',

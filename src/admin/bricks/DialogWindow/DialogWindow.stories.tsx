@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentType } from 'react';
 import { Button, FieldRow, TextBox } from '../../chrome';
 import { adminAsset } from '../../lib/assetPaths';
 import { DialogWindow, type DialogWindowType } from './DialogWindow';
@@ -33,12 +34,34 @@ type StoryArgs = WindowBrickShellArgs & {
 
 const meta = {
   title: 'Admin/Bricks/DialogWindow',
+  component: DialogWindow as unknown as ComponentType<StoryArgs>,
   parameters: {
     layout: 'centered',
     docs: {
       description: {
         component:
           'Dialog layout brick. Form fields and action buttons accept `accessKey` on the atoms (see Controls → Accessibility).',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { Button, DialogWindow, FieldRow, TextBox } from '@webhemi/ui';
+
+<DialogWindow
+  title="Enter Password"
+  actions={
+    <FieldRow className="justify-end">
+      <Button isDefault accessKey="o">OK</Button>
+      <Button accessKey="c">Cancel</Button>
+    </FieldRow>
+  }
+>
+  <FieldRow>
+    <TextBox id="user" label="User name:" accessKey="u" />
+  </FieldRow>
+  <FieldRow>
+    <TextBox id="pass" label="Password:" type="password" accessKey="p" />
+  </FieldRow>
+</DialogWindow>`,
       },
     },
   },

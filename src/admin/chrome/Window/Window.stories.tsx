@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentType } from 'react';
 import {
   resolveTitleBarIcon,
   TITLE_BAR_ICON_OPTIONS,
@@ -32,7 +33,48 @@ type WindowStoryArgs = {
 
 const meta = {
   title: 'Admin/Atoms/Window',
-  parameters: { layout: 'centered' },
+  component: Window as unknown as ComponentType<WindowStoryArgs>,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'Retro OS window chrome: compose TitleBar / WindowBody / StatusBar as children.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import {
+  StatusBar,
+  StatusBarField,
+  TitleBar,
+  TitleBarControl,
+  TitleBarControls,
+  TitleBarText,
+  Window,
+  WindowBody,
+} from '@webhemi/ui';
+
+<Window style={{ width: 320 }}>
+  <TitleBar>
+    <TitleBarText>Active window</TitleBarText>
+    <TitleBarControls>
+      <TitleBarControl action="Minimize" />
+      <TitleBarControl action="Maximize" />
+      <TitleBarControl action="Close" />
+    </TitleBarControls>
+  </TitleBar>
+  <WindowBody>
+    <p>Window body content.</p>
+  </WindowBody>
+  <StatusBar>
+    <StatusBarField>Ready</StatusBarField>
+    <StatusBarField />
+    <StatusBarField />
+  </StatusBar>
+</Window>`,
+      },
+    },
+  },
   args: {
     title: 'Active window',
     body: 'Window body content.',

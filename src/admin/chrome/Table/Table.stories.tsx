@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentType } from 'react';
 import { Table, TableRow } from './Table';
 import { SunkenPanel } from '../SunkenPanel';
 
@@ -17,7 +18,40 @@ type TableStoryArgs = {
 
 const meta = {
   title: 'Admin/Atoms/Table',
-  parameters: { layout: 'centered' },
+  component: Table as unknown as ComponentType<TableStoryArgs>,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component: 'Retro OS table. Use `interactive` for click-to-highlight rows via useTableView.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { SunkenPanel, Table, TableRow } from '@webhemi/ui';
+
+<SunkenPanel style={{ width: 360, height: 140 }}>
+  <Table interactive>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      <TableRow highlighted>
+        <td>Sites</td>
+        <td>Folder</td>
+      </TableRow>
+      <TableRow>
+        <td>Hosts</td>
+        <td>Folder</td>
+      </TableRow>
+    </tbody>
+  </Table>
+</SunkenPanel>`,
+      },
+    },
+  },
   args: {
     interactive: true,
     width: 360,

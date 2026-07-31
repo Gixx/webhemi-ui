@@ -13,6 +13,22 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
     backgrounds: { value: 'desktop' },
+    docs: {
+      description: {
+        component:
+          'Admin desktop surface: site icons + Control Panel. Double-click opens windows.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { AdminDesktop } from '@webhemi/ui';
+
+<AdminDesktop
+  sites={[
+    { id: 1, name: 'Example Site', slug: 'example', enabled: true },
+  ]}
+/>`,
+      },
+    },
   },
   args: {
     sites: SAMPLE_SITES,

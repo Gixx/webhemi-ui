@@ -17,7 +17,32 @@ const DEFAULT_MULTIROW_TABS: string[][] = [
 const meta = {
   title: 'Admin/Atoms/Tabs',
   component: TabList,
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'TabList + TabRow + Tab + TabPanel. Multi-row: selecting a tab in another row promotes that row (Win32).',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { Tab, TabList, TabPanel, TabRow, WindowBody } from '@webhemi/ui';
+
+<div style={{ width: 480 }}>
+  <TabList>
+    <TabRow>
+      <Tab selected>General</Tab>
+      <Tab>Desktop</Tab>
+      <Tab>Appearance</Tab>
+    </TabRow>
+  </TabList>
+  <TabPanel>
+    <WindowBody>Panel content</WindowBody>
+  </TabPanel>
+</div>`,
+      },
+    },
+  },
 } satisfies Meta<typeof TabList>;
 
 export default meta;

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentType } from 'react';
 import { TreeView } from './TreeView';
 
 type TreeStoryArgs = {
@@ -15,7 +16,39 @@ type TreeStoryArgs = {
 
 const meta = {
   title: 'Admin/Atoms/TreeView',
-  parameters: { layout: 'centered' },
+  component: TreeView as unknown as ComponentType<TreeStoryArgs>,
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component: '`ul.tree-view` — nest lists and `<details>` for expandable branches.',
+      },
+      source: {
+        language: 'tsx',
+        code: `import { TreeView } from '@webhemi/ui';
+
+<TreeView style={{ width: 200 }}>
+  <li>Table of Contents</li>
+  <li>
+    Chapter 1
+    <ul>
+      <li>Section 1.1</li>
+      <li>
+        <details open>
+          <summary>Section 1.2</summary>
+          <ul>
+            <li>Item A</li>
+            <li>Item B</li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+  </li>
+  <li>Chapter 2</li>
+</TreeView>`,
+      },
+    },
+  },
   args: {
     rootLabel: 'Table of Contents',
     chapterOne: 'Chapter 1',
