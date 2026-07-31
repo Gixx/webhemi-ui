@@ -9,7 +9,6 @@ export {
   type IconPanelSelectionInfoProps,
 } from './IconPanelWindow/IconPanelSelectionInfo';
 export { WizardWindow, type WizardWindowProps } from './WizardWindow';
-export { SystemIcon, type SystemIconProps, type SystemIconKind, type SystemIconLabelTone } from './SystemIcon';
 export {
   PaneWindowShell,
   TITLE_BAR_ICON_OPTIONS,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField } from '../../chrome';
-import { SystemIcon, type SystemIconKind } from '../SystemIcon';
+import { SystemIcon, type SystemIconKind } from '../../chrome/SystemIcon';
 import { IconPanelWindow } from './IconPanelWindow';
 import { IconPanelSelectionInfo } from './IconPanelSelectionInfo';
 import {

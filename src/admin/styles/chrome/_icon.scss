@@ -1,0 +1,101 @@
+/* Chrome: desktop / icon-panel system icon (glyph + label). */
+
+.icon {
+  width: 90px;
+  height: 90px;
+  z-index: 0;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: 48px;
+  font-family: var(--font-chrome);
+  font-size: var(--font-size-chrome);
+}
+
+.icon > a {
+  display: block;
+  text-align: center;
+  width: 90px;
+  padding-top: 50px;
+  height: 90px;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.icon.label-tone-light > a {
+  color: #ffffff;
+}
+
+.icon.label-tone-dark > a {
+  color: #000000;
+}
+
+.icon > a > span {
+  display: inline-block;
+  width: 88px;
+  max-height: 38px;
+  line-height: 15px;
+  font-family: inherit;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon > a:focus {
+  outline: none !important;
+}
+
+.icon > a:focus > span {
+  outline: 1px dotted #880000;
+  background-color: #000080;
+  color: #ffffff;
+}
+
+.icon.control-panel,
+.panel.info > .info-icon.control-panel {
+  background-image: url("/assets/admin/icons/control_panel.svg");
+}
+
+.icon.site,
+.panel.info > .info-icon.site {
+  background-image: url("/assets/admin/icons/site.svg");
+}
+
+.icon.network-neighborhood,
+.panel.info > .info-icon.network-neighborhood {
+  background-image: url("/assets/admin/icons/network_neighborhood.svg");
+}
+
+.icon.users,
+.panel.info > .info-icon.users {
+  background-image: url("/assets/admin/icons/users.svg");
+}
+
+.icon.roles,
+.panel.info > .info-icon.roles {
+  background-image: url("/assets/admin/icons/roles.svg");
+}
+
+.icon.permissions,
+.panel.info > .info-icon.permissions {
+  background-image: url("/assets/admin/icons/permissions.svg");
+}
+
+.icon.hosts,
+.panel.info > .info-icon.hosts {
+  background-image: url("/assets/admin/icons/hosts.svg");
+}
+
+.icon.sites,
+.panel.info > .info-icon.sites {
+  background-image: url("/assets/admin/icons/sites.svg");
+}
+
+.icon.settings,
+.panel.info > .info-icon.settings {
+  background-image: url("/assets/admin/icons/settings.svg");
+}
+
+.icon.themes,
+.panel.info > .info-icon.themes {
+  background-image: url("/assets/admin/icons/themes.svg");
+}

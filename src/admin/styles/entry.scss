@@ -31,6 +31,7 @@ html[data-wh-theme="admin"] {
   @include meta.load-css("chrome/tabs");
   @include meta.load-css("chrome/surfaces");
   @include meta.load-css("chrome/progress");
+  @include meta.load-css("chrome/icon");
 
   /* Product bricks (shell + layouts; CSS only in Phase 1) */
   @include meta.load-css("product/base");

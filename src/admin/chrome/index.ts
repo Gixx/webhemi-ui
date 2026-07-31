@@ -44,3 +44,9 @@ export { attachCustomScrollbar, type DetachCustomScrollbar } from './_lib/attach
 export { Table, TableRow, type TableProps, type TableRowProps } from './Table';
 export { useTableView } from './_lib/useTableView';
 export { Progress, type ProgressProps } from './Progress';
+export {
+  SystemIcon,
+  type SystemIconProps,
+  type SystemIconKind,
+  type SystemIconLabelTone,
+} from './SystemIcon';

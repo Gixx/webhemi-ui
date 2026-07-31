@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../../../lib/cn';
-import type { SystemIconKind } from '../SystemIcon';
+import type { SystemIconKind } from '../../chrome/SystemIcon';
 
 export type IconPanelSelectionInfoProps = {
   kind: SystemIconKind;

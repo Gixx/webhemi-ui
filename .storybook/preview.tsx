@@ -83,7 +83,7 @@ const withTheme: Decorator = (Story, context) => {
 
 /**
  * In-window atoms sit on silver chrome surface (`--surface`), not the teal desktop.
- * Window stories keep the desktop so the full `.window` chrome is visible.
+ * Window and SystemIcon keep their own surfaces (desktop / panel decorators).
  * Use block layout (not a row flex) so sibling FieldRows stack vertically.
  * Compact surface in Canvas and Docs — no 100vh shell (Storybook `layout: 'centered'`
  * handles placement; a full-viewport shell made Canvas look taller than Docs).
@@ -91,7 +91,9 @@ const withTheme: Decorator = (Story, context) => {
 const withAdminAtomSurface: Decorator = (Story, context) => {
   const { title } = context;
   const isInWindowAtom =
-    title.startsWith('Admin/Atoms/') && !title.startsWith('Admin/Atoms/Window');
+    title.startsWith('Admin/Atoms/') &&
+    !title.startsWith('Admin/Atoms/Window') &&
+    !title.startsWith('Admin/Atoms/SystemIcon');
 
   if (!isInWindowAtom) {
     return <Story />;
@@ -200,6 +202,7 @@ const preview: Preview = {
               'Table',
               'Tabs',
               'TreeView',
+              'SystemIcon',
               'SunkenPanel',
               'FieldBorder',
               'Window',
@@ -207,7 +210,6 @@ const preview: Preview = {
             ],
             'Bricks',
             [
-              'SystemIcon',
               'DialogWindow',
               'IconPanelWindow',
               'WizardWindow',

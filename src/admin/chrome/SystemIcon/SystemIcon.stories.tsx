@@ -40,7 +40,7 @@ const withDesktopSurface: Decorator = (Story, context) => {
 };
 
 const meta = {
-  title: 'Admin/Bricks/SystemIcon',
+  title: 'Admin/Atoms/SystemIcon',
   component: SystemIcon,
   parameters: { layout: 'centered' },
   decorators: [withDesktopSurface],

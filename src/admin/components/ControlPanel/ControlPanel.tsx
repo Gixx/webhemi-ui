@@ -7,7 +7,7 @@ import {
 } from '../../chrome';
 import { IconPanelWindow } from '../../bricks/IconPanelWindow';
 import { IconPanelSelectionInfo } from '../../bricks/IconPanelWindow/IconPanelSelectionInfo';
-import { SystemIcon, type SystemIconKind } from '../../bricks/SystemIcon';
+import { SystemIcon, type SystemIconKind } from '../../chrome/SystemIcon';
 
 const ICONS: { kind: SystemIconKind; label: string; description: string }[] = [
   { kind: 'sites', label: 'Sites', description: 'Manage sites and their contents.' },

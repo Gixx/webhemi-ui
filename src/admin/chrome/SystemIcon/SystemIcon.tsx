@@ -6,7 +6,7 @@ import type {
 } from 'react';
 import { cn } from '../../../lib/cn';
 
-/** CSS icon kinds wired in `product/_desktop.scss` (`.icon.*`). */
+/** CSS icon kinds wired in `chrome/_icon.scss` (`.icon.*`). */
 export type SystemIconKind =
   | 'control-panel'
   | 'site'
@@ -39,7 +39,7 @@ export type SystemIconProps = Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> & 
 
 /**
  * System icon for desktop or icon-panel surfaces: glyph (CSS background) + label.
- * Closed product unit — not a chrome atom.
+ * Chrome atom — OS desktop-icon primitive (activate / open).
  */
 export function SystemIcon({
   kind,

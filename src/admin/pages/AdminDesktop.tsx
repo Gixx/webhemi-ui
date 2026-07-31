@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Button, FieldRow, TitleBarControl, TitleBarControls } from '../chrome';
 import { DialogWindow } from '../bricks/DialogWindow';
-import { SystemIcon } from '../bricks/SystemIcon';
+import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import { cn } from '../../lib/cn';
 
