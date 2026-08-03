@@ -127,3 +127,55 @@ export function findExplorerItem(
   }
   return null;
 }
+
+/**
+ * Parent of `id` in the forest, or `null` when `id` is a root / missing.
+ * Used for toolbar Level-up (Win98 Up = parent location, not history back).
+ */
+export function findExplorerParent(
+  roots: ExplorerItem[],
+  id: string | null | undefined,
+): ExplorerItem | null {
+  if (!id) {
+    return null;
+  }
+  for (const node of roots) {
+    if (node.id === id) {
+      return null;
+    }
+    const kids = node.children ?? [];
+    if (kids.some((child) => child.id === id)) {
+      return node;
+    }
+    const nested = findExplorerParent(kids, id);
+    if (nested) {
+      return nested;
+    }
+  }
+  return null;
+}
+
+/** Ancestor ids from root down to (but not including) `id`. Empty if root/missing. */
+export function findExplorerAncestorIds(
+  roots: ExplorerItem[],
+  id: string | null | undefined,
+): string[] {
+  if (!id) {
+    return [];
+  }
+
+  const walk = (nodes: ExplorerItem[], path: string[]): string[] | null => {
+    for (const node of nodes) {
+      if (node.id === id) {
+        return path;
+      }
+      const found = walk(node.children ?? [], [...path, node.id]);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  };
+
+  return walk(roots, []) ?? [];
+}

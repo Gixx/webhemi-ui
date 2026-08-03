@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { FieldBorder } from '../../chrome/FieldBorder';
 import { TreeToggle, TreeView } from '../../chrome/TreeView';
 import { cn } from '../../../lib/cn';
@@ -7,6 +7,7 @@ import { ExplorerContent } from './ExplorerContent';
 import { ExplorerToolbar } from './ExplorerToolbar';
 import {
   explorerTreeChildren,
+  findExplorerAncestorIds,
   isExplorerTreeExpandable,
   type ExplorerItem,
   type ExplorerView,
@@ -19,6 +20,11 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   items: ExplorerItem[];
   view?: ExplorerView;
   onViewChange?: (view: ExplorerView) => void;
+  /**
+   * Current content location (tree highlight + ancestor auto-expand).
+   * Keep separate from `selectedId` (content-pane highlight).
+   */
+  locationId?: string | null;
   /** Highlighted item in the content pane. */
   selectedId?: string | null;
   /** Tree navigation (changes location / listing). */
@@ -28,6 +34,8 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   /** Content-pane double-click open. */
   onOpen?: (item: ExplorerItem) => void;
   onLevelUp?: () => void;
+  /** When true, Up is disabled (forest root / no parent). */
+  levelUpDisabled?: boolean;
   onCut?: () => void;
   onCopy?: () => void;
   onPaste?: () => void;
@@ -63,13 +71,25 @@ function TreeNodeLabel({
 
 function ExplorerTreeBranch({
   node,
+  locationId,
+  ancestorIds,
   onTreeSelect,
 }: {
   node: ExplorerItem;
+  locationId?: string | null;
+  ancestorIds: Set<string>;
   onTreeSelect?: (item: ExplorerItem) => void;
 }) {
   const kids = explorerTreeChildren(node);
-  const [open, setOpen] = useState(node.role === 'site');
+  const [open, setOpen] = useState(node.role === 'site' || ancestorIds.has(node.id));
+
+  useEffect(() => {
+    if (ancestorIds.has(node.id)) {
+      setOpen(true);
+    }
+  }, [ancestorIds, node.id]);
+
+  const isCurrent = locationId === node.id;
 
   return (
     <li>
@@ -95,6 +115,7 @@ function ExplorerTreeBranch({
           ) : (
             <a
               href="#"
+              aria-current={isCurrent ? 'true' : undefined}
               onClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -105,7 +126,7 @@ function ExplorerTreeBranch({
             </a>
           )}
         </summary>
-        <ul>{renderTreeNodes(kids, onTreeSelect)}</ul>
+        <ul>{renderTreeNodes(kids, locationId, ancestorIds, onTreeSelect)}</ul>
       </details>
     </li>
   );
@@ -113,13 +134,24 @@ function ExplorerTreeBranch({
 
 function renderTreeNodes(
   nodes: ExplorerItem[],
+  locationId: string | null | undefined,
+  ancestorIds: Set<string>,
   onTreeSelect?: (item: ExplorerItem) => void,
 ): ReactNode {
   return nodes.map((node) => {
     const canExpand = isExplorerTreeExpandable(node);
+    const isCurrent = locationId === node.id;
 
     if (canExpand) {
-      return <ExplorerTreeBranch key={node.id} node={node} onTreeSelect={onTreeSelect} />;
+      return (
+        <ExplorerTreeBranch
+          key={node.id}
+          node={node}
+          locationId={locationId}
+          ancestorIds={ancestorIds}
+          onTreeSelect={onTreeSelect}
+        />
+      );
     }
 
     return (
@@ -131,6 +163,7 @@ function renderTreeNodes(
         ) : (
           <a
             href="#"
+            aria-current={isCurrent ? 'true' : undefined}
             onClick={(event) => {
               event.preventDefault();
               onTreeSelect?.(node);
@@ -153,11 +186,13 @@ export function FileExplorerWindow({
   items,
   view = 'large-icons',
   onViewChange,
+  locationId = null,
   selectedId = null,
   onTreeSelect,
   onSelect,
   onOpen,
   onLevelUp,
+  levelUpDisabled = false,
   onCut,
   onCopy,
   onPaste,
@@ -178,6 +213,11 @@ export function FileExplorerWindow({
     width: typeof treeWidth === 'number' ? `${treeWidth}px` : treeWidth,
   };
 
+  const ancestorIds = useMemo(
+    () => new Set(findExplorerAncestorIds(tree, locationId)),
+    [tree, locationId],
+  );
+
   return (
     <PaneWindowShell
       className={cn('w-window-xl file-explorer-window', className)}
@@ -189,6 +229,7 @@ export function FileExplorerWindow({
           view={view}
           onViewChange={onViewChange}
           onLevelUp={onLevelUp}
+          levelUpDisabled={levelUpDisabled}
           onCut={onCut}
           onCopy={onCopy}
           onPaste={onPaste}
@@ -199,7 +240,7 @@ export function FileExplorerWindow({
         <div className="explorer-split">
           <FieldBorder scrollable className="panel explorer-tree" style={treeStyle}>
             <div className="explorer-tree-inner">
-              <TreeView>{renderTreeNodes(tree, onTreeSelect)}</TreeView>
+              <TreeView>{renderTreeNodes(tree, locationId, ancestorIds, onTreeSelect)}</TreeView>
             </div>
           </FieldBorder>
           <FieldBorder scrollable className="panel explorer-content">

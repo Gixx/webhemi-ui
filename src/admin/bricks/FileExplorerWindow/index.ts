@@ -6,6 +6,8 @@ export {
   explorerContentItems,
   explorerTreeChildren,
   findExplorerItem,
+  findExplorerParent,
+  findExplorerAncestorIds,
   isExplorerDocument,
   isExplorerFolder,
   isExplorerLocation,

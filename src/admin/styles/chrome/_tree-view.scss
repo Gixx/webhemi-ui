@@ -24,7 +24,8 @@ ul.tree-view a:focus {
   color: inherit;
 }
 
-ul.tree-view a:focus .tree-view-label {
+ul.tree-view a:focus .tree-view-label,
+ul.tree-view a[aria-current='true'] .tree-view-label {
   background-color: var(--dialog-blue);
   color: var(--button-highlight);
   outline: 1px dotted #000000;

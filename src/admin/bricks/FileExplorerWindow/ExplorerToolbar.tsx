@@ -6,6 +6,8 @@ export type ExplorerToolbarProps = {
   view: ExplorerView;
   onViewChange?: (view: ExplorerView) => void;
   onLevelUp?: () => void;
+  /** When true, Up is disabled (forest root / no parent). */
+  levelUpDisabled?: boolean;
   onCut?: () => void;
   onCopy?: () => void;
   onPaste?: () => void;
@@ -29,6 +31,7 @@ export function ExplorerToolbar({
   view,
   onViewChange,
   onLevelUp,
+  levelUpDisabled = false,
   onCut,
   onCopy,
   onPaste,
@@ -39,7 +42,13 @@ export function ExplorerToolbar({
 }: ExplorerToolbarProps) {
   return (
     <div className={cn('panel explorer-toolbar', className)} role="toolbar" aria-label="Explorer">
-      <Button type="button" className="tool level-up" aria-label="Up one level" onClick={onLevelUp} />
+      <Button
+        type="button"
+        className="tool level-up"
+        aria-label="Up one level"
+        disabled={levelUpDisabled}
+        onClick={onLevelUp}
+      />
       <VerticalBar />
       <Button type="button" className="tool cut" aria-label="Cut" onClick={onCut} />
       <Button type="button" className="tool copy" aria-label="Copy" onClick={onCopy} />

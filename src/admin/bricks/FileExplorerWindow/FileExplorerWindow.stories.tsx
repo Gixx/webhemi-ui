@@ -17,6 +17,7 @@ import { FileExplorerWindow } from './FileExplorerWindow';
 import {
   explorerContentItems,
   findExplorerItem,
+  findExplorerParent,
   isExplorerLocation,
   type ExplorerItem,
   type ExplorerView,
@@ -26,7 +27,6 @@ type StoryArgs = WindowBrickShellArgs & {
   view: ExplorerView;
   width: number;
   paneHeight: number;
-  onLevelUp: () => void;
   onCut: () => void;
   onCopy: () => void;
   onPaste: () => void;
@@ -52,8 +52,20 @@ function ExplorerDemo(args: StoryArgs) {
     [selectedId],
   );
   const items = useMemo(() => explorerContentItems(location), [location]);
+  const parent = useMemo(
+    () => findExplorerParent(EXPLORER_FIXTURE_TREE, locationId),
+    [locationId],
+  );
   const hiddenCount = items.filter((item) => item.hidden).length;
   const statusItem = selected ?? location;
+
+  const goToLocation = (item: ExplorerItem) => {
+    if (item.disabled || !isExplorerLocation(item)) {
+      return;
+    }
+    setLocationId(item.id);
+    setSelectedId(null);
+  };
 
   return (
     <FileExplorerWindow
@@ -66,25 +78,24 @@ function ExplorerDemo(args: StoryArgs) {
       items={items}
       view={view}
       onViewChange={setView}
+      locationId={locationId}
       selectedId={selectedId}
-      onTreeSelect={(item) => {
-        if (item.disabled || !isExplorerLocation(item)) {
-          return;
-        }
-        setLocationId(item.id);
-        setSelectedId(null);
-      }}
+      onTreeSelect={goToLocation}
       onSelect={(item) => {
         setSelectedId(item.id);
       }}
       onOpen={(item) => {
-        if (isExplorerLocation(item)) {
-          setLocationId(item.id);
-          setSelectedId(null);
-        }
+        goToLocation(item);
         args.onOpen(item);
       }}
-      onLevelUp={args.onLevelUp}
+      onLevelUp={() => {
+        if (!parent) {
+          return;
+        }
+        setLocationId(parent.id);
+        setSelectedId(null);
+      }}
+      levelUpDisabled={!parent}
       onCut={args.onCut}
       onCopy={args.onCopy}
       onPaste={args.onPaste}
@@ -111,6 +122,7 @@ import {
   FileExplorerWindow,
   explorerContentItems,
   findExplorerItem,
+  findExplorerParent,
   isExplorerLocation,
   type ExplorerItem,
   type ExplorerView,
@@ -128,7 +140,14 @@ function SiteExplorer({
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const location = useMemo(() => findExplorerItem(tree, locationId), [tree, locationId]);
+  const parent = useMemo(() => findExplorerParent(tree, locationId), [tree, locationId]);
   const items = useMemo(() => explorerContentItems(location), [location]);
+
+  const goToLocation = (item: ExplorerItem) => {
+    if (item.disabled || !isExplorerLocation(item)) return;
+    setLocationId(item.id);
+    setSelectedId(null);
+  };
 
   return (
     <FileExplorerWindow
@@ -138,19 +157,17 @@ function SiteExplorer({
       items={items}
       view={view}
       onViewChange={setView}
+      locationId={locationId}
       selectedId={selectedId}
-      onTreeSelect={(item) => {
-        if (item.disabled || !isExplorerLocation(item)) return;
-        setLocationId(item.id);
+      onTreeSelect={goToLocation}
+      onSelect={(item) => setSelectedId(item.id)}
+      onOpen={goToLocation}
+      onLevelUp={() => {
+        if (!parent) return;
+        setLocationId(parent.id);
         setSelectedId(null);
       }}
-      onSelect={(item) => setSelectedId(item.id)}
-      onOpen={(item) => {
-        if (isExplorerLocation(item)) {
-          setLocationId(item.id);
-          setSelectedId(null);
-        }
-      }}
+      levelUpDisabled={!parent}
       paneHeight={360}
       width={640}
     />
@@ -166,7 +183,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Site-management explorer: nav tree, media library, recycle bin, settings. Title uses the site name; title-bar icon is the site glyph (favicon later). Tree navigates location; content single-click selects, double-click opens. Keep `locationId` (listing) separate from `selectedId` (highlight).',
+          'Site-management explorer: nav tree, media library, recycle bin, settings. Title uses the site name; title-bar icon is the site glyph (favicon later). Tree navigates location; content single-click selects, double-click opens. Keep `locationId` (listing) separate from `selectedId` (highlight). Up uses parent lookup and is disabled on forest roots.',
       },
       source: {
         language: 'tsx',
@@ -183,7 +200,6 @@ const meta = {
     view: 'large-icons',
     width: 640,
     paneHeight: 360,
-    onLevelUp: fn(),
     onCut: fn(),
     onCopy: fn(),
     onPaste: fn(),
@@ -228,5 +244,34 @@ export const Details: Story = {
     await expect(canvas.getByRole('columnheader', { name: 'Name' })).toBeVisible();
     await userEvent.click(canvas.getByText('Media library'));
     await expect(canvas.getByText('hero.jpg')).toBeVisible();
+  },
+};
+
+export const Navigation: Story = {
+  args: { view: 'large-icons' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = within(
+      canvasElement.querySelector('.explorer-content') as HTMLElement,
+    );
+    const up = canvas.getByRole('button', { name: 'Up one level' });
+
+    await expect(up).toBeDisabled();
+
+    await userEvent.dblClick(content.getByText('About'));
+    await expect(content.getByText('Team')).toBeVisible();
+    await expect(canvas.getByRole('link', { name: /About/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(up).toBeEnabled();
+
+    await userEvent.click(up);
+    await expect(content.getByText('About')).toBeVisible();
+    await expect(canvas.getByRole('link', { name: /Acme Website/ })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(up).toBeDisabled();
   },
 };
