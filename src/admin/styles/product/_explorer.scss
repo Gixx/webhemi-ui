@@ -178,7 +178,7 @@
   align-items: stretch;
   flex: 1 1 auto;
   min-height: 0;
-  gap: 4px;
+  gap: 0;
   padding: 0 2px 2px;
 
   .explorer-tree-inner {
@@ -191,11 +191,35 @@
 }
 
 .explorer-panel-layout > .explorer-split > .panel.explorer-tree {
-  flex: 0 0 200px;
-  width: 200px;
-  min-width: 140px;
+  flex: 0 0 auto;
+  min-width: 0;
   min-height: 0;
   background: #fff;
+}
+
+.explorer-panel-layout > .explorer-split > .explorer-splitter {
+  flex: 0 0 4px;
+  width: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  align-self: stretch;
+  background: var(--surface, #c0c0c0);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.explorer-panel-layout > .explorer-split > .explorer-splitter:hover,
+.explorer-panel-layout > .explorer-split > .explorer-splitter.is-dragging,
+.explorer-panel-layout > .explorer-split > .explorer-splitter:focus-visible {
+  background: var(--button-face, #dfdfdf);
+  outline: none;
+  box-shadow: inset 1px 0 var(--button-highlight, #fff), inset -1px 0 var(--button-shadow, #808080);
+}
+
+.explorer-panel-layout > .explorer-split > .explorer-splitter.is-static {
+  cursor: default;
+  pointer-events: none;
 }
 
 .explorer-panel-layout > .explorer-split > .panel.explorer-content {

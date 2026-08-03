@@ -3,6 +3,7 @@ export { ExplorerToolbar, type ExplorerToolbarProps } from './ExplorerToolbar';
 export { ExplorerMenuBar, type ExplorerMenuBarProps } from './ExplorerMenuBar';
 export { ExplorerContent, type ExplorerContentProps } from './ExplorerContent';
 export { ExplorerPropertiesDialog, type ExplorerPropertiesDialogProps } from './ExplorerPropertiesDialog';
+export { ExplorerSplitter, type ExplorerSplitterProps } from './ExplorerSplitter';
 export { SiteFileExplorer, type SiteFileExplorerProps } from './SiteFileExplorer';
 export {
   formatExplorerSize,

@@ -27,6 +27,10 @@ type StoryArgs = WindowBrickShellArgs & {
   view: ExplorerView;
   width: number;
   paneHeight: number;
+  treeWidth: number;
+  treePaneResizable: boolean;
+  minTreeWidth: number;
+  maxTreeWidth: number;
   onCut: () => void;
   onCopy: () => void;
   onPaste: () => void;
@@ -77,6 +81,10 @@ function ExplorerDemo(args: StoryArgs) {
       titleIcon={args.titleIcon === 'none' ? undefined : args.titleIcon}
       width={args.width}
       paneHeight={args.paneHeight}
+      treeWidth={args.treeWidth}
+      treePaneResizable={args.treePaneResizable}
+      minTreeWidth={args.minTreeWidth}
+      maxTreeWidth={args.maxTreeWidth}
       tree={EXPLORER_FIXTURE_TREE}
       items={items}
       view={view}
@@ -210,6 +218,10 @@ const meta = {
     view: 'large-icons',
     width: 640,
     paneHeight: 360,
+    treeWidth: 200,
+    treePaneResizable: true,
+    minTreeWidth: 120,
+    maxTreeWidth: 480,
     onCut: fn(),
     onCopy: fn(),
     onPaste: fn(),
@@ -228,6 +240,10 @@ const meta = {
     },
     width: { control: { type: 'number', min: 400, max: 1200, step: 10 } },
     paneHeight: { control: { type: 'number', min: 200, max: 800, step: 10 } },
+    treeWidth: { control: { type: 'number', min: 80, max: 600, step: 8 } },
+    treePaneResizable: { control: 'boolean' },
+    minTreeWidth: { control: { type: 'number', min: 80, max: 400, step: 8 } },
+    maxTreeWidth: { control: { type: 'number', min: 200, max: 800, step: 8 } },
   },
   render: (args) => <ExplorerDemo key={args.view} {...args} />,
 } satisfies Meta<StoryArgs>;
@@ -316,5 +332,36 @@ export const MenuBar: Story = {
       'true',
     );
     await expect(canvas.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+  },
+};
+
+export const Splitter: Story = {
+  args: { view: 'large-icons' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const splitter = canvas.getByRole('separator', { name: 'Resize tree pane' });
+    const tree = canvasElement.querySelector('.explorer-tree') as HTMLElement;
+
+    await expect(splitter).toHaveAttribute('aria-valuenow', '200');
+    await expect(tree.style.width).toBe('200px');
+
+    splitter.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect(splitter).toHaveAttribute('aria-valuenow', '208');
+    await expect(tree.style.width).toBe('208px');
+
+    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+    await expect(splitter).toHaveAttribute('aria-valuenow', '192');
+    await expect(tree.style.width).toBe('192px');
+  },
+};
+
+export const SplitterDisabled: Story = {
+  args: { view: 'large-icons', treePaneResizable: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.queryByRole('separator', { name: 'Resize tree pane' }),
+    ).not.toBeInTheDocument();
   },
 };

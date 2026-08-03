@@ -5,6 +5,7 @@ import { cn } from '../../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 import { ExplorerContent } from './ExplorerContent';
 import { ExplorerMenuBar } from './ExplorerMenuBar';
+import { ExplorerSplitter } from './ExplorerSplitter';
 import { ExplorerToolbar } from './ExplorerToolbar';
 import {
   explorerTreeChildren,
@@ -14,6 +15,10 @@ import {
   type ExplorerItem,
   type ExplorerView,
 } from './types';
+
+const DEFAULT_TREE_WIDTH = 200;
+const MIN_TREE_WIDTH = 120;
+const MAX_TREE_WIDTH = 480;
 
 export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'onSelect'> & {
   /** Forest of root nodes (site, media library, trash, settings, …). */
@@ -58,7 +63,13 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   onAbout?: () => void;
   /** Total pane height (toolbar + split). */
   paneHeight?: number | string;
-  treeWidth?: number | string;
+  /** Tree pane width in px (splitter when numeric). */
+  treeWidth?: number;
+  onTreeWidthChange?: (width: number) => void;
+  minTreeWidth?: number;
+  maxTreeWidth?: number;
+  /** Drag/keyboard resize between tree and content. Default true. */
+  treePaneResizable?: boolean;
 };
 
 function treeGlyphKind(node: ExplorerItem, expanded: boolean): ExplorerItem['kind'] {
@@ -225,16 +236,38 @@ export function FileExplorerWindow({
   onAbout,
   className,
   paneHeight = 360,
-  treeWidth = 200,
+  treeWidth = DEFAULT_TREE_WIDTH,
+  onTreeWidthChange,
+  minTreeWidth = MIN_TREE_WIDTH,
+  maxTreeWidth = MAX_TREE_WIDTH,
+  treePaneResizable = true,
   resizable = true,
   ...shell
 }: FileExplorerWindowProps) {
+  const [uncontrolledTreeWidth, setUncontrolledTreeWidth] = useState(treeWidth);
+  const isTreeWidthControlled = onTreeWidthChange !== undefined;
+  const resolvedTreeWidth = isTreeWidthControlled ? treeWidth : uncontrolledTreeWidth;
+
+  useEffect(() => {
+    if (!isTreeWidthControlled) {
+      setUncontrolledTreeWidth(treeWidth);
+    }
+  }, [treeWidth, isTreeWidthControlled]);
+
+  const setTreeWidth = (width: number) => {
+    if (isTreeWidthControlled) {
+      onTreeWidthChange(width);
+    } else {
+      setUncontrolledTreeWidth(width);
+    }
+  };
+
   const paneStyle: CSSProperties = {
     height: typeof paneHeight === 'number' ? `${paneHeight}px` : paneHeight,
   };
   const treeStyle: CSSProperties = {
-    flexBasis: typeof treeWidth === 'number' ? `${treeWidth}px` : treeWidth,
-    width: typeof treeWidth === 'number' ? `${treeWidth}px` : treeWidth,
+    flexBasis: `${resolvedTreeWidth}px`,
+    width: `${resolvedTreeWidth}px`,
   };
 
   const ancestorIds = useMemo(
@@ -300,6 +333,16 @@ export function FileExplorerWindow({
               <TreeView>{renderTreeNodes(tree, locationId, ancestorIds, onTreeSelect)}</TreeView>
             </div>
           </FieldBorder>
+          {treePaneResizable ? (
+            <ExplorerSplitter
+              value={resolvedTreeWidth}
+              onChange={setTreeWidth}
+              min={minTreeWidth}
+              max={maxTreeWidth}
+            />
+          ) : (
+            <div className="explorer-splitter is-static" aria-hidden />
+          )}
           <FieldBorder scrollable className="panel explorer-content">
             <ExplorerContent
               view={view}
