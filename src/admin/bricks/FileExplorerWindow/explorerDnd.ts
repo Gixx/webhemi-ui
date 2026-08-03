@@ -5,9 +5,12 @@ export const EXPLORER_DND_MIME = 'application/x-webhemi-explorer-ids';
 /** Fallback when browsers clear custom MIME data outside a real user gesture. */
 let activeDragIds: string[] = [];
 
-export function beginExplorerDrag(ids: string[], dataTransfer: DataTransfer): void {
+export function beginExplorerDrag(ids: string[], dataTransfer: DataTransfer | null | undefined): void {
   // Always stash ids first — synthetic drag events (Chromatic / RTL) may reject setData.
   activeDragIds = [...ids];
+  if (!dataTransfer) {
+    return;
+  }
   try {
     dataTransfer.effectAllowed = 'move';
     dataTransfer.setData(EXPLORER_DND_MIME, JSON.stringify(ids));
@@ -26,17 +29,21 @@ export function readExplorerDragIds(event: ReactDragEvent | DragEvent): string[]
   if (!data) {
     return [...activeDragIds];
   }
-  const fromMime = parseJsonIds(data.getData(EXPLORER_DND_MIME));
-  if (fromMime.length > 0) {
-    return fromMime;
-  }
-  const fromText = data
-    .getData('text/plain')
-    .split('\n')
-    .map((id) => id.trim())
-    .filter(Boolean);
-  if (fromText.length > 0) {
-    return fromText;
+  try {
+    const fromMime = parseJsonIds(data.getData(EXPLORER_DND_MIME));
+    if (fromMime.length > 0) {
+      return fromMime;
+    }
+    const fromText = data
+      .getData('text/plain')
+      .split('\n')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (fromText.length > 0) {
+      return fromText;
+    }
+  } catch {
+    // getData may throw outside a real drop gesture.
   }
   return [...activeDragIds];
 }

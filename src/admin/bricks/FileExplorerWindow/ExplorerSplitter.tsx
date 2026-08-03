@@ -84,7 +84,11 @@ export function ExplorerSplitter({
       startWidth: value,
     };
     setDragging(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic pointer sequences (Chromatic) may reject capture.
+    }
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {

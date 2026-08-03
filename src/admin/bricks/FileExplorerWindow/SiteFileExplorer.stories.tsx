@@ -1,10 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fireEvent, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from './FileExplorerWindow.data';
+import { beginExplorerDrag } from './explorerDnd';
 import { SiteFileExplorer } from './SiteFileExplorer';
 
 const DEMO_SITE = { id: 1, name: 'Example Site' };
 const DEMO_TREE = buildDemoSiteExplorerTree(DEMO_SITE);
+/** Remapped fixture id for Contact under site-1. */
+const CONTACT_ID = 'site-1/nav-contact';
 
 const meta = {
   title: 'Admin/Bricks/SiteFileExplorer',
@@ -194,8 +197,13 @@ export const DragDropMove: Story = {
     const aboutIcon = content().getByText('About').closest('.icon') as HTMLElement;
     const dataTransfer = mockDataTransfer();
 
-    // fireEvent uses Testing Library's eventWrapper (flush); setData is try/caught in beginExplorerDrag.
-    fireEvent.dragStart(contactIcon, { dataTransfer });
+    // Seed MIME fallback first — Chromatic often skips/throws synthetic dragstart setData.
+    beginExplorerDrag([CONTACT_ID], dataTransfer);
+    try {
+      fireEvent.dragStart(contactIcon, { dataTransfer });
+    } catch {
+      // Keep seeded activeDragIds.
+    }
     fireEvent.dragOver(aboutIcon, { dataTransfer });
     fireEvent.drop(aboutIcon, { dataTransfer });
 

@@ -345,14 +345,23 @@ export const Splitter: Story = {
     await expect(splitter).toHaveAttribute('aria-valuenow', '200');
     await expect(tree.style.width).toBe('200px');
 
-    // fireEvent.keyDown on the separator — Chromatic fails focus()+userEvent.keyboard.
-    fireEvent.keyDown(splitter, { key: 'ArrowRight' });
+    // Native KeyboardEvent (key in constructor) + fireEvent wrapper flush.
+    // Chromatic browsers reject Testing Library's post-hoc key assignment and
+    // focus()+userEvent.keyboard on role=separator.
+    const press = (key: string) => {
+      fireEvent(
+        splitter,
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+      );
+    };
+
+    press('ArrowRight');
     await expect(splitter).toHaveAttribute('aria-valuenow', '208');
     await expect(tree.style.width).toBe('208px');
 
-    fireEvent.keyDown(splitter, { key: 'ArrowLeft' });
+    press('ArrowLeft');
     await expect(splitter).toHaveAttribute('aria-valuenow', '200');
-    fireEvent.keyDown(splitter, { key: 'ArrowLeft' });
+    press('ArrowLeft');
     await expect(splitter).toHaveAttribute('aria-valuenow', '192');
     await expect(tree.style.width).toBe('192px');
   },
