@@ -19,6 +19,15 @@ export {
   type ExplorerNodeRole,
 } from './types';
 export {
+  cloneExplorerForest,
+  canDeleteExplorerItem,
+  deleteExplorerItem,
+  undoExplorerDelete,
+  findExplorerTrashRoot,
+  isUnderExplorerTrash,
+  type ExplorerDeleteUndo,
+} from './explorerTreeOps';
+export {
   EXPLORER_FIXTURE_TREE,
   EXPLORER_FIXTURE_ITEMS,
   EXPLORER_FIXTURE_SITE,

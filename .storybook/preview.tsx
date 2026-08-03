@@ -214,6 +214,7 @@ const preview: Preview = {
               'IconPanelWindow',
               'WizardWindow',
               'FileExplorerWindow',
+              'SiteFileExplorer',
               '*',
             ],
             'Components',

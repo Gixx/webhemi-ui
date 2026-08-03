@@ -50,12 +50,42 @@ export function ExplorerToolbar({
         onClick={onLevelUp}
       />
       <VerticalBar />
-      <Button type="button" className="tool cut" aria-label="Cut" onClick={onCut} />
-      <Button type="button" className="tool copy" aria-label="Copy" onClick={onCopy} />
-      <Button type="button" className="tool paste" aria-label="Paste" onClick={onPaste} />
-      <Button type="button" className="tool undo" aria-label="Undo" onClick={onUndo} />
-      <Button type="button" className="tool delete" aria-label="Delete" onClick={onDelete} />
-      <Button type="button" className="tool properties" aria-label="Properties" onClick={onProperties} />
+      <Button type="button" className="tool cut" aria-label="Cut" disabled={!onCut} onClick={onCut} />
+      <Button
+        type="button"
+        className="tool copy"
+        aria-label="Copy"
+        disabled={!onCopy}
+        onClick={onCopy}
+      />
+      <Button
+        type="button"
+        className="tool paste"
+        aria-label="Paste"
+        disabled={!onPaste}
+        onClick={onPaste}
+      />
+      <Button
+        type="button"
+        className="tool undo"
+        aria-label="Undo"
+        disabled={!onUndo}
+        onClick={onUndo}
+      />
+      <Button
+        type="button"
+        className="tool delete"
+        aria-label="Delete"
+        disabled={!onDelete}
+        onClick={onDelete}
+      />
+      <Button
+        type="button"
+        className="tool properties"
+        aria-label="Properties"
+        disabled={!onProperties}
+        onClick={onProperties}
+      />
       <VerticalBar />
       {VIEW_TOOLS.map((tool) => (
         <Button

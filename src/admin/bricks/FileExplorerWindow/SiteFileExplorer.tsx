@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../../chrome';
+import {
+  canDeleteExplorerItem,
+  cloneExplorerForest,
+  deleteExplorerItem,
+  undoExplorerDelete,
+  type ExplorerDeleteUndo,
+} from './explorerTreeOps';
 import { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorerWindow';
 import {
   explorerContentItems,
@@ -23,6 +30,8 @@ export type SiteFileExplorerProps = Omit<
   | 'onOpen'
   | 'onLevelUp'
   | 'levelUpDisabled'
+  | 'onDelete'
+  | 'onUndo'
   | 'statusBar'
   | 'statusBarVisible'
   | 'onStatusBarToggle'
@@ -34,8 +43,8 @@ export type SiteFileExplorerProps = Omit<
 };
 
 /**
- * Stateful FileExplorer host for one site window: owns view / location / selection.
- * Parent supplies the forest (`tree`) and window chrome callbacks (`onClose`, …).
+ * Stateful FileExplorer host for one site window: owns view / location / selection / forest edits.
+ * Parent supplies the initial forest (`tree`) and window chrome callbacks (`onClose`, …).
  */
 export function SiteFileExplorer({
   tree,
@@ -46,17 +55,20 @@ export function SiteFileExplorer({
   ...rest
 }: SiteFileExplorerProps) {
   const rootId = initialLocationId ?? tree[0]?.id ?? '';
+  const [forest, setForest] = useState(() => cloneExplorerForest(tree));
   const [view, setView] = useState<ExplorerView>('large-icons');
   const [locationId, setLocationId] = useState(rootId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusBarVisible, setStatusBarVisible] = useState(true);
+  const [undoEntry, setUndoEntry] = useState<ExplorerDeleteUndo | null>(null);
 
-  const location = useMemo(() => findExplorerItem(tree, locationId), [tree, locationId]);
-  const selected = useMemo(() => findExplorerItem(tree, selectedId), [tree, selectedId]);
+  const location = useMemo(() => findExplorerItem(forest, locationId), [forest, locationId]);
+  const selected = useMemo(() => findExplorerItem(forest, selectedId), [forest, selectedId]);
   const items = useMemo(() => explorerContentItems(location), [location]);
-  const parent = useMemo(() => findExplorerParent(tree, locationId), [tree, locationId]);
+  const parent = useMemo(() => findExplorerParent(forest, locationId), [forest, locationId]);
   const hiddenCount = items.filter((item) => item.hidden).length;
   const statusItem = selected ?? location;
+  const canDelete = canDeleteExplorerItem(forest, selected);
 
   const goToLocation = (item: ExplorerItem) => {
     if (item.disabled || !isExplorerLocation(item)) {
@@ -66,12 +78,39 @@ export function SiteFileExplorer({
     setSelectedId(null);
   };
 
+  const handleDelete = () => {
+    if (!selectedId) {
+      return;
+    }
+    const result = deleteExplorerItem(forest, selectedId);
+    if (!result) {
+      return;
+    }
+    setForest(result.tree);
+    setUndoEntry(result.undo);
+    setSelectedId(null);
+  };
+
+  const handleUndo = () => {
+    if (!undoEntry) {
+      return;
+    }
+    const next = undoExplorerDelete(forest, undoEntry);
+    if (!next) {
+      setUndoEntry(null);
+      return;
+    }
+    setForest(next);
+    setSelectedId(undoEntry.item.id);
+    setUndoEntry(null);
+  };
+
   return (
     <FileExplorerWindow
       title={title}
       titleIcon={titleIcon}
       {...rest}
-      tree={tree}
+      tree={forest}
       items={items}
       view={view}
       onViewChange={setView}
@@ -89,6 +128,8 @@ export function SiteFileExplorer({
       }}
       levelUpDisabled={!parent}
       onClose={onClose}
+      onDelete={canDelete ? handleDelete : undefined}
+      onUndo={undoEntry ? handleUndo : undefined}
       statusBarVisible={statusBarVisible}
       onStatusBarToggle={() => setStatusBarVisible((value) => !value)}
       titleBarControls={
