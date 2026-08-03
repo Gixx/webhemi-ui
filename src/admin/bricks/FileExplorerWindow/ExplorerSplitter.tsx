@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -21,6 +20,8 @@ export type ExplorerSplitterProps = {
 
 /**
  * Vertical grip between the tree and content panes (col-resize + keyboard nudge).
+ * Pointer move/up are handled on the element (with capture) so resize works
+ * without waiting for a document-level useEffect — important for Chromatic.
  */
 export function ExplorerSplitter({
   value,
@@ -41,37 +42,21 @@ export function ExplorerSplitter({
     [min, max],
   );
 
-  useEffect(() => {
-    if (!dragging) {
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) {
       return;
     }
-
-    const onMove = (event: PointerEvent) => {
-      const drag = dragRef.current;
-      if (!drag || event.pointerId !== drag.pointerId) {
-        return;
+    dragRef.current = null;
+    setDragging(false);
+    try {
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
       }
-      onChange(clamp(drag.startWidth + (event.clientX - drag.startX)));
-    };
-
-    const onUp = (event: PointerEvent) => {
-      const drag = dragRef.current;
-      if (!drag || event.pointerId !== drag.pointerId) {
-        return;
-      }
-      dragRef.current = null;
-      setDragging(false);
-    };
-
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
-    return () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
-    };
-  }, [dragging, clamp, onChange]);
+    } catch {
+      // Synthetic pointer sequences may reject release.
+    }
+  };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (disabled || event.button !== 0) {
@@ -89,6 +74,14 @@ export function ExplorerSplitter({
     } catch {
       // Synthetic pointer sequences (Chromatic) may reject capture.
     }
+  };
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    onChange(clamp(drag.startWidth + (event.clientX - drag.startX)));
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -122,6 +115,9 @@ export function ExplorerSplitter({
       aria-disabled={disabled || undefined}
       tabIndex={disabled ? -1 : 0}
       onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
       onKeyDown={onKeyDown}
     />
   );

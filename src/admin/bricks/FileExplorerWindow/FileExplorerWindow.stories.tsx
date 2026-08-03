@@ -1,6 +1,6 @@
-import { useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fireEvent, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField } from '../../chrome';
 import {
   pickShellArgs,
@@ -49,6 +49,11 @@ function ExplorerDemo(args: StoryArgs) {
   /** Highlighted item in the content pane (independent of location). */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusBarVisible, setStatusBarVisible] = useState(true);
+  const [treeWidth, setTreeWidth] = useState(args.treeWidth);
+
+  useEffect(() => {
+    setTreeWidth(args.treeWidth);
+  }, [args.treeWidth]);
 
   const location = useMemo(
     () => findExplorerItem(EXPLORER_FIXTURE_TREE, locationId),
@@ -81,7 +86,8 @@ function ExplorerDemo(args: StoryArgs) {
       titleIcon={args.titleIcon === 'none' ? undefined : args.titleIcon}
       width={args.width}
       paneHeight={args.paneHeight}
-      treeWidth={args.treeWidth}
+      treeWidth={treeWidth}
+      onTreeWidthChange={setTreeWidth}
       treePaneResizable={args.treePaneResizable}
       minTreeWidth={args.minTreeWidth}
       maxTreeWidth={args.maxTreeWidth}
@@ -345,23 +351,25 @@ export const Splitter: Story = {
     await expect(splitter).toHaveAttribute('aria-valuenow', '200');
     await expect(tree.style.width).toBe('200px');
 
-    // Native KeyboardEvent (key in constructor) + fireEvent wrapper flush.
-    // Chromatic browsers reject Testing Library's post-hoc key assignment and
-    // focus()+userEvent.keyboard on role=separator.
-    const press = (key: string) => {
-      fireEvent(
-        splitter,
-        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
-      );
-    };
+    // Pointer drag (same path as AdminDesktop Chromatic fixes). Keyboard
+    // simulation does not update aria-valuenow in Chromatic Chrome.
+    const rect = splitter.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
 
-    press('ArrowRight');
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: splitter, coords: { clientX: x, clientY: y } },
+      { coords: { clientX: x + 8, clientY: y } },
+      { keys: '[/MouseLeft]' },
+    ]);
     await expect(splitter).toHaveAttribute('aria-valuenow', '208');
     await expect(tree.style.width).toBe('208px');
 
-    press('ArrowLeft');
-    await expect(splitter).toHaveAttribute('aria-valuenow', '200');
-    press('ArrowLeft');
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: splitter, coords: { clientX: x + 8, clientY: y } },
+      { coords: { clientX: x - 8, clientY: y } },
+      { keys: '[/MouseLeft]' },
+    ]);
     await expect(splitter).toHaveAttribute('aria-valuenow', '192');
     await expect(tree.style.width).toBe('192px');
   },
