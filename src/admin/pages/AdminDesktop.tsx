@@ -9,10 +9,13 @@ import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import { cn } from '../../lib/cn';
 import {
   CONTROL_PANEL_WINDOW_ID,
+  DEFAULT_WINDOW_SIZE,
   DesktopWindow,
+  getDesktopWorkSize,
   siteWindowId,
   StartMenu,
   Taskbar,
+  type ShellBounds,
   type ShellWindowState,
 } from '../shell';
 
@@ -56,7 +59,7 @@ function topVisibleWindowId(windows: ShellWindowState[]): string | null {
 
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 5 Slice A–D: registry, drag, taskbar + minimize, Start menu.
+ * Phase 5 Slice A–E: registry, drag, taskbar, Start menu, resize + maximize.
  */
 export function AdminDesktop({
   sites = [],
@@ -66,6 +69,7 @@ export function AdminDesktop({
 }: AdminDesktopProps) {
   const nextZRef = useRef(10);
   const cascadeRef = useRef(0);
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const [shell, setShell] = useState<DesktopShellState>({
     windows: [],
     activeId: null,
@@ -171,6 +175,64 @@ export function AdminDesktop({
     restoreAndActivate(id);
   };
 
+  const toggleMaximize = (id: string) => {
+    setShell((prev) => {
+      const target = prev.windows.find((win) => win.id === id);
+      if (!target) {
+        return prev;
+      }
+      const z = target.z === nextZRef.current ? target.z : raiseZ();
+
+      if (target.maximized && target.restore) {
+        return {
+          activeId: id,
+          windows: prev.windows.map((win) =>
+            win.id === id
+              ? {
+                  ...win,
+                  z,
+                  maximized: false,
+                  left: target.restore!.left,
+                  top: target.restore!.top,
+                  width: target.restore!.width,
+                  height: target.restore!.height,
+                  restore: undefined,
+                }
+              : win,
+          ),
+        };
+      }
+
+      const dashboard = dashboardRef.current;
+      const work = dashboard
+        ? getDesktopWorkSize(dashboard)
+        : { width: target.width, height: target.height };
+
+      return {
+        activeId: id,
+        windows: prev.windows.map((win) =>
+          win.id === id
+            ? {
+                ...win,
+                z,
+                maximized: true,
+                left: 0,
+                top: 0,
+                width: work.width,
+                height: work.height,
+                restore: {
+                  left: target.left,
+                  top: target.top,
+                  width: target.width,
+                  height: target.height,
+                },
+              }
+            : win,
+        ),
+      };
+    });
+  };
+
   const openControlPanel = () => {
     setShell((prev) => {
       const existing = prev.windows.find((win) => win.id === CONTROL_PANEL_WINDOW_ID);
@@ -189,6 +251,7 @@ export function AdminDesktop({
         };
       }
       const place = allocatePlacement();
+      const size = DEFAULT_WINDOW_SIZE['control-panel'];
       return {
         activeId: CONTROL_PANEL_WINDOW_ID,
         windows: [
@@ -200,6 +263,8 @@ export function AdminDesktop({
             left: place.left,
             top: place.top,
             z: place.z,
+            width: size.width,
+            height: size.height,
             minimized: false,
             maximized: false,
           },
@@ -225,6 +290,7 @@ export function AdminDesktop({
         };
       }
       const place = allocatePlacement();
+      const size = DEFAULT_WINDOW_SIZE.site;
       return {
         activeId: id,
         windows: [
@@ -237,6 +303,8 @@ export function AdminDesktop({
             left: place.left,
             top: place.top,
             z: place.z,
+            width: size.width,
+            height: size.height,
             minimized: false,
             maximized: false,
           },
@@ -254,8 +322,27 @@ export function AdminDesktop({
     }));
   };
 
+  const resizeWindow = (id: string, bounds: ShellBounds) => {
+    setShell((prev) => ({
+      ...prev,
+      windows: prev.windows.map((win) =>
+        win.id === id
+          ? {
+              ...win,
+              left: bounds.left,
+              top: bounds.top,
+              width: bounds.width,
+              height: bounds.height,
+              maximized: false,
+              restore: undefined,
+            }
+          : win,
+      ),
+    }));
+  };
+
   return (
-    <div className={cn('dashboard', className)}>
+    <div ref={dashboardRef} className={cn('dashboard', className)}>
       <div className="icon-list">
         {sites.map((site) => (
           <SystemIcon
@@ -276,6 +363,7 @@ export function AdminDesktop({
 
       {shell.windows.map((win) => {
         const active = win.id === shell.activeId && !win.minimized;
+        const maximizeAction = win.maximized ? 'Restore' : 'Maximize';
 
         if (win.kind === 'control-panel') {
           return (
@@ -285,15 +373,23 @@ export function AdminDesktop({
               left={win.left}
               top={win.top}
               zIndex={win.z}
+              width={win.width}
+              height={win.height}
+              maximized={win.maximized}
               className={cn(win.minimized && 'is-minimized')}
-              dragDisabled={win.minimized}
+              dragDisabled={win.minimized || win.maximized}
               onActivate={() => activateWindow(win.id)}
               onPositionChange={(left, top) => moveWindow(win.id, left, top)}
+              onBoundsChange={(bounds) => resizeWindow(win.id, bounds)}
+              onToggleMaximize={() => toggleMaximize(win.id)}
             >
               <ControlPanel
+                className={cn(win.maximized && 'is-maximized')}
                 inactive={!active}
+                maximized={win.maximized}
                 onClose={() => closeWindow(win.id)}
                 onMinimize={() => minimizeWindow(win.id)}
+                onMaximize={() => toggleMaximize(win.id)}
                 onActivate={() => activateWindow(win.id)}
               />
             </DesktopWindow>
@@ -312,20 +408,26 @@ export function AdminDesktop({
             left={win.left}
             top={win.top}
             zIndex={win.z}
+            width={win.width}
+            height={win.height}
+            maximized={win.maximized}
             className={cn(win.minimized && 'is-minimized')}
-            dragDisabled={win.minimized}
+            dragDisabled={win.minimized || win.maximized}
             onActivate={() => activateWindow(win.id)}
             onPositionChange={(left, top) => moveWindow(win.id, left, top)}
+            onBoundsChange={(bounds) => resizeWindow(win.id, bounds)}
+            onToggleMaximize={() => toggleMaximize(win.id)}
           >
             <SiteFileExplorer
+              className={cn(win.maximized && 'is-maximized')}
               inactive={!active}
               title={win.title}
               titleIcon="site"
               tree={explorerTreeForSite(site)}
               onClose={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}
-              width={640}
-              paneHeight={360}
+              onMaximize={() => toggleMaximize(win.id)}
+              maximizeAction={maximizeAction}
             />
           </DesktopWindow>
         );

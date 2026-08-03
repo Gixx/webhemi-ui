@@ -29,6 +29,8 @@ export type ControlPanelProps = {
   onActivate?: () => void;
   /** Inactive title-bar when another shell window is focused. */
   inactive?: boolean;
+  /** When true, Maximize control shows Restore. */
+  maximized?: boolean;
   className?: string;
   style?: CSSProperties;
   width?: number;
@@ -45,6 +47,7 @@ export function ControlPanel({
   onMaximize,
   onActivate,
   inactive = false,
+  maximized = false,
   className,
   style,
   width = 600,
@@ -65,7 +68,10 @@ export function ControlPanel({
       titleBarControls={
         <TitleBarControls>
           <TitleBarControl action="Minimize" onClick={onMinimize} />
-          <TitleBarControl action="Maximize" onClick={onMaximize} />
+          <TitleBarControl
+            action={maximized ? 'Restore' : 'Maximize'}
+            onClick={onMaximize}
+          />
           <TitleBarControl action="Close" onClick={onClose} />
         </TitleBarControls>
       }

@@ -14,7 +14,6 @@ export type ShellWindowKind = 'control-panel' | 'site';
 
 /**
  * One open desktop shell window.
- * Minimize / maximize / size fields are reserved for later Phase 5 slices.
  */
 export type ShellWindowState = {
   id: string;
@@ -25,10 +24,17 @@ export type ShellWindowState = {
   left: number;
   top: number;
   z: number;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
   minimized: boolean;
   maximized: boolean;
+  /** Geometry before maximize. */
+  restore?: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
 };
 
 export type ShellPlacement = {

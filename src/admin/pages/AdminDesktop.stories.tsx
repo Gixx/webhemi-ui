@@ -30,7 +30,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Admin desktop surface: site icons + Control Panel, shell windows with drag/active title-bars, taskbar minimize/restore, and Start menu.',
+          'Admin desktop surface: shell windows with drag, resize, maximize, taskbar, and Start menu.',
       },
       source: {
         language: 'tsx',
@@ -187,5 +187,60 @@ export const StartMenuControlPanel: Story = {
     await expect(
       canvas.getByText('Control Panel', { selector: '.title-bar-text' }),
     ).toBeVisible();
+  },
+};
+
+export const MaximizeRestore: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+
+    const host = canvasElement.querySelector('#control-panel') as HTMLElement;
+    await expect(host).not.toHaveClass('is-maximized');
+    await expect(host.querySelectorAll('.window-resize-handle')).toHaveLength(5);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Maximize' }));
+    await expect(host).toHaveClass('is-maximized');
+    await expect(host.querySelectorAll('.window-resize-handle')).toHaveLength(0);
+    await expect(canvas.getByRole('button', { name: 'Restore' })).toBeEnabled();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Restore' }));
+    await expect(host).not.toHaveClass('is-maximized');
+    await expect(host.querySelectorAll('.window-resize-handle')).toHaveLength(5);
+  },
+};
+
+export const ResizeHandle: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+
+    const host = canvasElement.querySelector('#control-panel') as HTMLElement;
+    const handle = host.querySelector('.window-resize-handle[data-edge="se"]') as HTMLElement;
+    const startWidth = host.offsetWidth;
+    const startHeight = host.offsetHeight;
+
+    fireEvent.pointerDown(handle, {
+      button: 0,
+      clientX: startWidth,
+      clientY: startHeight,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerMove(window, {
+      clientX: startWidth + 80,
+      clientY: startHeight + 60,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerUp(window, {
+      clientX: startWidth + 80,
+      clientY: startHeight + 60,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+
+    await expect(host.offsetWidth).toBeGreaterThan(startWidth);
+    await expect(host.offsetHeight).toBeGreaterThan(startHeight);
   },
 };

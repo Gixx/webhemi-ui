@@ -18,3 +18,13 @@ export {
   findShellProductWindow,
   findShellTitleBar,
 } from './geometry';
+export {
+  RESIZE_EDGES,
+  RESIZE_CURSORS,
+  SHELL_MIN_WIDTH,
+  SHELL_MIN_HEIGHT,
+  DEFAULT_WINDOW_SIZE,
+  computeResizeBounds,
+  type ResizeEdge,
+  type ShellBounds,
+} from './resize';

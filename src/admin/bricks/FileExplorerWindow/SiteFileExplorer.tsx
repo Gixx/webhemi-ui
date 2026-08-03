@@ -56,6 +56,10 @@ export type SiteFileExplorerProps = Omit<
   initialLocationId?: string;
   /** Shell minimize (Phase 5 taskbar). */
   onMinimize?: () => void;
+  /** Shell maximize / restore. */
+  onMaximize?: () => void;
+  /** Title-bar control label when maximized. */
+  maximizeAction?: 'Maximize' | 'Restore';
 };
 
 /**
@@ -67,6 +71,8 @@ export function SiteFileExplorer({
   initialLocationId,
   onClose,
   onMinimize,
+  onMaximize,
+  maximizeAction = 'Maximize',
   title,
   titleIcon = 'site',
   ...rest
@@ -315,7 +321,7 @@ export function SiteFileExplorer({
         titleBarControls={
           <TitleBarControls>
             <TitleBarControl action="Minimize" onClick={onMinimize} />
-            <TitleBarControl action="Maximize" />
+            <TitleBarControl action={maximizeAction} onClick={onMaximize} />
             <TitleBarControl action="Close" onClick={onClose} />
           </TitleBarControls>
         }
