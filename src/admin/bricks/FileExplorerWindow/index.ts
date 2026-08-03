@@ -21,11 +21,19 @@ export {
 export {
   cloneExplorerForest,
   canDeleteExplorerItem,
+  canCutOrCopyExplorerItem,
+  canPasteIntoExplorerLocation,
   deleteExplorerItem,
+  pasteExplorerClipboard,
   undoExplorerDelete,
+  undoExplorerPaste,
+  undoExplorerAction,
   findExplorerTrashRoot,
   isUnderExplorerTrash,
   type ExplorerDeleteUndo,
+  type ExplorerClipboard,
+  type ExplorerPasteUndo,
+  type ExplorerUndo,
 } from './explorerTreeOps';
 export {
   EXPLORER_FIXTURE_TREE,

@@ -27,8 +27,13 @@ export {
   isExplorerTreeExpandable,
   cloneExplorerForest,
   canDeleteExplorerItem,
+  canCutOrCopyExplorerItem,
+  canPasteIntoExplorerLocation,
   deleteExplorerItem,
+  pasteExplorerClipboard,
   undoExplorerDelete,
+  undoExplorerPaste,
+  undoExplorerAction,
   findExplorerTrashRoot,
   isUnderExplorerTrash,
   EXPLORER_FIXTURE_TREE,
@@ -45,6 +50,9 @@ export {
   type ExplorerView,
   type ExplorerNodeRole,
   type ExplorerDeleteUndo,
+  type ExplorerClipboard,
+  type ExplorerPasteUndo,
+  type ExplorerUndo,
   type SiteExplorerIdentity,
 } from './FileExplorerWindow';
 export {

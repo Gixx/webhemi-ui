@@ -29,6 +29,8 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   locationId?: string | null;
   /** Highlighted item in the content pane. */
   selectedId?: string | null;
+  /** Ghost the cut clipboard item in the content pane. */
+  cutItemId?: string | null;
   /** Tree navigation (changes location / listing). */
   onTreeSelect?: (item: ExplorerItem) => void;
   /** Content-pane single-click selection (highlight only). */
@@ -200,6 +202,7 @@ export function FileExplorerWindow({
   onViewChange,
   locationId = null,
   selectedId = null,
+  cutItemId = null,
   onTreeSelect,
   onSelect,
   onOpen,
@@ -302,6 +305,7 @@ export function FileExplorerWindow({
               view={view}
               items={items}
               selectedId={selectedId}
+              cutItemId={cutItemId}
               onSelect={onSelect}
               onOpen={onOpen}
             />

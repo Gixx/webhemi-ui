@@ -14,7 +14,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Stateful site explorer host: navigation, menubar, and local forest edits (Delete → Recycle Bin, Undo).',
+          'Stateful site explorer host: navigation, menubar, Delete → Recycle Bin, Cut/Copy/Paste, Undo.',
       },
     },
   },
@@ -63,5 +63,40 @@ export const DeleteToRecycleBin: Story = {
       canvasElement.querySelector('.explorer-content') as HTMLElement,
     );
     await expect(restored.getByText('Contact')).toBeVisible();
+  },
+};
+
+export const CutCopyPaste: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = () =>
+      within(canvasElement.querySelector('.explorer-content') as HTMLElement);
+
+    await expect(canvas.getByRole('button', { name: 'Paste' })).toBeDisabled();
+
+    await userEvent.click(content().getByText('Contact'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Copy' }));
+    await expect(canvas.getByRole('button', { name: 'Paste' })).toBeEnabled();
+
+    await userEvent.dblClick(content().getByText('About'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Paste' }));
+    await expect(content().getByText('Contact')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Undo' }));
+    await expect(content().queryByText('Contact')).not.toBeInTheDocument();
+
+    await userEvent.click(canvas.getByRole('link', { name: /Example Site/ }));
+    await userEvent.click(content().getByText('Contact'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Cut' }));
+    await expect(content().getByText('Contact').closest('.icon')).toHaveClass('is-cut');
+
+    await userEvent.dblClick(content().getByText('Blog'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Paste' }));
+    await expect(content().getByText('Contact')).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Paste' })).toBeDisabled();
+
+    await userEvent.click(canvas.getByRole('link', { name: /Example Site/ }));
+    await expect(content().queryByText('Contact')).not.toBeInTheDocument();
   },
 };

@@ -12,6 +12,8 @@ export type ExplorerContentProps = {
   view: ExplorerView;
   items: ExplorerItem[];
   selectedId?: string | null;
+  /** Item currently on the cut clipboard (ghosted in the listing). */
+  cutItemId?: string | null;
   onSelect?: (item: ExplorerItem) => void;
   onOpen?: (item: ExplorerItem) => void;
 };
@@ -28,6 +30,7 @@ export function ExplorerContent({
   view,
   items,
   selectedId = null,
+  cutItemId = null,
   onSelect,
   onOpen,
 }: ExplorerContentProps) {
@@ -47,7 +50,11 @@ export function ExplorerContent({
             kind={item.kind}
             label={item.label}
             labelTone="dark"
-            className={cn(item.hidden && 'is-hidden', selectedId === item.id && 'is-selected')}
+            className={cn(
+              item.hidden && 'is-hidden',
+              selectedId === item.id && 'is-selected',
+              cutItemId === item.id && 'is-cut',
+            )}
             onActivate={() => onSelect?.(item)}
             onOpen={() => openItem(item)}
           />
@@ -67,6 +74,7 @@ export function ExplorerContent({
               'explorer-list-item',
               item.hidden && 'is-hidden',
               selectedId === item.id && 'is-selected',
+              cutItemId === item.id && 'is-cut',
             )}
             onClick={(event) => {
               event.preventDefault();
@@ -101,7 +109,7 @@ export function ExplorerContent({
             <TableRow
               key={item.id}
               highlighted={selectedId === item.id}
-              className={cn(item.hidden && 'is-hidden')}
+              className={cn(item.hidden && 'is-hidden', cutItemId === item.id && 'is-cut')}
               onClick={() => onSelect?.(item)}
               onDoubleClick={() => openItem(item)}
             >

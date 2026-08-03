@@ -1,11 +1,15 @@
 import { useMemo, useState } from 'react';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../../chrome';
 import {
+  canCutOrCopyExplorerItem,
   canDeleteExplorerItem,
+  canPasteIntoExplorerLocation,
   cloneExplorerForest,
   deleteExplorerItem,
-  undoExplorerDelete,
-  type ExplorerDeleteUndo,
+  pasteExplorerClipboard,
+  undoExplorerAction,
+  type ExplorerClipboard,
+  type ExplorerUndo,
 } from './explorerTreeOps';
 import { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorerWindow';
 import {
@@ -25,11 +29,15 @@ export type SiteFileExplorerProps = Omit<
   | 'onViewChange'
   | 'locationId'
   | 'selectedId'
+  | 'cutItemId'
   | 'onTreeSelect'
   | 'onSelect'
   | 'onOpen'
   | 'onLevelUp'
   | 'levelUpDisabled'
+  | 'onCut'
+  | 'onCopy'
+  | 'onPaste'
   | 'onDelete'
   | 'onUndo'
   | 'statusBar'
@@ -60,7 +68,8 @@ export function SiteFileExplorer({
   const [locationId, setLocationId] = useState(rootId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusBarVisible, setStatusBarVisible] = useState(true);
-  const [undoEntry, setUndoEntry] = useState<ExplorerDeleteUndo | null>(null);
+  const [clipboard, setClipboard] = useState<ExplorerClipboard | null>(null);
+  const [undoEntry, setUndoEntry] = useState<ExplorerUndo | null>(null);
 
   const location = useMemo(() => findExplorerItem(forest, locationId), [forest, locationId]);
   const selected = useMemo(() => findExplorerItem(forest, selectedId), [forest, selectedId]);
@@ -69,6 +78,8 @@ export function SiteFileExplorer({
   const hiddenCount = items.filter((item) => item.hidden).length;
   const statusItem = selected ?? location;
   const canDelete = canDeleteExplorerItem(forest, selected);
+  const canCutCopy = canCutOrCopyExplorerItem(forest, selected);
+  const canPaste = canPasteIntoExplorerLocation(forest, locationId, clipboard);
 
   const goToLocation = (item: ExplorerItem) => {
     if (item.disabled || !isExplorerLocation(item)) {
@@ -76,6 +87,48 @@ export function SiteFileExplorer({
     }
     setLocationId(item.id);
     setSelectedId(null);
+  };
+
+  const handleCut = () => {
+    if (!selected || !canCutCopy) {
+      return;
+    }
+    const sourceParent = findExplorerParent(forest, selected.id);
+    if (!sourceParent) {
+      return;
+    }
+    setClipboard({
+      mode: 'cut',
+      item: cloneExplorerForest([selected])[0],
+      sourceParentId: sourceParent.id,
+    });
+  };
+
+  const handleCopy = () => {
+    if (!selected || !canCutCopy) {
+      return;
+    }
+    setClipboard({
+      mode: 'copy',
+      item: cloneExplorerForest([selected])[0],
+      sourceParentId: null,
+    });
+  };
+
+  const handlePaste = () => {
+    if (!clipboard || !locationId) {
+      return;
+    }
+    const result = pasteExplorerClipboard(forest, locationId, clipboard);
+    if (!result) {
+      return;
+    }
+    setForest(result.tree);
+    setUndoEntry(result.undo);
+    setSelectedId(result.pasted.id);
+    if (clipboard.mode === 'cut') {
+      setClipboard(null);
+    }
   };
 
   const handleDelete = () => {
@@ -86,6 +139,9 @@ export function SiteFileExplorer({
     if (!result) {
       return;
     }
+    if (clipboard && clipboard.item.id === selectedId) {
+      setClipboard(null);
+    }
     setForest(result.tree);
     setUndoEntry(result.undo);
     setSelectedId(null);
@@ -95,13 +151,17 @@ export function SiteFileExplorer({
     if (!undoEntry) {
       return;
     }
-    const next = undoExplorerDelete(forest, undoEntry);
+    const next = undoExplorerAction(forest, undoEntry);
     if (!next) {
       setUndoEntry(null);
       return;
     }
     setForest(next);
-    setSelectedId(undoEntry.item.id);
+    if (undoEntry.type === 'to-trash' || undoEntry.type === 'permanent') {
+      setSelectedId(undoEntry.item.id);
+    } else {
+      setSelectedId(undoEntry.itemId);
+    }
     setUndoEntry(null);
   };
 
@@ -116,6 +176,7 @@ export function SiteFileExplorer({
       onViewChange={setView}
       locationId={locationId}
       selectedId={selectedId}
+      cutItemId={clipboard?.mode === 'cut' ? clipboard.item.id : null}
       onTreeSelect={goToLocation}
       onSelect={(item) => setSelectedId(item.id)}
       onOpen={goToLocation}
@@ -128,6 +189,9 @@ export function SiteFileExplorer({
       }}
       levelUpDisabled={!parent}
       onClose={onClose}
+      onCut={canCutCopy ? handleCut : undefined}
+      onCopy={canCutCopy ? handleCopy : undefined}
+      onPaste={canPaste ? handlePaste : undefined}
       onDelete={canDelete ? handleDelete : undefined}
       onUndo={undoEntry ? handleUndo : undefined}
       statusBarVisible={statusBarVisible}
