@@ -14,7 +14,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Stateful site explorer host: navigation, menubar, Delete → Recycle Bin, Cut/Copy/Paste, Undo.',
+          'Stateful site explorer host: navigation, menubar, Delete → Recycle Bin, Cut/Copy/Paste, Properties, Undo.',
       },
     },
   },
@@ -98,5 +98,36 @@ export const CutCopyPaste: Story = {
 
     await userEvent.click(canvas.getByRole('link', { name: /Example Site/ }));
     await expect(content().queryByText('Contact')).not.toBeInTheDocument();
+  },
+};
+
+export const Properties: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = within(
+      canvasElement.querySelector('.explorer-content') as HTMLElement,
+    );
+
+    await expect(canvas.getByRole('button', { name: 'Properties' })).toBeDisabled();
+
+    await userEvent.click(content.getByText('Contact'));
+    await expect(canvas.getByRole('button', { name: 'Properties' })).toBeEnabled();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Properties' }));
+    const dialog = within(
+      canvasElement.querySelector('.explorer-properties-dialog') as HTMLElement,
+    );
+    await expect(
+      dialog.getByText('Contact Properties', { selector: '.title-bar-text' }),
+    ).toBeVisible();
+    await expect(dialog.getByText('HTML Document')).toBeVisible();
+    await expect(dialog.getByText('Location:').closest('div')!).toHaveTextContent(
+      'Example Site',
+    );
+
+    await userEvent.click(dialog.getByRole('button', { name: 'OK' }));
+    await expect(
+      canvasElement.querySelector('.explorer-properties-dialog'),
+    ).not.toBeInTheDocument();
   },
 };

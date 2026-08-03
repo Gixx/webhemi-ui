@@ -406,3 +406,67 @@
   text-shadow: 1px 1px 0 var(--button-highlight, #fff);
   cursor: default;
 }
+
+/* --- Properties dialog overlay --- */
+
+.site-file-explorer {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.explorer-properties-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+  background: rgb(0 0 0 / 8%);
+}
+
+.explorer-properties-dialog {
+  max-width: 100%;
+}
+
+.explorer-properties-identity {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--button-shadow, #808080);
+  box-shadow: 0 1px 0 var(--button-highlight, #fff);
+}
+
+.explorer-properties-name {
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.explorer-properties-list {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.explorer-properties-list > div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.explorer-properties-list dt {
+  margin: 0;
+  color: #000;
+}
+
+.explorer-properties-list dd {
+  margin: 0;
+  word-break: break-word;
+}
+

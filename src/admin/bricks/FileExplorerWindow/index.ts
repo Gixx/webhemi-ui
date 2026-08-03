@@ -2,6 +2,7 @@ export { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorer
 export { ExplorerToolbar, type ExplorerToolbarProps } from './ExplorerToolbar';
 export { ExplorerMenuBar, type ExplorerMenuBarProps } from './ExplorerMenuBar';
 export { ExplorerContent, type ExplorerContentProps } from './ExplorerContent';
+export { ExplorerPropertiesDialog, type ExplorerPropertiesDialogProps } from './ExplorerPropertiesDialog';
 export { SiteFileExplorer, type SiteFileExplorerProps } from './SiteFileExplorer';
 export {
   formatExplorerSize,

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../../chrome';
+import { ExplorerPropertiesDialog } from './ExplorerPropertiesDialog';
 import {
   canCutOrCopyExplorerItem,
   canDeleteExplorerItem,
@@ -40,6 +41,7 @@ export type SiteFileExplorerProps = Omit<
   | 'onPaste'
   | 'onDelete'
   | 'onUndo'
+  | 'onProperties'
   | 'statusBar'
   | 'statusBarVisible'
   | 'onStatusBarToggle'
@@ -70,6 +72,7 @@ export function SiteFileExplorer({
   const [statusBarVisible, setStatusBarVisible] = useState(true);
   const [clipboard, setClipboard] = useState<ExplorerClipboard | null>(null);
   const [undoEntry, setUndoEntry] = useState<ExplorerUndo | null>(null);
+  const [propertiesItem, setPropertiesItem] = useState<ExplorerItem | null>(null);
 
   const location = useMemo(() => findExplorerItem(forest, locationId), [forest, locationId]);
   const selected = useMemo(() => findExplorerItem(forest, selectedId), [forest, selectedId]);
@@ -80,6 +83,7 @@ export function SiteFileExplorer({
   const canDelete = canDeleteExplorerItem(forest, selected);
   const canCutCopy = canCutOrCopyExplorerItem(forest, selected);
   const canPaste = canPasteIntoExplorerLocation(forest, locationId, clipboard);
+  const canProperties = Boolean(selected);
 
   const goToLocation = (item: ExplorerItem) => {
     if (item.disabled || !isExplorerLocation(item)) {
@@ -142,6 +146,9 @@ export function SiteFileExplorer({
     if (clipboard && clipboard.item.id === selectedId) {
       setClipboard(null);
     }
+    if (propertiesItem?.id === selectedId) {
+      setPropertiesItem(null);
+    }
     setForest(result.tree);
     setUndoEntry(result.undo);
     setSelectedId(null);
@@ -165,56 +172,80 @@ export function SiteFileExplorer({
     setUndoEntry(null);
   };
 
+  const propertiesParentLabel = propertiesItem
+    ? (findExplorerParent(forest, propertiesItem.id)?.label ?? null)
+    : null;
+
   return (
-    <FileExplorerWindow
-      title={title}
-      titleIcon={titleIcon}
-      {...rest}
-      tree={forest}
-      items={items}
-      view={view}
-      onViewChange={setView}
-      locationId={locationId}
-      selectedId={selectedId}
-      cutItemId={clipboard?.mode === 'cut' ? clipboard.item.id : null}
-      onTreeSelect={goToLocation}
-      onSelect={(item) => setSelectedId(item.id)}
-      onOpen={goToLocation}
-      onLevelUp={() => {
-        if (!parent) {
-          return;
+    <div className="site-file-explorer">
+      <FileExplorerWindow
+        title={title}
+        titleIcon={titleIcon}
+        {...rest}
+        tree={forest}
+        items={items}
+        view={view}
+        onViewChange={setView}
+        locationId={locationId}
+        selectedId={selectedId}
+        cutItemId={clipboard?.mode === 'cut' ? clipboard.item.id : null}
+        onTreeSelect={goToLocation}
+        onSelect={(item) => setSelectedId(item.id)}
+        onOpen={goToLocation}
+        onLevelUp={() => {
+          if (!parent) {
+            return;
+          }
+          setLocationId(parent.id);
+          setSelectedId(null);
+        }}
+        levelUpDisabled={!parent}
+        onClose={onClose}
+        onCut={canCutCopy ? handleCut : undefined}
+        onCopy={canCutCopy ? handleCopy : undefined}
+        onPaste={canPaste ? handlePaste : undefined}
+        onDelete={canDelete ? handleDelete : undefined}
+        onUndo={undoEntry ? handleUndo : undefined}
+        onProperties={
+          canProperties
+            ? () => {
+                if (selected) {
+                  setPropertiesItem(selected);
+                }
+              }
+            : undefined
         }
-        setLocationId(parent.id);
-        setSelectedId(null);
-      }}
-      levelUpDisabled={!parent}
-      onClose={onClose}
-      onCut={canCutCopy ? handleCut : undefined}
-      onCopy={canCutCopy ? handleCopy : undefined}
-      onPaste={canPaste ? handlePaste : undefined}
-      onDelete={canDelete ? handleDelete : undefined}
-      onUndo={undoEntry ? handleUndo : undefined}
-      statusBarVisible={statusBarVisible}
-      onStatusBarToggle={() => setStatusBarVisible((value) => !value)}
-      titleBarControls={
-        <TitleBarControls>
-          <TitleBarControl action="Minimize" />
-          <TitleBarControl action="Maximize" />
-          <TitleBarControl action="Close" onClick={onClose} />
-        </TitleBarControls>
-      }
-      statusBar={
-        statusBarVisible ? (
-          <StatusBar>
-            <StatusBarField>
-              {items.length} object(s)
-              {hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
-            </StatusBarField>
-            <StatusBarField className="description">{statusItem?.typeLabel ?? ''}</StatusBarField>
-            <StatusBarField />
-          </StatusBar>
-        ) : undefined
-      }
-    />
+        statusBarVisible={statusBarVisible}
+        onStatusBarToggle={() => setStatusBarVisible((value) => !value)}
+        titleBarControls={
+          <TitleBarControls>
+            <TitleBarControl action="Minimize" />
+            <TitleBarControl action="Maximize" />
+            <TitleBarControl action="Close" onClick={onClose} />
+          </TitleBarControls>
+        }
+        statusBar={
+          statusBarVisible ? (
+            <StatusBar>
+              <StatusBarField>
+                {items.length} object(s)
+                {hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
+              </StatusBarField>
+              <StatusBarField className="description">{statusItem?.typeLabel ?? ''}</StatusBarField>
+              <StatusBarField />
+            </StatusBar>
+          ) : undefined
+        }
+      />
+      {propertiesItem ? (
+        <div className="explorer-properties-overlay">
+          <ExplorerPropertiesDialog
+            item={propertiesItem}
+            parentLabel={propertiesParentLabel}
+            onClose={() => setPropertiesItem(null)}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
