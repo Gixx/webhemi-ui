@@ -1,6 +1,16 @@
 export * from './chrome';
 export * from './bricks';
+export * from './api';
 export { adminAsset, adminIconAsset, ADMIN_ASSETS_BASE } from './lib/assetPaths';
+export { playAdminSound, type AdminSoundName } from './lib/playAdminSound';
+export {
+  flashOwnedModalAttention,
+  findTopOwnedFloatingModal,
+  findTopFloatingModal,
+  OWNED_MODAL_FLASH_COUNT,
+  OWNED_MODAL_FLASH_INTERVAL_MS,
+  type FlashOwnedModalOptions,
+} from './lib/flashOwnedModalAttention';
 export { FlashList, type FlashMap } from './components/FlashList/FlashList';
 export { DataTable, type DataTableProps, type DataTableColumn } from './components/DataTable/DataTable';
 export { Pagination, type PaginationProps } from './components/Pagination/Pagination';
@@ -11,6 +21,20 @@ export { TopBar, type TopBarProps } from './components/TopBar/TopBar';
 export { AdminLayout, type AdminLayoutProps } from './components/AdminLayout/AdminLayout';
 export { LoginForm, type LoginFormProps } from './components/LoginForm/LoginForm';
 export { ControlPanel, type ControlPanelProps } from './components/ControlPanel/ControlPanel';
+export {
+  SitesWindow,
+  type SitesWindowProps,
+  type SitesWindowSite,
+  type SitesWindowCreatePayload,
+} from './components/SitesWindow/SitesWindow';
+export {
+  SiteFormDialog,
+  type SiteFormDialogProps,
+  type SiteFormHostOption,
+  type SiteFormMode,
+  type SiteFormSavePayload,
+  type SiteFormValues,
+} from './components/SitesWindow/SiteFormDialog';
 export { SiteListView, type SiteListViewProps, type SiteRow } from './views/SiteListView';
 export {
   SiteHostListView,

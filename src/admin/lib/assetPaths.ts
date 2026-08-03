@@ -12,6 +12,7 @@
  * - `icons/explorer/` — file explorer glyphs
  * - `icons/toolbar/` — explorer toolbar tools
  * - `system/` — banners / misc product bitmaps
+ * - `sounds/` — system sounds (`chord.mp3` Critical Stop, `ding.mp3` Default Beep)
  * - `fonts/`, `logo/`
  */
 export const ADMIN_ASSETS_BASE = '/assets/admin';

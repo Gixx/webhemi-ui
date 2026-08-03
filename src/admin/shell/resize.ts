@@ -19,6 +19,7 @@ export const SHELL_MIN_HEIGHT = 340;
 export const DEFAULT_WINDOW_SIZE = {
   'control-panel': { width: 600, height: 380 },
   site: { width: 640, height: 440 },
+  sites: { width: 560, height: 480 },
 } as const;
 
 export type ShellBounds = {

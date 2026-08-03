@@ -1,5 +1,6 @@
 export {
   CONTROL_PANEL_WINDOW_ID,
+  SITES_WINDOW_ID,
   siteWindowId,
   parseSiteWindowId,
   type ShellWindowKind,

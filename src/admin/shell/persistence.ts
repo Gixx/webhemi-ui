@@ -1,5 +1,6 @@
 import {
   CONTROL_PANEL_WINDOW_ID,
+  SITES_WINDOW_ID,
   parseSiteWindowId,
   type ShellWindowKind,
   type ShellWindowState,
@@ -70,7 +71,10 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     return null;
   }
   const raw = value as Record<string, unknown>;
-  const kind = raw.kind === 'site' || raw.kind === 'control-panel' ? raw.kind : null;
+  const kind =
+    raw.kind === 'site' || raw.kind === 'control-panel' || raw.kind === 'sites'
+      ? raw.kind
+      : null;
   if (!kind) {
     return null;
   }
@@ -85,6 +89,12 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   }
   const siteId = kind === 'site' ? parseSiteWindowId(id) : undefined;
   if (kind === 'site' && siteId === null) {
+    return null;
+  }
+  if (kind === 'sites' && id !== SITES_WINDOW_ID) {
+    return null;
+  }
+  if (kind === 'control-panel' && id !== CONTROL_PANEL_WINDOW_ID) {
     return null;
   }
   return {
@@ -199,7 +209,7 @@ export function windowFromEntry(entry: PersistedWindowEntry): ShellWindowState {
 
 /**
  * Hydrate open windows from storage for the current site list.
- * Drops unknown site ids; keeps control-panel when present and open.
+ * Drops unknown site ids; keeps control-panel / sites when present and open.
  */
 export function hydrateDesktopFromPersistence(
   persisted: PersistedDesktopState | null,
@@ -223,6 +233,10 @@ export function hydrateDesktopFromPersistence(
       continue;
     }
     if (entry.kind === 'control-panel' && entry.id === CONTROL_PANEL_WINDOW_ID) {
+      windows.push(windowFromEntry(entry));
+      continue;
+    }
+    if (entry.kind === 'sites' && entry.id === SITES_WINDOW_ID) {
       windows.push(windowFromEntry(entry));
       continue;
     }
@@ -290,9 +304,13 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
   width: number;
   height: number;
 } {
-  return kind === 'control-panel'
-    ? DEFAULT_WINDOW_SIZE['control-panel']
-    : DEFAULT_WINDOW_SIZE.site;
+  if (kind === 'control-panel') {
+    return DEFAULT_WINDOW_SIZE['control-panel'];
+  }
+  if (kind === 'sites') {
+    return DEFAULT_WINDOW_SIZE.sites;
+  }
+  return DEFAULT_WINDOW_SIZE.site;
 }
 
 /** Prefer saved closed-window geometry when reopening. */

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../../chrome';
+import { DesktopModal } from '../DesktopModal';
 import { ExplorerPropertiesDialog } from './ExplorerPropertiesDialog';
 import {
   canCutOrCopyExplorerItems,
@@ -336,13 +337,13 @@ export function SiteFileExplorer({
         }
       />
       {propertiesItem ? (
-        <div className="explorer-properties-overlay">
+        <DesktopModal>
           <ExplorerPropertiesDialog
             item={propertiesItem}
             parentLabel={propertiesParentLabel}
             onClose={() => setPropertiesItem(null)}
           />
-        </div>
+        </DesktopModal>
       ) : null}
     </div>
   );

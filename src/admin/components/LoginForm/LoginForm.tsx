@@ -9,7 +9,6 @@ export interface LoginFormProps {
   method?: 'post' | 'get';
   csrfToken?: string;
   csrfFieldName?: string;
-  error?: string;
   loading?: boolean;
   emailDefault?: string;
   /**
@@ -23,13 +22,13 @@ export interface LoginFormProps {
 
 /**
  * Retro OS login dialog composed from DialogWindow + chrome form atoms.
+ * Auth errors are shown by the page via MessageDialog (not inline).
  */
 export function LoginForm({
   action = '/login',
   method = 'post',
   csrfToken,
   csrfFieldName = '_csrf_token',
-  error,
   loading = false,
   emailDefault = '',
   bannerUrl,
@@ -66,11 +65,6 @@ export function LoginForm({
           </FieldRow>
         }
       >
-        {error ? (
-          <p role="alert" style={{ marginTop: 0, marginBottom: 10, color: '#800000' }}>
-            {error}
-          </p>
-        ) : null}
         <FieldRow>
           <TextBox
             id="email"

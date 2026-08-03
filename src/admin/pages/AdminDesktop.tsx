@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   buildEmptySiteExplorerTree,
   SiteFileExplorer,
@@ -6,6 +6,15 @@ import {
 } from '../bricks/FileExplorerWindow';
 import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
+import {
+  SitesWindow,
+  type SitesWindowSite,
+} from '../components/SitesWindow/SitesWindow';
+import {
+  createAdminApiClient,
+  type AdminApiClient,
+  type AdminApiSite,
+} from '../api';
 import { cn } from '../../lib/cn';
 import {
   buildPersistedDesktopState,
@@ -19,6 +28,7 @@ import {
   loadPersistedDesktop,
   savePersistedDesktop,
   siteWindowId,
+  SITES_WINDOW_ID,
   StartMenu,
   Taskbar,
   type PersistedDesktopState,
@@ -42,6 +52,18 @@ export type AdminDesktopProps = {
   explorerTreeForSite?: (site: DesktopSite) => ExplorerItem[];
   /** Logout URL for Start → Logout (Twig: `path('app_logout')`). */
   logoutHref?: string;
+  /** CSRF token for `POST /admin/api/*` (`csrf_token('admin_api')`). */
+  apiCsrfToken?: string;
+  /** Digested chord.mp3 URL for error dialogs (`asset('admin/sounds/chord.mp3')`). */
+  errorSoundUrl?: string;
+  /** Digested ding.mp3 — click blocked owner while a modal is open. */
+  dingSoundUrl?: string;
+  /** Override API base URL (default `/admin/api`). */
+  apiBaseUrl?: string;
+  /** Injected `fetch` for Storybook / tests. */
+  apiFetch?: typeof fetch;
+  /** Full API client override (Storybook mocks). */
+  sitesApi?: AdminApiClient;
   /**
    * localStorage key for window geometry. Default product key;
    * pass `false` to disable (Storybook interaction tests).
@@ -70,14 +92,39 @@ function topVisibleWindowId(windows: ShellWindowState[]): string | null {
   );
 }
 
+function toDesktopSite(site: AdminApiSite | SitesWindowSite): DesktopSite {
+  return {
+    id: site.id,
+    name: site.name,
+    slug: site.slug,
+    enabled: site.enabled,
+  };
+}
+
+function toWindowSite(site: AdminApiSite): SitesWindowSite {
+  return {
+    id: site.id,
+    name: site.name,
+    slug: site.slug,
+    enabled: site.enabled,
+    hostCount: site.hostCount,
+  };
+}
+
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 5 Slice A–F: registry, drag, taskbar, Start, resize, persistence.
+ * Phase 6 Slice C: Sites window via `/admin/api`.
  */
 export function AdminDesktop({
   sites = [],
   explorerTreeForSite = buildEmptySiteExplorerTree,
   logoutHref,
+  apiCsrfToken,
+  errorSoundUrl,
+  dingSoundUrl,
+  apiBaseUrl,
+  apiFetch,
+  sitesApi,
   persistenceKey = DESKTOP_WINDOWS_STORAGE_KEY,
   className,
 }: AdminDesktopProps) {
@@ -97,6 +144,33 @@ export function AdminDesktop({
     activeId: hydratedRef.current.activeId,
   }));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
+  const [desktopSites, setDesktopSites] = useState<DesktopSite[]>(sites);
+  const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
+  const [sitesLoading, setSitesLoading] = useState(false);
+  const [sitesCreating, setSitesCreating] = useState(false);
+  const [sitesError, setSitesError] = useState<string | null>(null);
+  const [sitesFormError, setSitesFormError] = useState<string | null>(null);
+  const [sitesFieldErrors, setSitesFieldErrors] = useState<
+    Partial<Record<'name' | 'slug', string>>
+  >({});
+
+  const api = useMemo(
+    () =>
+      sitesApi ??
+      createAdminApiClient({
+        csrfToken: apiCsrfToken,
+        baseUrl: apiBaseUrl,
+        fetch: apiFetch,
+      }),
+    [sitesApi, apiCsrfToken, apiBaseUrl, apiFetch],
+  );
+
+  const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
+  const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
+
+  useEffect(() => {
+    setDesktopSites(sites);
+  }, [sites]);
 
   useEffect(() => {
     if (!storageKey) {
@@ -115,6 +189,37 @@ export function AdminDesktop({
     }, PERSIST_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [shell, storageKey]);
+
+  useEffect(() => {
+    if (!sitesWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    setSitesLoading(true);
+    setSitesError(null);
+
+    void (async () => {
+      const result = await api.listSites();
+      if (cancelled) {
+        return;
+      }
+      setSitesLoading(false);
+      if (!result.ok) {
+        setSitesError(result.error.message);
+        if (result.status === 401) {
+          window.location.assign('/login');
+        }
+        return;
+      }
+      setSitesRows(result.data.map(toWindowSite));
+      setDesktopSites(result.data.map(toDesktopSite));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sitesWindowOpen, api]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -273,42 +378,41 @@ export function AdminDesktop({
     });
   };
 
-  const openControlPanel = () => {
+  const openOrRaiseWindow = (
+    id: string,
+    kind: ShellWindowState['kind'],
+    title: string,
+    defaultSize: { width: number; height: number },
+  ) => {
     setShell((prev) => {
-      const existing = prev.windows.find((win) => win.id === CONTROL_PANEL_WINDOW_ID);
+      const existing = prev.windows.find((win) => win.id === id);
       if (existing) {
         const z =
           !existing.minimized && existing.z === nextZRef.current
             ? existing.z
             : raiseZ();
         return {
-          activeId: CONTROL_PANEL_WINDOW_ID,
+          activeId: id,
           windows: prev.windows.map((win) =>
-            win.id === CONTROL_PANEL_WINDOW_ID
-              ? { ...win, z, minimized: false }
-              : win,
+            win.id === id ? { ...win, z, minimized: false } : win,
           ),
         };
       }
-      const saved = geometryFromPersistence(
-        persistedRef.current,
-        CONTROL_PANEL_WINDOW_ID,
-        'control-panel',
-      );
+      const saved = geometryFromPersistence(persistedRef.current, id, kind);
       const place = saved
         ? { left: saved.left, top: saved.top, z: raiseZ() }
         : allocatePlacement();
       const size = saved
         ? { width: saved.width, height: saved.height }
-        : DEFAULT_WINDOW_SIZE['control-panel'];
+        : defaultSize;
       return {
-        activeId: CONTROL_PANEL_WINDOW_ID,
+        activeId: id,
         windows: [
           ...prev.windows,
           {
-            id: CONTROL_PANEL_WINDOW_ID,
-            kind: 'control-panel',
-            title: 'Control Panel',
+            id,
+            kind,
+            title,
             left: place.left,
             top: place.top,
             z: place.z,
@@ -320,6 +424,24 @@ export function AdminDesktop({
         ],
       };
     });
+  };
+
+  const openControlPanel = () => {
+    openOrRaiseWindow(
+      CONTROL_PANEL_WINDOW_ID,
+      'control-panel',
+      'Control Panel',
+      DEFAULT_WINDOW_SIZE['control-panel'],
+    );
+  };
+
+  const openSites = () => {
+    openOrRaiseWindow(
+      SITES_WINDOW_ID,
+      'sites',
+      'Sites',
+      DEFAULT_WINDOW_SIZE.sites,
+    );
   };
 
   const openSite = (site: DesktopSite) => {
@@ -395,10 +517,73 @@ export function AdminDesktop({
     }));
   };
 
+  const handleSaveSite = async (payload: {
+    mode: 'new' | 'edit';
+    siteId?: number;
+    name: string;
+    slug: string;
+    enabled: boolean;
+    hostIds: number[];
+  }) => {
+    if (payload.mode !== 'new') {
+      // Update API arrives with Hosts / edit slice; keep dialog feedback for now.
+      setSitesFormError('Editing a site is not available yet.');
+      return;
+    }
+
+    setSitesCreating(true);
+    setSitesFormError(null);
+    setSitesFieldErrors({});
+
+    const result = await api.createSite({
+      name: payload.name,
+      slug: payload.slug,
+      enabled: payload.enabled,
+    });
+    setSitesCreating(false);
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setSitesFieldErrors({
+          name: result.error.fields.name,
+          slug: result.error.fields.slug,
+        });
+      }
+      setSitesFormError(result.error.message);
+      if (result.status === 401) {
+        window.location.assign('/login');
+      }
+      return;
+    }
+
+    // hostIds ignored until Hosts assignment API exists (payload reserved).
+
+    const list = await api.listSites();
+    if (list.ok) {
+      setSitesRows(list.data.map(toWindowSite));
+      setDesktopSites(list.data.map(toDesktopSite));
+      return;
+    }
+
+    const created = toWindowSite(result.data);
+    setSitesRows((prev) =>
+      [...prev.filter((row) => row.id !== created.id), created].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+    setDesktopSites((prev) => {
+      const next = [
+        ...prev.filter((row) => row.id !== created.id),
+        toDesktopSite(created),
+      ];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+  };
+
   return (
     <div ref={dashboardRef} className={cn('dashboard', className)}>
       <div className="icon-list">
-        {sites.map((site) => (
+        {desktopSites.map((site) => (
           <SystemIcon
             key={site.id}
             kind="site"
@@ -419,43 +604,7 @@ export function AdminDesktop({
         const active = win.id === shell.activeId && !win.minimized;
         const maximizeAction = win.maximized ? 'Restore' : 'Maximize';
 
-        if (win.kind === 'control-panel') {
-          return (
-            <DesktopWindow
-              key={win.id}
-              windowId={win.id}
-              left={win.left}
-              top={win.top}
-              zIndex={win.z}
-              width={win.width}
-              height={win.height}
-              maximized={win.maximized}
-              className={cn(win.minimized && 'is-minimized')}
-              dragDisabled={win.minimized || win.maximized}
-              onActivate={() => activateWindow(win.id)}
-              onPositionChange={(left, top) => moveWindow(win.id, left, top)}
-              onBoundsChange={(bounds) => resizeWindow(win.id, bounds)}
-              onToggleMaximize={() => toggleMaximize(win.id)}
-            >
-              <ControlPanel
-                className={cn(win.maximized && 'is-maximized')}
-                inactive={!active}
-                maximized={win.maximized}
-                onClose={() => closeWindow(win.id)}
-                onMinimize={() => minimizeWindow(win.id)}
-                onMaximize={() => toggleMaximize(win.id)}
-                onActivate={() => activateWindow(win.id)}
-              />
-            </DesktopWindow>
-          );
-        }
-
-        const site = sites.find((entry) => entry.id === win.siteId) ?? {
-          id: win.siteId ?? 0,
-          name: win.title,
-        };
-
-        return (
+        const shellFrame = (child: ReactNode) => (
           <DesktopWindow
             key={win.id}
             windowId={win.id}
@@ -472,18 +621,69 @@ export function AdminDesktop({
             onBoundsChange={(bounds) => resizeWindow(win.id, bounds)}
             onToggleMaximize={() => toggleMaximize(win.id)}
           >
-            <SiteFileExplorer
+            {child}
+          </DesktopWindow>
+        );
+
+        if (win.kind === 'control-panel') {
+          return shellFrame(
+            <ControlPanel
               className={cn(win.maximized && 'is-maximized')}
               inactive={!active}
-              title={win.title}
-              titleIcon="site"
-              tree={explorerTreeForSite(site)}
+              maximized={win.maximized}
               onClose={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}
               onMaximize={() => toggleMaximize(win.id)}
-              maximizeAction={maximizeAction}
-            />
-          </DesktopWindow>
+              onActivate={() => activateWindow(win.id)}
+              onOpenSites={openSites}
+            />,
+          );
+        }
+
+        if (win.kind === 'sites') {
+          return shellFrame(
+            <SitesWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              sites={sitesRows}
+              canEdit={canEditSites}
+              loading={sitesLoading}
+              saving={sitesCreating}
+              error={sitesError}
+              formError={sitesFormError}
+              fieldErrors={sitesFieldErrors}
+              onSave={handleSaveSite}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
+        const site = desktopSites.find((entry) => entry.id === win.siteId) ?? {
+          id: win.siteId ?? 0,
+          name: win.title,
+        };
+
+        return shellFrame(
+          <SiteFileExplorer
+            className={cn(win.maximized && 'is-maximized')}
+            inactive={!active}
+            title={win.title}
+            titleIcon="site"
+            tree={explorerTreeForSite(site)}
+            onClose={() => closeWindow(win.id)}
+            onMinimize={() => minimizeWindow(win.id)}
+            onMaximize={() => toggleMaximize(win.id)}
+            maximizeAction={maximizeAction}
+          />,
         );
       })}
 

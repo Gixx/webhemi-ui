@@ -3,12 +3,23 @@ export {
   type DialogWindowProps,
   type DialogWindowType,
 } from './DialogWindow';
+export { FloatingModal, type FloatingModalProps } from './FloatingModal';
+export {
+  DesktopModal,
+  type DesktopModalProps,
+  type DesktopModalLayer,
+} from './DesktopModal';
+export { MessageDialog, type MessageDialogProps } from './MessageDialog';
 export { IconPanelWindow, type IconPanelWindowProps } from './IconPanelWindow';
 export {
   IconPanelSelectionInfo,
   type IconPanelSelectionInfoProps,
 } from './IconPanelWindow/IconPanelSelectionInfo';
 export { WizardWindow, type WizardWindowProps } from './WizardWindow';
+export {
+  HeadingPanelWindow,
+  type HeadingPanelWindowProps,
+} from './HeadingPanelWindow';
 export {
   FileExplorerWindow,
   ExplorerToolbar,

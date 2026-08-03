@@ -1,0 +1,119 @@
+/* Sites window + New/Edit form dialog overlay */
+
+.sites-window.window {
+  position: relative;
+}
+
+/* Shell-sized Sites window: fill DesktopWindow; body pane flexes. */
+.dashboard > .desktop-window.is-sized .sites-window.window,
+.dashboard > .desktop-window.is-maximized .sites-window.window {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.dashboard > .desktop-window.is-sized .sites-window .heading-panel-layout,
+.dashboard > .desktop-window.is-maximized .sites-window .heading-panel-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+/* Host / parent-modal dim while a DesktopModal is open. */
+.modal-blocker {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  background: rgb(0 0 0 / 8%);
+}
+
+.floating-modal > .modal-blocker {
+  z-index: 20;
+}
+
+/*
+ * Owned modals portal as `.dashboard > .floating-modal.desktop-owned-modal`
+ * with inline z-index = owner shell z (same integer). A raised sibling window
+ * (nextZ = top+1) stacks above; equal z + later DOM keeps the dialog above its owner.
+ */
+.floating-modal {
+  position: absolute;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+/* Storybook / no-dashboard fallback: stay inside the host window only. */
+.desktop-modal-layer.is-local {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.desktop-modal-layer.is-local.is-alert {
+  z-index: 50;
+}
+
+.desktop-modal-layer.is-local .floating-modal {
+  pointer-events: auto;
+}
+
+/* Login page still uses a local layer on `.dashboard.login-desktop`. */
+.dashboard.login-desktop > .desktop-modal-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.site-form-dialog {
+  max-width: 100%;
+}
+
+.site-form-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.site-form-dialog-actions {
+  margin-top: 10px;
+}
+
+/* Align Name/Slug (and similar) inputs: equal-width captions before controls. */
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 4.5em;
+  box-sizing: border-box;
+  width: 4.5em;
+  min-width: 4.5em;
+}
+
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > select,
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.site-form-host-list {
+  max-height: 160px;
+  min-height: 96px;
+}
+
+.site-form-host-list > .scrollable-viewport {
+  padding: 6px 8px;
+  box-sizing: border-box;
+  max-height: 160px;
+  overflow: auto;
+}

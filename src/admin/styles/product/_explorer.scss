@@ -448,18 +448,6 @@
   max-width: 100%;
 }
 
-.explorer-properties-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  box-sizing: border-box;
-  background: rgb(0 0 0 / 8%);
-}
-
 .explorer-properties-dialog {
   max-width: 100%;
 }

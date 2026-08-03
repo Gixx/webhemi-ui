@@ -20,6 +20,7 @@ function taskClassName(win: ShellWindowState, active: boolean): string {
     'task',
     win.kind === 'control-panel' && 'control-panel',
     win.kind === 'site' && 'site',
+    win.kind === 'sites' && 'sites',
     active && 'active',
   );
 }

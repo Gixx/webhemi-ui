@@ -9,6 +9,16 @@
   box-sizing: border-box;
 }
 
+.dashboard.login-desktop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-host {
+  position: relative;
+}
+
 .dashboard > .icon-list {
   position: static;
   display: flex;

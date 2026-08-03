@@ -21,6 +21,8 @@ const ICONS: { kind: SystemIconKind; label: string; description: string }[] = [
 
 export type ControlPanelProps = {
   onClose: () => void;
+  /** Open the Sites shell window (Phase 6). */
+  onOpenSites?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
   onMinimize?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
@@ -39,10 +41,11 @@ export type ControlPanelProps = {
 
 /**
  * Control Panel product surface: IconPanelWindow + static admin icons.
- * Icon open/CRUD is Phase 6; selection only updates the info column.
+ * Sites opens via `onOpenSites`; other icons are selection-only until later slices.
  */
 export function ControlPanel({
   onClose,
+  onOpenSites,
   onMinimize,
   onMaximize,
   onActivate,
@@ -101,6 +104,7 @@ export function ControlPanel({
           label={icon.label}
           labelTone="dark"
           onActivate={() => setSelected(icon)}
+          onOpen={icon.kind === 'sites' ? onOpenSites : undefined}
         />
       ))}
     </IconPanelWindow>

@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
+import type { AdminApiClient, AdminApiSite } from '../api';
 import { AdminDesktop } from './AdminDesktop';
 
 const SAMPLE_SITES = [
@@ -8,6 +9,28 @@ const SAMPLE_SITES = [
   { id: 2, name: 'Docs', slug: 'docs', enabled: true },
 ];
 
+const SAMPLE_API_SITES: AdminApiSite[] = [
+  { id: 1, name: 'Example Site', slug: 'example', enabled: true, hostCount: 2 },
+  { id: 2, name: 'Docs', slug: 'docs', enabled: true, hostCount: 1 },
+];
+
+function createMockSitesApi(initial: AdminApiSite[]): AdminApiClient {
+  let rows = [...initial];
+  return {
+    listSites: async () => ({ ok: true, status: 200, data: [...rows] }),
+    createSite: async (body) => {
+      const created: AdminApiSite = {
+        id: Math.max(0, ...rows.map((row) => row.id)) + 1,
+        name: body.name,
+        slug: body.slug,
+        enabled: body.enabled ?? true,
+        hostCount: 0,
+      };
+      rows = [...rows, created];
+      return { ok: true, status: 201, data: created };
+    },
+  };
+}
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {
   return Number.parseFloat(element.style[prop] || '0');
 }
@@ -85,6 +108,29 @@ export const OpenControlPanel: Story = {
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
     await expect(canvas.getByText('Control Panel', { selector: '.title-bar-text' })).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'Sites' })).toBeVisible();
+  },
+};
+
+export const OpenSitesWindow: Story = {
+  args: {
+    sitesApi: createMockSitesApi(SAMPLE_API_SITES),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
+
+    const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
+    await expect(sitesHost).toBeTruthy();
+    await expect(sitesHost).toHaveAttribute('data-shell-window', 'sites');
+    await expect(
+      within(sitesHost).getByText('Sites', { selector: '.title-bar-text' }),
+    ).toBeVisible();
+    await expect(within(sitesHost).getByRole('button', { name: /^new$/i })).toBeEnabled();
+
+    const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
+    await expect(within(table).getByText('Example Site')).toBeVisible();
+    await expect(within(table).getByText('Docs')).toBeVisible();
   },
 };
 

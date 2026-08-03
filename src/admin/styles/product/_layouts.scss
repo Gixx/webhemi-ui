@@ -3,22 +3,20 @@
 /* --- Window pane layouts --- */
 
 /*
- * Retro OS groove separators between stacked / wizard panels.
+ * Retro OS groove separators between stacked wizard panels.
  * First: bottom only; last: top only; middle: both.
+ * Heading-panel layouts stay flush (no horizontal grooves).
  */
-.wizard-panel-layout > .panel,
-.heading-panel-layout > .panel {
+.wizard-panel-layout > .panel {
   border-top: 1px solid #ffffff;
   border-bottom: 1px solid #868a8e;
 }
 
-.wizard-panel-layout > .panel:first-child,
-.heading-panel-layout > .panel:first-child {
+.wizard-panel-layout > .panel:first-child {
   border-top: 0;
 }
 
-.wizard-panel-layout > .panel:last-child,
-.heading-panel-layout > .panel:last-child {
+.wizard-panel-layout > .panel:last-child {
   border-bottom: 0;
 }
 
@@ -188,6 +186,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.heading-panel-layout > .panel {
+  padding: 10px 8px;
+  box-sizing: border-box;
 }
 
 .heading-panel-layout > .panel:first-child {
@@ -196,7 +201,38 @@
   margin-left: -8px;
   width: calc(100% + 16px);
   max-width: none;
-  box-sizing: border-box;
+  flex: 0 0 auto;
+  /* Offset bleed so first-line captions are not clipped by .window-body overflow. */
+  padding-top: 12px;
+}
+
+.heading-panel-layout > .panel:not(:first-child):not(.actions) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.heading-panel-layout > .panel:not(:first-child):not(.actions) > .sunken-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Prefer shrinking + inner scroll over covering `.panel.actions`. */
+  height: auto;
+}
+
+.heading-panel-layout > .panel.actions {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  padding: 10px 8px 8px 8px;
+}
+
+.heading-panel-layout > .panel.actions > .field-row {
+  gap: 8px;
+}
+
+.heading-panel-layout > .panel.actions > .field-row > * + * {
+  margin-left: 0;
 }
 
 /* dialog-panel-layout: compact column (login / alert / message) */

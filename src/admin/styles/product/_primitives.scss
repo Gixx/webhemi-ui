@@ -41,6 +41,11 @@
   background-color: silver;
 }
 
+/* List-view inset: whole sunk host is white (not only table rows). */
+.sunken-panel:has(table) {
+  background-color: #fff;
+}
+
 .bg-white {
   background-color: #fff;
 }
