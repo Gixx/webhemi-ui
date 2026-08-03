@@ -1,6 +1,6 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fireEvent, fn, userEvent, within } from 'storybook/test';
 import { StatusBar, StatusBarField } from '../../chrome';
 import {
   pickShellArgs,
@@ -345,12 +345,14 @@ export const Splitter: Story = {
     await expect(splitter).toHaveAttribute('aria-valuenow', '200');
     await expect(tree.style.width).toBe('200px');
 
-    splitter.focus();
-    await userEvent.keyboard('{ArrowRight}');
+    // fireEvent.keyDown on the separator — Chromatic fails focus()+userEvent.keyboard.
+    fireEvent.keyDown(splitter, { key: 'ArrowRight' });
     await expect(splitter).toHaveAttribute('aria-valuenow', '208');
     await expect(tree.style.width).toBe('208px');
 
-    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+    fireEvent.keyDown(splitter, { key: 'ArrowLeft' });
+    await expect(splitter).toHaveAttribute('aria-valuenow', '200');
+    fireEvent.keyDown(splitter, { key: 'ArrowLeft' });
     await expect(splitter).toHaveAttribute('aria-valuenow', '192');
     await expect(tree.style.width).toBe('192px');
   },

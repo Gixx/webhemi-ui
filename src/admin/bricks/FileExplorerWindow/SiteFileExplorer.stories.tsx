@@ -164,7 +164,24 @@ export const SelectAll: Story = {
 };
 
 function mockDataTransfer(): DataTransfer {
-  return new DataTransfer();
+  try {
+    return new DataTransfer();
+  } catch {
+    const store = new Map<string, string>();
+    return {
+      dropEffect: 'none',
+      effectAllowed: 'all',
+      files: [] as unknown as FileList,
+      items: [] as unknown as DataTransferItemList,
+      types: [],
+      clearData: () => store.clear(),
+      getData: (format: string) => store.get(format) ?? '',
+      setData: (format: string, data: string) => {
+        store.set(format, data);
+      },
+      setDragImage: () => {},
+    } as DataTransfer;
+  }
 }
 
 export const DragDropMove: Story = {
@@ -177,6 +194,7 @@ export const DragDropMove: Story = {
     const aboutIcon = content().getByText('About').closest('.icon') as HTMLElement;
     const dataTransfer = mockDataTransfer();
 
+    // fireEvent uses Testing Library's eventWrapper (flush); setData is try/caught in beginExplorerDrag.
     fireEvent.dragStart(contactIcon, { dataTransfer });
     fireEvent.dragOver(aboutIcon, { dataTransfer });
     fireEvent.drop(aboutIcon, { dataTransfer });

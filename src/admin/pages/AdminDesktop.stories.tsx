@@ -1,5 +1,5 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import { AdminDesktop } from './AdminDesktop';
 
@@ -8,6 +8,22 @@ const SAMPLE_SITES = [
   { id: 2, name: 'Docs', slug: 'docs', enabled: true },
 ];
 
+function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {
+  return Number.parseFloat(element.style[prop] || '0');
+}
+
+/** Realistic pointer drag — works in Vitest browser and Chromatic. */
+async function pointerDrag(
+  target: Element,
+  from: { clientX: number; clientY: number },
+  to: { clientX: number; clientY: number },
+) {
+  await userEvent.pointer([
+    { keys: '[MouseLeft>]', target, coords: from },
+    { coords: to },
+    { keys: '[/MouseLeft]' },
+  ]);
+}
 /** Docs: fixed-height teal canvas; Canvas keeps fullscreen body desktop. */
 const withDocsDesktopFrame: Decorator = (Story, context) => {
   if (context.viewMode !== 'docs') {
@@ -120,31 +136,13 @@ export const TitleBarDrag: Story = {
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const titleBar = host.querySelector('.title-bar') as HTMLElement;
-    const startLeft = host.offsetLeft;
-    const startTop = host.offsetTop;
+    const startLeft = stylePx(host, 'left');
+    const startTop = stylePx(host, 'top');
 
-    fireEvent.pointerDown(titleBar, {
-      button: 0,
-      clientX: 120,
-      clientY: 40,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerMove(window, {
-      clientX: 220,
-      clientY: 120,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerUp(window, {
-      clientX: 220,
-      clientY: 120,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
+    await pointerDrag(titleBar, { clientX: 120, clientY: 40 }, { clientX: 220, clientY: 120 });
 
-    await expect(host.offsetLeft).toBeGreaterThan(startLeft);
-    await expect(host.offsetTop).toBeGreaterThan(startTop);
+    await expect(stylePx(host, 'left')).toBeGreaterThan(startLeft);
+    await expect(stylePx(host, 'top')).toBeGreaterThan(startTop);
   },
 };
 
@@ -219,31 +217,17 @@ export const ResizeHandle: Story = {
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const handle = host.querySelector('.window-resize-handle[data-edge="se"]') as HTMLElement;
-    const startWidth = host.offsetWidth;
-    const startHeight = host.offsetHeight;
+    const startWidth = stylePx(host, 'width') || host.offsetWidth;
+    const startHeight = stylePx(host, 'height') || host.offsetHeight;
 
-    fireEvent.pointerDown(handle, {
-      button: 0,
-      clientX: startWidth,
-      clientY: startHeight,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerMove(window, {
-      clientX: startWidth + 80,
-      clientY: startHeight + 60,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerUp(window, {
-      clientX: startWidth + 80,
-      clientY: startHeight + 60,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
+    await pointerDrag(
+      handle,
+      { clientX: startWidth, clientY: startHeight },
+      { clientX: startWidth + 80, clientY: startHeight + 60 },
+    );
 
-    await expect(host.offsetWidth).toBeGreaterThan(startWidth);
-    await expect(host.offsetHeight).toBeGreaterThan(startHeight);
+    await expect(stylePx(host, 'width') || host.offsetWidth).toBeGreaterThan(startWidth);
+    await expect(stylePx(host, 'height') || host.offsetHeight).toBeGreaterThan(startHeight);
   },
 };
 
@@ -260,29 +244,11 @@ export const Persistence: Story = {
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const titleBar = host.querySelector('.title-bar') as HTMLElement;
-    const startLeft = host.offsetLeft;
+    const startLeft = stylePx(host, 'left');
 
-    fireEvent.pointerDown(titleBar, {
-      button: 0,
-      clientX: 120,
-      clientY: 40,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerMove(window, {
-      clientX: 220,
-      clientY: 100,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
-    fireEvent.pointerUp(window, {
-      clientX: 220,
-      clientY: 100,
-      pointerId: 1,
-      pointerType: 'mouse',
-    });
+    await pointerDrag(titleBar, { clientX: 120, clientY: 40 }, { clientX: 220, clientY: 100 });
 
-    await expect(host.offsetLeft).toBeGreaterThan(startLeft);
+    await expect(stylePx(host, 'left')).toBeGreaterThan(startLeft);
 
     await new Promise((resolve) => {
       window.setTimeout(resolve, 250);
@@ -295,7 +261,7 @@ export const Persistence: Story = {
     };
     await expect(data.entries['control-panel']).toBeTruthy();
     await expect(data.entries['control-panel'].closed).toBe(false);
-    await expect(data.entries['control-panel'].left).toBe(host.offsetLeft);
+    await expect(data.entries['control-panel'].left).toBe(stylePx(host, 'left'));
 
     localStorage.removeItem(PERSISTENCE_STORY_KEY);
   },

@@ -151,7 +151,11 @@ function TreeDropLink({
         droppable
           ? (event) => {
               event.preventDefault();
-              event.dataTransfer.dropEffect = 'move';
+              try {
+                event.dataTransfer.dropEffect = 'move';
+              } catch {
+                // Synthetic drag events may expose a read-only dataTransfer.
+              }
             }
           : undefined
       }

@@ -151,8 +151,12 @@ export function DesktopWindow({
         }
         session.active = true;
         node.classList.add('is-dragging');
-        if (typeof node.setPointerCapture === 'function') {
-          node.setPointerCapture(session.pointerId);
+        try {
+          if (typeof node.setPointerCapture === 'function') {
+            node.setPointerCapture(session.pointerId);
+          }
+        } catch {
+          // Synthetic pointer sequences (Chromatic) may reject capture.
         }
         event.preventDefault();
       }
@@ -245,8 +249,12 @@ export function DesktopWindow({
       RESIZE_CURSORS[edge],
       'important',
     );
-    if (typeof node.setPointerCapture === 'function') {
-      node.setPointerCapture(event.pointerId);
+    try {
+      if (typeof node.setPointerCapture === 'function') {
+        node.setPointerCapture(event.pointerId);
+      }
+    } catch {
+      // Synthetic pointer sequences (Chromatic) may reject capture.
     }
   };
 

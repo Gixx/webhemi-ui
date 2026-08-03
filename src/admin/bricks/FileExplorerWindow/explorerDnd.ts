@@ -6,10 +6,15 @@ export const EXPLORER_DND_MIME = 'application/x-webhemi-explorer-ids';
 let activeDragIds: string[] = [];
 
 export function beginExplorerDrag(ids: string[], dataTransfer: DataTransfer): void {
+  // Always stash ids first — synthetic drag events (Chromatic / RTL) may reject setData.
   activeDragIds = [...ids];
-  dataTransfer.effectAllowed = 'move';
-  dataTransfer.setData(EXPLORER_DND_MIME, JSON.stringify(ids));
-  dataTransfer.setData('text/plain', ids.join('\n'));
+  try {
+    dataTransfer.effectAllowed = 'move';
+    dataTransfer.setData(EXPLORER_DND_MIME, JSON.stringify(ids));
+    dataTransfer.setData('text/plain', ids.join('\n'));
+  } catch {
+    // activeDragIds remains the source of truth for drop.
+  }
 }
 
 export function endExplorerDrag(): void {

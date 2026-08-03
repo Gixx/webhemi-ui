@@ -104,7 +104,11 @@ export function ExplorerContent({
       return;
     }
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    try {
+      event.dataTransfer.dropEffect = 'move';
+    } catch {
+      // Synthetic drag events may expose a read-only dataTransfer.
+    }
     if (dragOverId !== item.id) {
       setDragOverId(item.id);
     }
