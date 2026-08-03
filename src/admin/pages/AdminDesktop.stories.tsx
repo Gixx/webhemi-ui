@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
+import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import { AdminDesktop } from './AdminDesktop';
 
 const SAMPLE_SITES = [
@@ -16,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Admin desktop surface: site icons + Control Panel. Double-click opens windows.',
+          'Admin desktop surface: site icons + Control Panel. Double-click a site opens FileExplorer; Control Panel opens the icon panel.',
       },
       source: {
         language: 'tsx',
@@ -32,6 +33,8 @@ const meta = {
   },
   args: {
     sites: SAMPLE_SITES,
+    // Rich fixture in Storybook; product PHP path uses empty roots by default.
+    explorerTreeForSite: buildDemoSiteExplorerTree,
   },
 } satisfies Meta<typeof AdminDesktop>;
 
@@ -53,11 +56,18 @@ export const OpenControlPanel: Story = {
   },
 };
 
-export const OpenSiteStub: Story = {
+export const OpenSiteExplorer: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Example Site' }));
-    await expect(canvas.getByText(/Site administration for/)).toBeVisible();
-    await expect(canvas.getByRole('button', { name: 'OK' })).toBeVisible();
+    await expect(
+      canvas.getByText('Example Site', { selector: '.title-bar-text' }),
+    ).toBeVisible();
+    await expect(canvas.getByRole('menuitem', { name: 'File' })).toBeVisible();
+    await expect(canvas.getByRole('button', { name: 'Up one level' })).toBeDisabled();
+    const content = within(
+      canvasElement.querySelector('.explorer-content') as HTMLElement,
+    );
+    await expect(content.getByText('About')).toBeVisible();
   },
 };

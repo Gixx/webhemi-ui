@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
-import { Button, FieldRow, TitleBarControl, TitleBarControls } from '../chrome';
-import { DialogWindow } from '../bricks/DialogWindow';
+import {
+  buildEmptySiteExplorerTree,
+  SiteFileExplorer,
+  type ExplorerItem,
+} from '../bricks/FileExplorerWindow';
 import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import { cn } from '../../lib/cn';
@@ -14,6 +17,11 @@ export type DesktopSite = {
 
 export type AdminDesktopProps = {
   sites?: DesktopSite[];
+  /**
+   * Forest for a site explorer window. Defaults to empty product roots
+   * (`buildEmptySiteExplorerTree`) until PHP supplies real data.
+   */
+  explorerTreeForSite?: (site: DesktopSite) => ExplorerItem[];
   className?: string;
 };
 
@@ -31,14 +39,18 @@ type ControlPanelWindow = {
   z: number;
 };
 
-const CASCADE_ORIGIN = { left: 120, top: 32 };
+const CASCADE_ORIGIN = { left: 48, top: 24 };
 const CASCADE_STEP = 28;
 
 /**
  * Phase 4 admin desktop: site icons + Control Panel icon; openable windows.
- * Drag / taskbar / persistence = Phase 5.
+ * Site open → FileExplorer; drag / taskbar / persistence = Phase 5.
  */
-export function AdminDesktop({ sites = [], className }: AdminDesktopProps) {
+export function AdminDesktop({
+  sites = [],
+  explorerTreeForSite = buildEmptySiteExplorerTree,
+  className,
+}: AdminDesktopProps) {
   const nextZRef = useRef(10);
   const cascadeRef = useRef(0);
   const [controlPanel, setControlPanel] = useState<ControlPanelWindow | null>(null);
@@ -136,37 +148,29 @@ export function AdminDesktop({ sites = [], className }: AdminDesktopProps) {
         </div>
       ) : null}
 
-      {openSites.map((win) => (
-        <div
-          key={win.id}
-          className="desktop-window"
-          style={{ left: win.left, top: win.top, zIndex: win.z }}
-          onMouseDown={() => activateSite(win.id)}
-        >
-          <DialogWindow
-            title={win.name}
-            titleIcon="site"
-            type="info"
-            titleBarControls={
-              <TitleBarControls>
-                <TitleBarControl action="Close" onClick={() => closeSite(win.id)} />
-              </TitleBarControls>
-            }
-            actions={
-              <FieldRow className="justify-end">
-                <Button type="button" isDefault accessKey="o" onClick={() => closeSite(win.id)}>
-                  OK
-                </Button>
-              </FieldRow>
-            }
+      {openSites.map((win) => {
+        const site = sites.find((entry) => entry.id === win.id) ?? {
+          id: win.id,
+          name: win.name,
+        };
+        return (
+          <div
+            key={win.id}
+            className="desktop-window"
+            style={{ left: win.left, top: win.top, zIndex: win.z }}
+            onMouseDown={() => activateSite(win.id)}
           >
-            <p style={{ margin: 0 }}>
-              Site administration for <strong>{win.name}</strong> will appear here in a later
-              release.
-            </p>
-          </DialogWindow>
-        </div>
-      ))}
+            <SiteFileExplorer
+              title={win.name}
+              titleIcon="site"
+              tree={explorerTreeForSite(site)}
+              onClose={() => closeSite(win.id)}
+              width={640}
+              paneHeight={360}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

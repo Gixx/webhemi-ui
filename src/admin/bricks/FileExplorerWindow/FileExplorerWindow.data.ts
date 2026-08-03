@@ -178,3 +178,90 @@ export const EXPLORER_FIXTURE_TREE: ExplorerItem[] = [
 /** @deprecated Prefer selecting from `EXPLORER_FIXTURE_TREE`; kept for shallow imports. */
 export const EXPLORER_FIXTURE_ITEMS: ExplorerItem[] =
   EXPLORER_FIXTURE_TREE.find((n) => n.id === 'site-acme')?.children ?? [];
+
+export type SiteExplorerIdentity = {
+  id: string | number;
+  name: string;
+};
+
+/**
+ * Empty product forest for a site window until PHP supplies real nav/media data.
+ * Roots match the FileExplorer data model (site, media library, trash, settings).
+ */
+export function buildEmptySiteExplorerTree(site: SiteExplorerIdentity): ExplorerItem[] {
+  const prefix = `site-${site.id}`;
+  return [
+    {
+      id: prefix,
+      label: site.name,
+      kind: 'site',
+      role: 'site',
+      typeLabel: 'Website',
+      children: [],
+    },
+    {
+      id: `${prefix}-media`,
+      label: 'Media library',
+      kind: 'folder-gallery',
+      role: 'media-library',
+      typeLabel: 'Media Library',
+      children: [],
+    },
+    {
+      id: `${prefix}-trash`,
+      label: 'Recycle Bin',
+      kind: 'trash',
+      role: 'trash',
+      typeLabel: 'Recycle Bin',
+      expandable: false,
+      children: [],
+    },
+    {
+      id: `${prefix}-settings`,
+      label: 'Settings',
+      kind: 'settings',
+      role: 'settings',
+      typeLabel: 'Settings',
+      expandable: false,
+      disabled: true,
+    },
+  ];
+}
+
+/**
+ * Remap the Storybook Acme fixture onto another site id/name (demo / desktop stories).
+ */
+export function buildDemoSiteExplorerTree(site: SiteExplorerIdentity): ExplorerItem[] {
+  const prefix = `site-${site.id}`;
+
+  const remap = (nodes: ExplorerItem[], path: string): ExplorerItem[] =>
+    nodes.map((node) => ({
+      ...node,
+      id: `${path}/${node.id}`,
+      children: node.children ? remap(node.children, `${path}/${node.id}`) : undefined,
+    }));
+
+  const [siteRoot, media, trash, settings] = EXPLORER_FIXTURE_TREE;
+  return [
+    {
+      ...siteRoot,
+      id: prefix,
+      label: site.name,
+      children: siteRoot.children ? remap(siteRoot.children, prefix) : [],
+    },
+    {
+      ...media,
+      id: `${prefix}-media`,
+      children: media.children ? remap(media.children, `${prefix}-media`) : [],
+    },
+    {
+      ...trash,
+      id: `${prefix}-trash`,
+      children: trash.children ? remap(trash.children, `${prefix}-trash`) : [],
+    },
+    {
+      ...settings,
+      id: `${prefix}-settings`,
+    },
+  ];
+}

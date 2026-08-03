@@ -2,6 +2,7 @@ export { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorer
 export { ExplorerToolbar, type ExplorerToolbarProps } from './ExplorerToolbar';
 export { ExplorerMenuBar, type ExplorerMenuBarProps } from './ExplorerMenuBar';
 export { ExplorerContent, type ExplorerContentProps } from './ExplorerContent';
+export { SiteFileExplorer, type SiteFileExplorerProps } from './SiteFileExplorer';
 export {
   formatExplorerSize,
   explorerContentItems,
@@ -21,4 +22,7 @@ export {
   EXPLORER_FIXTURE_TREE,
   EXPLORER_FIXTURE_ITEMS,
   EXPLORER_FIXTURE_SITE,
+  buildEmptySiteExplorerTree,
+  buildDemoSiteExplorerTree,
+  type SiteExplorerIdentity,
 } from './FileExplorerWindow.data';
