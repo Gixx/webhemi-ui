@@ -8,13 +8,17 @@
 
 @use "sass:meta";
 
-html[data-wh-theme="admin"] {
+html[data-wh-theme="admin"],
+[data-wh-theme="admin"] {
   position: relative;
   margin: 0;
   padding: 0;
+  user-select: none;
+}
+
+html[data-wh-theme="admin"] {
   width: 100vw;
   height: 100vh;
-  user-select: none;
 }
 
 [data-wh-theme="admin"] {

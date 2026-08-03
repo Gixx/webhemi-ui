@@ -45,3 +45,10 @@ ul.tree-view {
 *:focus {
   outline: none;
 }
+
+/* Shell UI is non-selectable; allow selection only in editable fields. */
+input,
+textarea,
+[contenteditable="true"] {
+  user-select: text;
+}

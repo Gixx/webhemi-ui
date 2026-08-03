@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fireEvent, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import { AdminDesktop } from './AdminDesktop';
@@ -8,16 +8,29 @@ const SAMPLE_SITES = [
   { id: 2, name: 'Docs', slug: 'docs', enabled: true },
 ];
 
+/** Docs: fixed-height teal canvas; Canvas keeps fullscreen body desktop. */
+const withDocsDesktopFrame: Decorator = (Story, context) => {
+  if (context.viewMode !== 'docs') {
+    return <Story />;
+  }
+  return (
+    <div className="sb-admin-desktop-docs">
+      <Story />
+    </div>
+  );
+};
+
 const meta = {
   title: 'Admin/Components/AdminDesktop',
   component: AdminDesktop,
+  decorators: [withDocsDesktopFrame],
   parameters: {
     layout: 'fullscreen',
     backgrounds: { value: 'desktop' },
     docs: {
       description: {
         component:
-          'Admin desktop surface: site icons + Control Panel. Double-click a site opens FileExplorer; Control Panel opens the icon panel. Shell windows track active/inactive title-bars (Phase 5).',
+          'Admin desktop surface: site icons + Control Panel, shell windows with drag/active title-bars, and a taskbar (minimize / restore).',
       },
       source: {
         language: 'tsx',
@@ -129,5 +142,28 @@ export const TitleBarDrag: Story = {
 
     await expect(host.offsetLeft).toBeGreaterThan(startLeft);
     await expect(host.offsetTop).toBeGreaterThan(startTop);
+  },
+};
+
+export const TaskbarMinimize: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+
+    const host = canvasElement.querySelector('#control-panel') as HTMLElement;
+    const task = canvas.getByRole('button', { name: 'Control Panel', pressed: true });
+    await expect(host).not.toHaveClass('is-minimized');
+    await expect(task).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Minimize' }));
+    await expect(host).toHaveClass('is-minimized');
+    await expect(task).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(task);
+    await expect(host).not.toHaveClass('is-minimized');
+    await expect(task).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(task);
+    await expect(host).toHaveClass('is-minimized');
   },
 };

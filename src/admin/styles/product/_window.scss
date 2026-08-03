@@ -230,6 +230,33 @@ html.is-window-resizing * {
 }
 
 /*
+ * Size grip: only when the window is resizable and a status bar is present.
+ * Sit slightly outside the 3rd field so the glyph covers the inset bevel.
+ */
+.window.resizable:not(.is-maximized) > .status-bar {
+  overflow: visible;
+}
+
+.window.resizable:not(.is-maximized) > .status-bar > .status-bar-field:nth-child(3) {
+  position: relative;
+  overflow: visible;
+}
+
+.window.resizable:not(.is-maximized) > .status-bar > .status-bar-field:nth-child(3)::after {
+  content: "";
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  background: url("/assets/admin/chrome/window-resize.svg") no-repeat right bottom;
+  background-size: 12px 12px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/*
  * Bleed content to the window chrome inside .window-body
  * (classic chrome used margin: 8px on .window-body). Prefer layout-encoded bleed;
  * keep .stretched for one-off cases.

@@ -54,6 +54,8 @@ export type SiteFileExplorerProps = Omit<
   tree: ExplorerItem[];
   /** Initial content location; defaults to the first tree root. */
   initialLocationId?: string;
+  /** Shell minimize (Phase 5 taskbar). */
+  onMinimize?: () => void;
 };
 
 /**
@@ -64,6 +66,7 @@ export function SiteFileExplorer({
   tree,
   initialLocationId,
   onClose,
+  onMinimize,
   title,
   titleIcon = 'site',
   ...rest
@@ -311,7 +314,7 @@ export function SiteFileExplorer({
         onStatusBarToggle={() => setStatusBarVisible((value) => !value)}
         titleBarControls={
           <TitleBarControls>
-            <TitleBarControl action="Minimize" />
+            <TitleBarControl action="Minimize" onClick={onMinimize} />
             <TitleBarControl action="Maximize" />
             <TitleBarControl action="Close" onClick={onClose} />
           </TitleBarControls>

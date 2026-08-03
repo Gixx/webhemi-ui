@@ -7,9 +7,13 @@ export {
   type ShellPlacement,
 } from './types';
 export { DesktopWindow, type DesktopWindowProps } from './DesktopWindow';
+export { Taskbar, type TaskbarProps } from './Taskbar';
+export { TaskbarClock } from './TaskbarClock';
 export {
   DRAG_THRESHOLD_PX,
+  TASKBAR_RESERVE_PX,
   clampDesktopPosition,
+  getDesktopWorkSize,
   findShellProductWindow,
   findShellTitleBar,
 } from './geometry';

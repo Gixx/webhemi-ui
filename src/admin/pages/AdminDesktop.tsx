@@ -11,6 +11,7 @@ import {
   CONTROL_PANEL_WINDOW_ID,
   DesktopWindow,
   siteWindowId,
+  Taskbar,
   type ShellWindowState,
 } from '../shell';
 
@@ -39,16 +40,20 @@ type DesktopShellState = {
 const CASCADE_ORIGIN = { left: 48, top: 24 };
 const CASCADE_STEP = 28;
 
-function topWindowId(windows: ShellWindowState[]): string | null {
-  return windows.reduce<ShellWindowState | null>(
-    (best, win) => (!best || win.z > best.z ? win : best),
-    null,
-  )?.id ?? null;
+function topVisibleWindowId(windows: ShellWindowState[]): string | null {
+  return (
+    windows
+      .filter((win) => !win.minimized)
+      .reduce<ShellWindowState | null>(
+        (best, win) => (!best || win.z > best.z ? win : best),
+        null,
+      )?.id ?? null
+  );
 }
 
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 5 Slice A–B: registry + active/inactive + title-bar drag. Taskbar / persistence follow.
+ * Phase 5 Slice A–C: registry, drag, taskbar + minimize. Start menu / persistence follow.
  */
 export function AdminDesktop({
   sites = [],
@@ -81,14 +86,13 @@ export function AdminDesktop({
   const activateWindow = (id: string) => {
     setShell((prev) => {
       const target = prev.windows.find((win) => win.id === id);
-      if (!target) {
+      if (!target || target.minimized) {
         return prev;
       }
       if (target.z === nextZRef.current && prev.activeId === id) {
         return prev;
       }
-      const z =
-        target.z === nextZRef.current ? target.z : raiseZ();
+      const z = target.z === nextZRef.current ? target.z : raiseZ();
       return {
         activeId: id,
         windows: prev.windows.map((win) =>
@@ -103,20 +107,74 @@ export function AdminDesktop({
       const windows = prev.windows.filter((win) => win.id !== id);
       return {
         windows,
-        activeId: prev.activeId === id ? topWindowId(windows) : prev.activeId,
+        activeId:
+          prev.activeId === id ? topVisibleWindowId(windows) : prev.activeId,
       };
     });
+  };
+
+  const minimizeWindow = (id: string) => {
+    setShell((prev) => {
+      let windows = prev.windows.map((win) =>
+        win.id === id ? { ...win, minimized: true } : win,
+      );
+      let activeId =
+        prev.activeId === id ? topVisibleWindowId(windows) : prev.activeId;
+      if (activeId && activeId !== prev.activeId) {
+        const z = raiseZ();
+        windows = windows.map((win) =>
+          win.id === activeId ? { ...win, z } : win,
+        );
+      }
+      return { windows, activeId };
+    });
+  };
+
+  const restoreAndActivate = (id: string) => {
+    setShell((prev) => {
+      const target = prev.windows.find((win) => win.id === id);
+      if (!target) {
+        return prev;
+      }
+      const z =
+        !target.minimized && target.z === nextZRef.current
+          ? target.z
+          : raiseZ();
+      return {
+        activeId: id,
+        windows: prev.windows.map((win) =>
+          win.id === id ? { ...win, minimized: false, z } : win,
+        ),
+      };
+    });
+  };
+
+  const handleTaskClick = (id: string) => {
+    const target = shell.windows.find((win) => win.id === id);
+    if (!target) {
+      return;
+    }
+    if (!target.minimized && shell.activeId === id) {
+      minimizeWindow(id);
+      return;
+    }
+    restoreAndActivate(id);
   };
 
   const openControlPanel = () => {
     setShell((prev) => {
       const existing = prev.windows.find((win) => win.id === CONTROL_PANEL_WINDOW_ID);
       if (existing) {
-        const z = existing.z === nextZRef.current ? existing.z : raiseZ();
+        const z =
+          !existing.minimized && existing.z === nextZRef.current
+            ? existing.z
+            : raiseZ();
         return {
           activeId: CONTROL_PANEL_WINDOW_ID,
           windows: prev.windows.map((win) =>
-            win.id === CONTROL_PANEL_WINDOW_ID ? { ...win, z } : win,
+            win.id === CONTROL_PANEL_WINDOW_ID
+              ? { ...win, z, minimized: false }
+              : win,
           ),
         };
       }
@@ -145,10 +203,15 @@ export function AdminDesktop({
     setShell((prev) => {
       const existing = prev.windows.find((win) => win.id === id);
       if (existing) {
-        const z = existing.z === nextZRef.current ? existing.z : raiseZ();
+        const z =
+          !existing.minimized && existing.z === nextZRef.current
+            ? existing.z
+            : raiseZ();
         return {
           activeId: id,
-          windows: prev.windows.map((win) => (win.id === id ? { ...win, z } : win)),
+          windows: prev.windows.map((win) =>
+            win.id === id ? { ...win, z, minimized: false } : win,
+          ),
         };
       }
       const place = allocatePlacement();
@@ -202,7 +265,7 @@ export function AdminDesktop({
       </div>
 
       {shell.windows.map((win) => {
-        const active = win.id === shell.activeId;
+        const active = win.id === shell.activeId && !win.minimized;
 
         if (win.kind === 'control-panel') {
           return (
@@ -212,12 +275,15 @@ export function AdminDesktop({
               left={win.left}
               top={win.top}
               zIndex={win.z}
+              className={cn(win.minimized && 'is-minimized')}
+              dragDisabled={win.minimized}
               onActivate={() => activateWindow(win.id)}
               onPositionChange={(left, top) => moveWindow(win.id, left, top)}
             >
               <ControlPanel
                 inactive={!active}
                 onClose={() => closeWindow(win.id)}
+                onMinimize={() => minimizeWindow(win.id)}
                 onActivate={() => activateWindow(win.id)}
               />
             </DesktopWindow>
@@ -236,6 +302,8 @@ export function AdminDesktop({
             left={win.left}
             top={win.top}
             zIndex={win.z}
+            className={cn(win.minimized && 'is-minimized')}
+            dragDisabled={win.minimized}
             onActivate={() => activateWindow(win.id)}
             onPositionChange={(left, top) => moveWindow(win.id, left, top)}
           >
@@ -245,12 +313,19 @@ export function AdminDesktop({
               titleIcon="site"
               tree={explorerTreeForSite(site)}
               onClose={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
               width={640}
               paneHeight={360}
             />
           </DesktopWindow>
         );
       })}
+
+      <Taskbar
+        windows={shell.windows}
+        activeId={shell.activeId}
+        onTaskClick={handleTaskClick}
+      />
     </div>
   );
 }
