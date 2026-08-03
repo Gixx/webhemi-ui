@@ -4,10 +4,12 @@ import { TreeToggle, TreeView } from '../../chrome/TreeView';
 import { cn } from '../../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 import { ExplorerContent } from './ExplorerContent';
+import { ExplorerMenuBar } from './ExplorerMenuBar';
 import { ExplorerToolbar } from './ExplorerToolbar';
 import {
   explorerTreeChildren,
   findExplorerAncestorIds,
+  findExplorerItem,
   isExplorerTreeExpandable,
   type ExplorerItem,
   type ExplorerView,
@@ -42,6 +44,16 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
   onUndo?: () => void;
   onDelete?: () => void;
   onProperties?: () => void;
+  /** File menu / title-bar Close. */
+  onClose?: () => void;
+  onNewFolder?: () => void;
+  onNewPage?: () => void;
+  onRename?: () => void;
+  onSelectAll?: () => void;
+  onRefresh?: () => void;
+  statusBarVisible?: boolean;
+  onStatusBarToggle?: () => void;
+  onAbout?: () => void;
   /** Total pane height (toolbar + split). */
   paneHeight?: number | string;
   treeWidth?: number | string;
@@ -199,6 +211,15 @@ export function FileExplorerWindow({
   onUndo,
   onDelete,
   onProperties,
+  onClose,
+  onNewFolder,
+  onNewPage,
+  onRename,
+  onSelectAll,
+  onRefresh,
+  statusBarVisible = true,
+  onStatusBarToggle,
+  onAbout,
   className,
   paneHeight = 360,
   treeWidth = 200,
@@ -218,6 +239,9 @@ export function FileExplorerWindow({
     [tree, locationId],
   );
 
+  const selectedItem =
+    findExplorerItem(tree, selectedId) ?? items.find((item) => item.id === selectedId) ?? null;
+
   return (
     <PaneWindowShell
       className={cn('w-window-xl file-explorer-window', className)}
@@ -225,6 +249,36 @@ export function FileExplorerWindow({
       {...shell}
     >
       <div className="window-pane explorer-panel-layout" style={paneStyle}>
+        <ExplorerMenuBar
+          view={view}
+          onViewChange={onViewChange}
+          onFileOpen={
+            onOpen
+              ? () => {
+                  if (selectedItem) {
+                    onOpen(selectedItem);
+                  }
+                }
+              : undefined
+          }
+          fileOpenDisabled={!selectedItem}
+          onNewFolder={onNewFolder}
+          onNewPage={onNewPage}
+          onRename={onRename}
+          onDelete={onDelete}
+          onProperties={onProperties}
+          onClose={onClose}
+          onUndo={onUndo}
+          onCut={onCut}
+          onCopy={onCopy}
+          onPaste={onPaste}
+          onSelectAll={onSelectAll}
+          onRefresh={onRefresh}
+          statusBarVisible={statusBarVisible}
+          onStatusBarToggle={onStatusBarToggle}
+          onAbout={onAbout}
+        />
+        <div className="explorer-chrome-separator" role="separator" />
         <ExplorerToolbar
           view={view}
           onViewChange={onViewChange}

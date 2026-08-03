@@ -13,6 +13,154 @@
   box-sizing: border-box;
 }
 
+.explorer-panel-layout > .panel.explorer-menubar {
+  flex: 0 0 auto;
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
+  padding: 1px 2px;
+  background: var(--surface, #c0c0c0);
+  z-index: 2;
+}
+
+.explorer-menu-root {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.explorer-menu-button {
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  /* Transparent border reserves 1px so hover/active outset|inset does not shift text. */
+  padding: 1px 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  color: #000;
+  font: inherit;
+  cursor: default;
+}
+
+.explorer-menu-button:focus {
+  outline: none;
+}
+
+/* Win98 flat menubar: no navy fill — hover raises, open/press sinks. */
+.explorer-menu-button:not(:disabled):hover:not([aria-expanded='true']),
+.explorer-menu-button:focus-visible:not([aria-expanded='true']) {
+  background: transparent;
+  color: #000;
+  border-top-color: var(--button-highlight, #fff);
+  border-left-color: var(--button-highlight, #fff);
+  border-right-color: var(--button-shadow, #808080);
+  border-bottom-color: var(--button-shadow, #808080);
+  box-shadow: none;
+  outline: none;
+  text-shadow: none;
+}
+
+.explorer-menu-button[aria-expanded='true'],
+.explorer-menu-button:not(:disabled):active {
+  background: transparent;
+  color: #000;
+  border-top-color: var(--button-shadow, #808080);
+  border-left-color: var(--button-shadow, #808080);
+  border-right-color: var(--button-highlight, #fff);
+  border-bottom-color: var(--button-highlight, #fff);
+  box-shadow: none;
+  outline: none;
+  text-shadow: none;
+}
+
+.explorer-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  margin: 0;
+  padding: 2px;
+  background: var(--surface, #c0c0c0);
+  @include bevel-raised;
+  box-sizing: border-box;
+}
+
+.explorer-menu-separator {
+  height: 0;
+  margin: 3px 2px;
+  border: none;
+  border-top: 1px solid var(--button-shadow, #808080);
+  border-bottom: 1px solid var(--button-highlight, #fff);
+}
+
+.explorer-menu-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 2px 12px 2px 4px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: #000;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.explorer-menu-item:not(:disabled):hover,
+.explorer-menu-item:not(:disabled):focus {
+  background: var(--dialog-blue, #000080);
+  color: var(--button-highlight, #fff);
+  box-shadow: none;
+  outline: none;
+}
+
+.explorer-menu-item:disabled,
+.explorer-menu-item.is-disabled {
+  color: var(--button-shadow, #808080);
+  text-shadow: 1px 1px 0 var(--button-highlight, #fff);
+}
+
+.explorer-menu-item:disabled:hover,
+.explorer-menu-item:disabled:focus {
+  background: transparent;
+  color: var(--button-shadow, #808080);
+}
+
+.explorer-menu-check {
+  display: inline-flex;
+  flex: 0 0 14px;
+  width: 14px;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.explorer-menu-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.explorer-panel-layout > .explorer-chrome-separator {
+  flex: 0 0 auto;
+  height: 0;
+  margin: 1px 2px;
+  border: none;
+  border-top: 1px solid var(--button-shadow, #808080);
+  border-bottom: 1px solid var(--button-highlight, #fff);
+}
+
 .explorer-panel-layout > .panel.explorer-toolbar {
   flex: 0 0 auto;
   display: flex;

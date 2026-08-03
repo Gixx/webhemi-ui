@@ -33,6 +33,8 @@ type StoryArgs = WindowBrickShellArgs & {
   onUndo: () => void;
   onDelete: () => void;
   onProperties: () => void;
+  onClose: () => void;
+  onAbout: () => void;
   onOpen: (item: ExplorerItem) => void;
 };
 
@@ -42,6 +44,7 @@ function ExplorerDemo(args: StoryArgs) {
   const [locationId, setLocationId] = useState<string>(EXPLORER_FIXTURE_SITE.id);
   /** Highlighted item in the content pane (independent of location). */
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [statusBarVisible, setStatusBarVisible] = useState(true);
 
   const location = useMemo(
     () => findExplorerItem(EXPLORER_FIXTURE_TREE, locationId),
@@ -102,15 +105,21 @@ function ExplorerDemo(args: StoryArgs) {
       onUndo={args.onUndo}
       onDelete={args.onDelete}
       onProperties={args.onProperties}
+      onClose={args.onClose}
+      onAbout={args.onAbout}
+      statusBarVisible={statusBarVisible}
+      onStatusBarToggle={() => setStatusBarVisible((value) => !value)}
       statusBar={
-        <StatusBar>
-          <StatusBarField>
-            {items.length} object(s)
-            {hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
-          </StatusBarField>
-          <StatusBarField className="description">{statusItem?.typeLabel ?? ''}</StatusBarField>
-          <StatusBarField />
-        </StatusBar>
+        statusBarVisible ? (
+          <StatusBar>
+            <StatusBarField>
+              {items.length} object(s)
+              {hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
+            </StatusBarField>
+            <StatusBarField className="description">{statusItem?.typeLabel ?? ''}</StatusBarField>
+            <StatusBarField />
+          </StatusBar>
+        ) : undefined
       }
     />
   );
@@ -168,6 +177,7 @@ function SiteExplorer({
         setSelectedId(null);
       }}
       levelUpDisabled={!parent}
+      onClose={() => {}}
       paneHeight={360}
       width={640}
     />
@@ -183,7 +193,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Site-management explorer: nav tree, media library, recycle bin, settings. Title uses the site name; title-bar icon is the site glyph (favicon later). Tree navigates location; content single-click selects, double-click opens. Keep `locationId` (listing) separate from `selectedId` (highlight). Up uses parent lookup and is disabled on forest roots.',
+          'Site-management explorer: File/Edit/View/Help menubar, toolbar, nav tree, media library, recycle bin, settings. Tree navigates location; content single-click selects, double-click opens. Keep `locationId` separate from `selectedId`. Menu items without handlers stay disabled; View modes and overlapping edit actions share toolbar handlers.',
       },
       source: {
         language: 'tsx',
@@ -206,6 +216,8 @@ const meta = {
     onUndo: fn(),
     onDelete: fn(),
     onProperties: fn(),
+    onClose: fn(),
+    onAbout: fn(),
     onOpen: fn(),
   },
   argTypes: {
@@ -273,5 +285,36 @@ export const Navigation: Story = {
       'true',
     );
     await expect(up).toBeDisabled();
+  },
+};
+
+export const MenuBar: Story = {
+  args: { view: 'large-icons' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const content = within(
+      canvasElement.querySelector('.explorer-content') as HTMLElement,
+    );
+
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'File' }));
+    await expect(canvas.getByRole('menuitem', { name: 'New Folder' })).toBeDisabled();
+    await expect(canvas.getByRole('menuitem', { name: 'Open' })).toBeDisabled();
+    await expect(canvas.getByRole('menuitem', { name: 'Close' })).toBeEnabled();
+
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Close' }));
+    await expect(args.onClose).toHaveBeenCalled();
+
+    await userEvent.click(content.getByText('About'));
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'File' }));
+    await expect(canvas.getByRole('menuitem', { name: 'Open' })).toBeEnabled();
+    await userEvent.keyboard('{Escape}');
+
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'View' }));
+    await userEvent.click(canvas.getByRole('menuitemradio', { name: /Details/ }));
+    await expect(canvas.getByRole('button', { name: 'Details' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(canvas.getByRole('columnheader', { name: 'Name' })).toBeVisible();
   },
 };

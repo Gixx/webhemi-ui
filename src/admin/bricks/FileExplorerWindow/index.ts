@@ -1,5 +1,6 @@
 export { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorerWindow';
 export { ExplorerToolbar, type ExplorerToolbarProps } from './ExplorerToolbar';
+export { ExplorerMenuBar, type ExplorerMenuBarProps } from './ExplorerMenuBar';
 export { ExplorerContent, type ExplorerContentProps } from './ExplorerContent';
 export {
   formatExplorerSize,

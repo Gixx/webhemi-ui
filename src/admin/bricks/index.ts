@@ -12,6 +12,7 @@ export { WizardWindow, type WizardWindowProps } from './WizardWindow';
 export {
   FileExplorerWindow,
   ExplorerToolbar,
+  ExplorerMenuBar,
   ExplorerContent,
   formatExplorerSize,
   explorerContentItems,
@@ -28,6 +29,7 @@ export {
   EXPLORER_FIXTURE_SITE,
   type FileExplorerWindowProps,
   type ExplorerToolbarProps,
+  type ExplorerMenuBarProps,
   type ExplorerContentProps,
   type ExplorerItem,
   type ExplorerView,
