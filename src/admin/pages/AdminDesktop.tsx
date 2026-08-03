@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   buildEmptySiteExplorerTree,
   SiteFileExplorer,
@@ -11,6 +11,7 @@ import {
   CONTROL_PANEL_WINDOW_ID,
   DesktopWindow,
   siteWindowId,
+  StartMenu,
   Taskbar,
   type ShellWindowState,
 } from '../shell';
@@ -29,6 +30,8 @@ export type AdminDesktopProps = {
    * (`buildEmptySiteExplorerTree`) until PHP supplies real data.
    */
   explorerTreeForSite?: (site: DesktopSite) => ExplorerItem[];
+  /** Logout URL for Start → Logout (Twig: `path('app_logout')`). */
+  logoutHref?: string;
   className?: string;
 };
 
@@ -53,11 +56,12 @@ function topVisibleWindowId(windows: ShellWindowState[]): string | null {
 
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 5 Slice A–C: registry, drag, taskbar + minimize. Start menu / persistence follow.
+ * Phase 5 Slice A–D: registry, drag, taskbar + minimize, Start menu.
  */
 export function AdminDesktop({
   sites = [],
   explorerTreeForSite = buildEmptySiteExplorerTree,
+  logoutHref,
   className,
 }: AdminDesktopProps) {
   const nextZRef = useRef(10);
@@ -66,6 +70,12 @@ export function AdminDesktop({
     windows: [],
     activeId: null,
   });
+  const [startMenuOpen, setStartMenuOpen] = useState(false);
+
+  const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
+  const toggleStartMenu = useCallback(() => {
+    setStartMenuOpen((open) => !open);
+  }, []);
 
   const allocatePlacement = () => {
     const index = cascadeRef.current;
@@ -325,6 +335,16 @@ export function AdminDesktop({
         windows={shell.windows}
         activeId={shell.activeId}
         onTaskClick={handleTaskClick}
+        onMenuClick={toggleStartMenu}
+        menuExpanded={startMenuOpen}
+        startMenu={
+          <StartMenu
+            open={startMenuOpen}
+            onClose={closeStartMenu}
+            onOpenControlPanel={openControlPanel}
+            logoutHref={logoutHref}
+          />
+        }
       />
     </div>
   );

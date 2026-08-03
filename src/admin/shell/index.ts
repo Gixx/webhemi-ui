@@ -9,6 +9,7 @@ export {
 export { DesktopWindow, type DesktopWindowProps } from './DesktopWindow';
 export { Taskbar, type TaskbarProps } from './Taskbar';
 export { TaskbarClock } from './TaskbarClock';
+export { StartMenu, type StartMenuProps } from './StartMenu';
 export {
   DRAG_THRESHOLD_PX,
   TASKBAR_RESERVE_PX,

@@ -134,6 +134,18 @@
   text-shadow: none;
 }
 
+#toolbar .start-menu-list .start-item:disabled {
+  color: grey;
+  text-shadow: 1px 1px 0 #fff;
+}
+
+#toolbar .start-menu-list .start-item:disabled:hover,
+#toolbar .start-menu-list .start-item:disabled:focus-visible {
+  background-color: transparent;
+  color: grey;
+  text-shadow: 1px 1px 0 #fff;
+}
+
 #toolbar .start-menu-list .start-item.uploads {
   background-image: url("/assets/admin/icons/system/upload.svg");
 }

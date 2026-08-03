@@ -30,7 +30,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Admin desktop surface: site icons + Control Panel, shell windows with drag/active title-bars, and a taskbar (minimize / restore).',
+          'Admin desktop surface: site icons + Control Panel, shell windows with drag/active title-bars, taskbar minimize/restore, and Start menu.',
       },
       source: {
         language: 'tsx',
@@ -48,6 +48,7 @@ const meta = {
     sites: SAMPLE_SITES,
     // Rich fixture in Storybook; product PHP path uses empty roots by default.
     explorerTreeForSite: buildDemoSiteExplorerTree,
+    logoutHref: '/logout',
   },
 } satisfies Meta<typeof AdminDesktop>;
 
@@ -165,5 +166,26 @@ export const TaskbarMinimize: Story = {
 
     await userEvent.click(task);
     await expect(host).toHaveClass('is-minimized');
+  },
+};
+
+export const StartMenuControlPanel: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const menuButton = canvas.getByRole('button', { name: 'Menu' });
+
+    await expect(canvasElement.querySelector('#start-menu')).toHaveAttribute('hidden');
+    await userEvent.click(menuButton);
+    await expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(canvasElement.querySelector('#start-menu')).not.toHaveAttribute('hidden');
+
+    await expect(canvas.getByRole('menuitem', { name: 'Uploads' })).toBeDisabled();
+    await expect(canvas.getByRole('menuitem', { name: 'Logout' })).toBeEnabled();
+
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Control Panel' }));
+    await expect(canvasElement.querySelector('#start-menu')).toHaveAttribute('hidden');
+    await expect(
+      canvas.getByText('Control Panel', { selector: '.title-bar-text' }),
+    ).toBeVisible();
   },
 };
