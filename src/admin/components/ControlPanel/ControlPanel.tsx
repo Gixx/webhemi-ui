@@ -27,6 +27,8 @@ export type ControlPanelProps = {
   onMaximize?: () => void;
   /** Bring this window to front (Phase 4: bump z-index via parent). */
   onActivate?: () => void;
+  /** Inactive title-bar when another shell window is focused. */
+  inactive?: boolean;
   className?: string;
   style?: CSSProperties;
   width?: number;
@@ -42,6 +44,7 @@ export function ControlPanel({
   onMinimize,
   onMaximize,
   onActivate,
+  inactive = false,
   className,
   style,
   width = 600,
@@ -54,7 +57,7 @@ export function ControlPanel({
       className={className}
       style={style}
       width={width}
-      draggable
+      inactive={inactive}
       resizable
       paneHeight={paneHeight}
       title="Control Panel"

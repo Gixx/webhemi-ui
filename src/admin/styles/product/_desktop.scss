@@ -1,4 +1,4 @@
-/* Product: desktop shell surface (Phase 4; WM in Phase 5). Icon chrome: chrome/_icon.scss */
+/* Product: desktop shell surface (Phase 5). Icon chrome: chrome/_icon.scss */
 
 .dashboard {
   position: relative;
@@ -17,6 +17,11 @@
 
 .dashboard > .desktop-window {
   position: absolute;
+}
+
+.dashboard > .desktop-window.is-dragging {
+  cursor: move;
+  user-select: none;
 }
 
 .dashboard [draggable="true"] {

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, fireEvent, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import { AdminDesktop } from './AdminDesktop';
 
@@ -17,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Admin desktop surface: site icons + Control Panel. Double-click a site opens FileExplorer; Control Panel opens the icon panel.',
+          'Admin desktop surface: site icons + Control Panel. Double-click a site opens FileExplorer; Control Panel opens the icon panel. Shell windows track active/inactive title-bars (Phase 5).',
       },
       source: {
         language: 'tsx',
@@ -69,5 +69,65 @@ export const OpenSiteExplorer: Story = {
       canvasElement.querySelector('.explorer-content') as HTMLElement,
     );
     await expect(content.getByText('About')).toBeVisible();
+  },
+};
+
+export const ActiveInactive: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Example Site' }));
+
+    const controlPanel = canvasElement.querySelector('#control-panel') as HTMLElement;
+    const siteWindow = canvasElement.querySelector('#site-1') as HTMLElement;
+    await expect(controlPanel).toBeTruthy();
+    await expect(siteWindow).toBeTruthy();
+    await expect(controlPanel).toHaveAttribute('data-shell-window', 'control-panel');
+    await expect(siteWindow).toHaveAttribute('data-shell-window', 'site-1');
+
+    const siteTitleBar = siteWindow.querySelector('.title-bar') as HTMLElement;
+    const cpTitleBar = controlPanel.querySelector('.title-bar') as HTMLElement;
+    await expect(siteTitleBar).not.toHaveClass('inactive');
+    await expect(cpTitleBar).toHaveClass('inactive');
+
+    await userEvent.click(cpTitleBar);
+    await expect(cpTitleBar).not.toHaveClass('inactive');
+    await expect(siteTitleBar).toHaveClass('inactive');
+  },
+};
+
+export const TitleBarDrag: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+
+    const host = canvasElement.querySelector('#control-panel') as HTMLElement;
+    const titleBar = host.querySelector('.title-bar') as HTMLElement;
+    const startLeft = host.offsetLeft;
+    const startTop = host.offsetTop;
+
+    fireEvent.pointerDown(titleBar, {
+      button: 0,
+      clientX: 120,
+      clientY: 40,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 220,
+      clientY: 120,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerUp(window, {
+      clientX: 220,
+      clientY: 120,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+
+    await expect(host.offsetLeft).toBeGreaterThan(startLeft);
+    await expect(host.offsetTop).toBeGreaterThan(startTop);
   },
 };

@@ -7,6 +7,12 @@ import {
 import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import { cn } from '../../lib/cn';
+import {
+  CONTROL_PANEL_WINDOW_ID,
+  DesktopWindow,
+  siteWindowId,
+  type ShellWindowState,
+} from '../shell';
 
 export type DesktopSite = {
   id: number;
@@ -25,26 +31,24 @@ export type AdminDesktopProps = {
   className?: string;
 };
 
-type OpenSiteWindow = {
-  id: number;
-  name: string;
-  left: number;
-  top: number;
-  z: number;
-};
-
-type ControlPanelWindow = {
-  left: number;
-  top: number;
-  z: number;
+type DesktopShellState = {
+  windows: ShellWindowState[];
+  activeId: string | null;
 };
 
 const CASCADE_ORIGIN = { left: 48, top: 24 };
 const CASCADE_STEP = 28;
 
+function topWindowId(windows: ShellWindowState[]): string | null {
+  return windows.reduce<ShellWindowState | null>(
+    (best, win) => (!best || win.z > best.z ? win : best),
+    null,
+  )?.id ?? null;
+}
+
 /**
- * Phase 4 admin desktop: site icons + Control Panel icon; openable windows.
- * Site open → FileExplorer; drag / taskbar / persistence = Phase 5.
+ * Admin desktop: site icons + Control Panel; openable shell windows.
+ * Phase 5 Slice A–B: registry + active/inactive + title-bar drag. Taskbar / persistence follow.
  */
 export function AdminDesktop({
   sites = [],
@@ -53,8 +57,10 @@ export function AdminDesktop({
 }: AdminDesktopProps) {
   const nextZRef = useRef(10);
   const cascadeRef = useRef(0);
-  const [controlPanel, setControlPanel] = useState<ControlPanelWindow | null>(null);
-  const [openSites, setOpenSites] = useState<OpenSiteWindow[]>([]);
+  const [shell, setShell] = useState<DesktopShellState>({
+    windows: [],
+    activeId: null,
+  });
 
   const allocatePlacement = () => {
     const index = cascadeRef.current;
@@ -72,51 +78,107 @@ export function AdminDesktop({
     return nextZRef.current;
   };
 
-  const openControlPanel = () => {
-    setControlPanel((prev) => {
-      if (prev) {
-        return { ...prev, z: raiseZ() };
+  const activateWindow = (id: string) => {
+    setShell((prev) => {
+      const target = prev.windows.find((win) => win.id === id);
+      if (!target) {
+        return prev;
       }
-      return allocatePlacement();
+      if (target.z === nextZRef.current && prev.activeId === id) {
+        return prev;
+      }
+      const z =
+        target.z === nextZRef.current ? target.z : raiseZ();
+      return {
+        activeId: id,
+        windows: prev.windows.map((win) =>
+          win.id === id ? { ...win, z } : win,
+        ),
+      };
     });
   };
 
-  const closeControlPanel = () => setControlPanel(null);
+  const closeWindow = (id: string) => {
+    setShell((prev) => {
+      const windows = prev.windows.filter((win) => win.id !== id);
+      return {
+        windows,
+        activeId: prev.activeId === id ? topWindowId(windows) : prev.activeId,
+      };
+    });
+  };
 
-  const openSite = (site: DesktopSite) => {
-    setOpenSites((prev) => {
-      const existing = prev.find((w) => w.id === site.id);
+  const openControlPanel = () => {
+    setShell((prev) => {
+      const existing = prev.windows.find((win) => win.id === CONTROL_PANEL_WINDOW_ID);
       if (existing) {
-        const z = raiseZ();
-        return prev.map((w) => (w.id === site.id ? { ...w, z } : w));
+        const z = existing.z === nextZRef.current ? existing.z : raiseZ();
+        return {
+          activeId: CONTROL_PANEL_WINDOW_ID,
+          windows: prev.windows.map((win) =>
+            win.id === CONTROL_PANEL_WINDOW_ID ? { ...win, z } : win,
+          ),
+        };
       }
       const place = allocatePlacement();
-      return [...prev, { id: site.id, name: site.name, ...place }];
+      return {
+        activeId: CONTROL_PANEL_WINDOW_ID,
+        windows: [
+          ...prev.windows,
+          {
+            id: CONTROL_PANEL_WINDOW_ID,
+            kind: 'control-panel',
+            title: 'Control Panel',
+            left: place.left,
+            top: place.top,
+            z: place.z,
+            minimized: false,
+            maximized: false,
+          },
+        ],
+      };
     });
   };
 
-  const closeSite = (id: number) => {
-    setOpenSites((prev) => prev.filter((w) => w.id !== id));
-  };
-
-  const activateSite = (id: number) => {
-    setOpenSites((prev) => {
-      const target = prev.find((w) => w.id === id);
-      if (!target || target.z === nextZRef.current) {
-        return prev;
+  const openSite = (site: DesktopSite) => {
+    const id = siteWindowId(site.id);
+    setShell((prev) => {
+      const existing = prev.windows.find((win) => win.id === id);
+      if (existing) {
+        const z = existing.z === nextZRef.current ? existing.z : raiseZ();
+        return {
+          activeId: id,
+          windows: prev.windows.map((win) => (win.id === id ? { ...win, z } : win)),
+        };
       }
-      const z = raiseZ();
-      return prev.map((w) => (w.id === id ? { ...w, z } : w));
+      const place = allocatePlacement();
+      return {
+        activeId: id,
+        windows: [
+          ...prev.windows,
+          {
+            id,
+            kind: 'site',
+            title: site.name,
+            siteId: site.id,
+            left: place.left,
+            top: place.top,
+            z: place.z,
+            minimized: false,
+            maximized: false,
+          },
+        ],
+      };
     });
   };
 
-  const activateControlPanel = () => {
-    setControlPanel((prev) => {
-      if (!prev || prev.z === nextZRef.current) {
-        return prev;
-      }
-      return { ...prev, z: raiseZ() };
-    });
+  const moveWindow = (id: string, left: number, top: number) => {
+    setShell((prev) => ({
+      ...prev,
+      windows: prev.windows.map((win) =>
+        win.id === id ? { ...win, left, top } : win,
+      ),
+    }));
   };
 
   return (
@@ -139,36 +201,54 @@ export function AdminDesktop({
         />
       </div>
 
-      {controlPanel ? (
-        <div
-          className="desktop-window"
-          style={{ left: controlPanel.left, top: controlPanel.top, zIndex: controlPanel.z }}
-        >
-          <ControlPanel onClose={closeControlPanel} onActivate={activateControlPanel} />
-        </div>
-      ) : null}
+      {shell.windows.map((win) => {
+        const active = win.id === shell.activeId;
 
-      {openSites.map((win) => {
-        const site = sites.find((entry) => entry.id === win.id) ?? {
-          id: win.id,
-          name: win.name,
+        if (win.kind === 'control-panel') {
+          return (
+            <DesktopWindow
+              key={win.id}
+              windowId={win.id}
+              left={win.left}
+              top={win.top}
+              zIndex={win.z}
+              onActivate={() => activateWindow(win.id)}
+              onPositionChange={(left, top) => moveWindow(win.id, left, top)}
+            >
+              <ControlPanel
+                inactive={!active}
+                onClose={() => closeWindow(win.id)}
+                onActivate={() => activateWindow(win.id)}
+              />
+            </DesktopWindow>
+          );
+        }
+
+        const site = sites.find((entry) => entry.id === win.siteId) ?? {
+          id: win.siteId ?? 0,
+          name: win.title,
         };
+
         return (
-          <div
+          <DesktopWindow
             key={win.id}
-            className="desktop-window"
-            style={{ left: win.left, top: win.top, zIndex: win.z }}
-            onMouseDown={() => activateSite(win.id)}
+            windowId={win.id}
+            left={win.left}
+            top={win.top}
+            zIndex={win.z}
+            onActivate={() => activateWindow(win.id)}
+            onPositionChange={(left, top) => moveWindow(win.id, left, top)}
           >
             <SiteFileExplorer
-              title={win.name}
+              inactive={!active}
+              title={win.title}
               titleIcon="site"
               tree={explorerTreeForSite(site)}
-              onClose={() => closeSite(win.id)}
+              onClose={() => closeWindow(win.id)}
               width={640}
               paneHeight={360}
             />
-          </div>
+          </DesktopWindow>
         );
       })}
     </div>
