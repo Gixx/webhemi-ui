@@ -2,17 +2,19 @@ import { useMemo, useState } from 'react';
 import { StatusBar, StatusBarField, TitleBarControl, TitleBarControls } from '../../chrome';
 import { ExplorerPropertiesDialog } from './ExplorerPropertiesDialog';
 import {
-  canCutOrCopyExplorerItem,
+  canCutOrCopyExplorerItems,
   canDeleteExplorerItem,
   canPasteIntoExplorerLocation,
   cloneExplorerForest,
-  deleteExplorerItem,
+  deleteExplorerItems,
+  moveExplorerItems,
   pasteExplorerClipboard,
   undoExplorerAction,
   type ExplorerClipboard,
   type ExplorerUndo,
 } from './explorerTreeOps';
 import { FileExplorerWindow, type FileExplorerWindowProps } from './FileExplorerWindow';
+import type { ExplorerSelectModifiers } from './ExplorerContent';
 import {
   explorerContentItems,
   findExplorerItem,
@@ -29,8 +31,8 @@ export type SiteFileExplorerProps = Omit<
   | 'view'
   | 'onViewChange'
   | 'locationId'
-  | 'selectedId'
-  | 'cutItemId'
+  | 'selectedIds'
+  | 'cutItemIds'
   | 'onTreeSelect'
   | 'onSelect'
   | 'onOpen'
@@ -42,6 +44,8 @@ export type SiteFileExplorerProps = Omit<
   | 'onDelete'
   | 'onUndo'
   | 'onProperties'
+  | 'onSelectAll'
+  | 'onItemsDrop'
   | 'statusBar'
   | 'statusBarVisible'
   | 'onStatusBarToggle'
@@ -68,53 +72,113 @@ export function SiteFileExplorer({
   const [forest, setForest] = useState(() => cloneExplorerForest(tree));
   const [view, setView] = useState<ExplorerView>('large-icons');
   const [locationId, setLocationId] = useState(rootId);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionAnchorId, setSelectionAnchorId] = useState<string | null>(null);
   const [statusBarVisible, setStatusBarVisible] = useState(true);
   const [clipboard, setClipboard] = useState<ExplorerClipboard | null>(null);
   const [undoEntry, setUndoEntry] = useState<ExplorerUndo | null>(null);
   const [propertiesItem, setPropertiesItem] = useState<ExplorerItem | null>(null);
 
   const location = useMemo(() => findExplorerItem(forest, locationId), [forest, locationId]);
-  const selected = useMemo(() => findExplorerItem(forest, selectedId), [forest, selectedId]);
   const items = useMemo(() => explorerContentItems(location), [location]);
   const parent = useMemo(() => findExplorerParent(forest, locationId), [forest, locationId]);
+  const selectedItems = useMemo(
+    () =>
+      selectedIds
+        .map((id) => findExplorerItem(forest, id) ?? items.find((item) => item.id === id) ?? null)
+        .filter((item): item is ExplorerItem => item !== null),
+    [forest, items, selectedIds],
+  );
+  const primarySelected = selectedItems[selectedItems.length - 1] ?? null;
   const hiddenCount = items.filter((item) => item.hidden).length;
-  const statusItem = selected ?? location;
-  const canDelete = canDeleteExplorerItem(forest, selected);
-  const canCutCopy = canCutOrCopyExplorerItem(forest, selected);
+  const statusItem = primarySelected ?? location;
+  const canDelete =
+    selectedItems.length > 0 &&
+    selectedItems.every((item) => canDeleteExplorerItem(forest, item));
+  const canCutCopy = canCutOrCopyExplorerItems(forest, selectedItems);
   const canPaste = canPasteIntoExplorerLocation(forest, locationId, clipboard);
-  const canProperties = Boolean(selected);
+  const canProperties = selectedItems.length === 1;
+  const canSelectAll = items.length > 0;
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+    setSelectionAnchorId(null);
+  };
 
   const goToLocation = (item: ExplorerItem) => {
     if (item.disabled || !isExplorerLocation(item)) {
       return;
     }
     setLocationId(item.id);
-    setSelectedId(null);
+    clearSelection();
+  };
+
+  const handleSelect = (item: ExplorerItem, modifiers: ExplorerSelectModifiers) => {
+    const additive = modifiers.ctrlKey || modifiers.metaKey;
+
+    if (modifiers.shiftKey && selectionAnchorId) {
+      const anchorIndex = items.findIndex((entry) => entry.id === selectionAnchorId);
+      const targetIndex = items.findIndex((entry) => entry.id === item.id);
+      if (anchorIndex >= 0 && targetIndex >= 0) {
+        const [from, to] =
+          anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+        const rangeIds = items.slice(from, to + 1).map((entry) => entry.id);
+        if (additive) {
+          setSelectedIds((prev) => Array.from(new Set([...prev, ...rangeIds])));
+        } else {
+          setSelectedIds(rangeIds);
+        }
+        return;
+      }
+    }
+
+    if (additive) {
+      setSelectedIds((prev) =>
+        prev.includes(item.id) ? prev.filter((id) => id !== item.id) : [...prev, item.id],
+      );
+      setSelectionAnchorId(item.id);
+      return;
+    }
+
+    setSelectedIds([item.id]);
+    setSelectionAnchorId(item.id);
+  };
+
+  const handleSelectAll = () => {
+    if (!canSelectAll) {
+      return;
+    }
+    setSelectedIds(items.map((item) => item.id));
+    setSelectionAnchorId(items[0]?.id ?? null);
   };
 
   const handleCut = () => {
-    if (!selected || !canCutCopy) {
+    if (!canCutCopy || selectedItems.length === 0) {
       return;
     }
-    const sourceParent = findExplorerParent(forest, selected.id);
+    const sourceParent = findExplorerParent(forest, selectedItems[0].id);
     if (!sourceParent) {
+      return;
+    }
+    if (
+      selectedItems.some((item) => findExplorerParent(forest, item.id)?.id !== sourceParent.id)
+    ) {
       return;
     }
     setClipboard({
       mode: 'cut',
-      item: cloneExplorerForest([selected])[0],
+      items: cloneExplorerForest(selectedItems),
       sourceParentId: sourceParent.id,
     });
   };
 
   const handleCopy = () => {
-    if (!selected || !canCutCopy) {
+    if (!canCutCopy || selectedItems.length === 0) {
       return;
     }
     setClipboard({
       mode: 'copy',
-      item: cloneExplorerForest([selected])[0],
+      items: cloneExplorerForest(selectedItems),
       sourceParentId: null,
     });
   };
@@ -129,29 +193,44 @@ export function SiteFileExplorer({
     }
     setForest(result.tree);
     setUndoEntry(result.undo);
-    setSelectedId(result.pasted.id);
+    setSelectedIds(result.pasted.map((item) => item.id));
+    setSelectionAnchorId(result.pasted[0]?.id ?? null);
     if (clipboard.mode === 'cut') {
       setClipboard(null);
     }
   };
 
   const handleDelete = () => {
-    if (!selectedId) {
+    if (selectedIds.length === 0) {
       return;
     }
-    const result = deleteExplorerItem(forest, selectedId);
+    const result = deleteExplorerItems(forest, selectedIds);
     if (!result) {
       return;
     }
-    if (clipboard && clipboard.item.id === selectedId) {
+    if (clipboard?.items.some((item) => selectedIds.includes(item.id))) {
       setClipboard(null);
     }
-    if (propertiesItem?.id === selectedId) {
+    if (propertiesItem && selectedIds.includes(propertiesItem.id)) {
       setPropertiesItem(null);
     }
     setForest(result.tree);
     setUndoEntry(result.undo);
-    setSelectedId(null);
+    clearSelection();
+  };
+
+  const handleItemsDrop = (itemIds: string[], targetId: string) => {
+    const result = moveExplorerItems(forest, itemIds, targetId);
+    if (!result) {
+      return;
+    }
+    if (clipboard?.items.some((item) => itemIds.includes(item.id))) {
+      setClipboard(null);
+    }
+    setForest(result.tree);
+    setUndoEntry(result.undo);
+    setSelectedIds(result.moved.map((item) => item.id));
+    setSelectionAnchorId(result.moved[0]?.id ?? null);
   };
 
   const handleUndo = () => {
@@ -165,9 +244,15 @@ export function SiteFileExplorer({
     }
     setForest(next);
     if (undoEntry.type === 'to-trash' || undoEntry.type === 'permanent') {
-      setSelectedId(undoEntry.item.id);
+      setSelectedIds([undoEntry.item.id]);
+      setSelectionAnchorId(undoEntry.item.id);
+    } else if (undoEntry.type === 'delete-many') {
+      const ids = undoEntry.undos.map((entry) => entry.item.id);
+      setSelectedIds(ids);
+      setSelectionAnchorId(ids[0] ?? null);
     } else {
-      setSelectedId(undoEntry.itemId);
+      setSelectedIds(undoEntry.itemIds);
+      setSelectionAnchorId(undoEntry.itemIds[0] ?? null);
     }
     setUndoEntry(null);
   };
@@ -175,6 +260,11 @@ export function SiteFileExplorer({
   const propertiesParentLabel = propertiesItem
     ? (findExplorerParent(forest, propertiesItem.id)?.label ?? null)
     : null;
+
+  const statusCountLabel =
+    selectedIds.length > 0
+      ? `${selectedIds.length} object(s) selected`
+      : `${items.length} object(s)${hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}`;
 
   return (
     <div className="site-file-explorer">
@@ -187,17 +277,18 @@ export function SiteFileExplorer({
         view={view}
         onViewChange={setView}
         locationId={locationId}
-        selectedId={selectedId}
-        cutItemId={clipboard?.mode === 'cut' ? clipboard.item.id : null}
+        selectedIds={selectedIds}
+        cutItemIds={clipboard?.mode === 'cut' ? clipboard.items.map((item) => item.id) : []}
         onTreeSelect={goToLocation}
-        onSelect={(item) => setSelectedId(item.id)}
+        onSelect={handleSelect}
         onOpen={goToLocation}
+        onItemsDrop={handleItemsDrop}
         onLevelUp={() => {
           if (!parent) {
             return;
           }
           setLocationId(parent.id);
-          setSelectedId(null);
+          clearSelection();
         }}
         levelUpDisabled={!parent}
         onClose={onClose}
@@ -206,11 +297,12 @@ export function SiteFileExplorer({
         onPaste={canPaste ? handlePaste : undefined}
         onDelete={canDelete ? handleDelete : undefined}
         onUndo={undoEntry ? handleUndo : undefined}
+        onSelectAll={canSelectAll ? handleSelectAll : undefined}
         onProperties={
           canProperties
             ? () => {
-                if (selected) {
-                  setPropertiesItem(selected);
+                if (primarySelected) {
+                  setPropertiesItem(primarySelected);
                 }
               }
             : undefined
@@ -227,10 +319,7 @@ export function SiteFileExplorer({
         statusBar={
           statusBarVisible ? (
             <StatusBar>
-              <StatusBarField>
-                {items.length} object(s)
-                {hiddenCount > 0 ? ` (${hiddenCount} hidden)` : ''}
-              </StatusBarField>
+              <StatusBarField>{statusCountLabel}</StatusBarField>
               <StatusBarField className="description">{statusItem?.typeLabel ?? ''}</StatusBarField>
               <StatusBarField />
             </StatusBar>

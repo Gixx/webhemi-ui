@@ -1,45 +1,142 @@
+import { useState, type DragEvent as ReactDragEvent, type MouseEvent as ReactMouseEvent } from 'react';
 import { SystemIcon } from '../../chrome/SystemIcon';
 import { Table, TableRow } from '../../chrome/Table';
 import { cn } from '../../../lib/cn';
 import {
+  beginExplorerDrag,
+  endExplorerDrag,
+  EXPLORER_DND_MIME,
+  readExplorerDragIds,
+} from './explorerDnd';
+import {
   formatExplorerSize,
   isExplorerDocument,
+  isExplorerLocation,
   type ExplorerItem,
   type ExplorerView,
 } from './types';
 
+export { EXPLORER_DND_MIME };
+
+export type ExplorerSelectModifiers = {
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+};
+
 export type ExplorerContentProps = {
   view: ExplorerView;
   items: ExplorerItem[];
-  selectedId?: string | null;
-  /** Item currently on the cut clipboard (ghosted in the listing). */
-  cutItemId?: string | null;
-  onSelect?: (item: ExplorerItem) => void;
+  /** Selected item ids in the content pane (multi-select). */
+  selectedIds?: string[];
+  /** Items currently on the cut clipboard (ghosted in the listing). */
+  cutItemIds?: string[];
+  onSelect?: (item: ExplorerItem, modifiers: ExplorerSelectModifiers) => void;
   onOpen?: (item: ExplorerItem) => void;
+  /** Drop selected/dragged ids onto a location item (folder / library). */
+  onItemsDrop?: (itemIds: string[], targetId: string) => void;
 };
 
 function Glyph({ kind }: { kind: ExplorerItem['kind'] }) {
   return <span className={cn('explorer-glyph', kind)} aria-hidden />;
 }
 
+function modifiersFromEvent(event: {
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+}): ExplorerSelectModifiers {
+  return {
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    shiftKey: event.shiftKey,
+  };
+}
+
 /**
  * Right-pane content: large-icons / list / details.
- * Single click selects; double-click opens. Documents: open is a no-op (editor later).
+ * Click selects (Ctrl/Cmd toggles, Shift ranges); double-click opens.
+ * Drag onto folder locations to move.
  */
 export function ExplorerContent({
   view,
   items,
-  selectedId = null,
-  cutItemId = null,
+  selectedIds = [],
+  cutItemIds = [],
   onSelect,
   onOpen,
+  onItemsDrop,
 }: ExplorerContentProps) {
+  const selected = new Set(selectedIds);
+  const cut = new Set(cutItemIds);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
   const openItem = (item: ExplorerItem) => {
     if (isExplorerDocument(item)) {
       return;
     }
     onOpen?.(item);
   };
+
+  const selectFromMouse = (
+    item: ExplorerItem,
+    event: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
+  ) => {
+    onSelect?.(item, modifiersFromEvent(event));
+  };
+
+  const onDragStartItem = (item: ExplorerItem, event: ReactDragEvent) => {
+    if (!onItemsDrop) {
+      event.preventDefault();
+      return;
+    }
+    const ids = selected.has(item.id) ? selectedIds : [item.id];
+    beginExplorerDrag(ids, event.dataTransfer);
+    if (!selected.has(item.id)) {
+      onSelect?.(item, { ctrlKey: false, metaKey: false, shiftKey: false });
+    }
+  };
+
+  const canDropOn = (item: ExplorerItem) => isExplorerLocation(item) && !item.disabled;
+
+  const onDragOverItem = (item: ExplorerItem, event: ReactDragEvent) => {
+    if (!onItemsDrop || !canDropOn(item)) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (dragOverId !== item.id) {
+      setDragOverId(item.id);
+    }
+  };
+
+  const onDragLeaveItem = (item: ExplorerItem) => {
+    if (dragOverId === item.id) {
+      setDragOverId(null);
+    }
+  };
+
+  const onDropItem = (item: ExplorerItem, event: ReactDragEvent) => {
+    if (!onItemsDrop || !canDropOn(item)) {
+      return;
+    }
+    event.preventDefault();
+    setDragOverId(null);
+    const ids = readExplorerDragIds(event).filter((id) => id !== item.id);
+    endExplorerDrag();
+    if (ids.length === 0) {
+      return;
+    }
+    onItemsDrop(ids, item.id);
+  };
+
+  const itemClass = (item: ExplorerItem) =>
+    cn(
+      item.hidden && 'is-hidden',
+      selected.has(item.id) && 'is-selected',
+      cut.has(item.id) && 'is-cut',
+      dragOverId === item.id && 'is-drag-over',
+    );
 
   if (view === 'large-icons') {
     return (
@@ -50,13 +147,14 @@ export function ExplorerContent({
             kind={item.kind}
             label={item.label}
             labelTone="dark"
-            className={cn(
-              item.hidden && 'is-hidden',
-              selectedId === item.id && 'is-selected',
-              cutItemId === item.id && 'is-cut',
-            )}
-            onActivate={() => onSelect?.(item)}
+            draggable={Boolean(onItemsDrop)}
+            className={itemClass(item)}
+            onActivate={(event) => selectFromMouse(item, event)}
             onOpen={() => openItem(item)}
+            onDragStart={(event) => onDragStartItem(item, event)}
+            onDragOver={(event) => onDragOverItem(item, event)}
+            onDragLeave={() => onDragLeaveItem(item)}
+            onDrop={(event) => onDropItem(item, event)}
           />
         ))}
       </div>
@@ -70,20 +168,20 @@ export function ExplorerContent({
           <a
             key={item.id}
             href="#"
-            className={cn(
-              'explorer-list-item',
-              item.hidden && 'is-hidden',
-              selectedId === item.id && 'is-selected',
-              cutItemId === item.id && 'is-cut',
-            )}
-            onClick={(event) => {
+            draggable={Boolean(onItemsDrop)}
+            className={cn('explorer-list-item', itemClass(item))}
+            onClick={(event: ReactMouseEvent<HTMLAnchorElement>) => {
               event.preventDefault();
-              onSelect?.(item);
+              selectFromMouse(item, event);
             }}
             onDoubleClick={(event) => {
               event.preventDefault();
               openItem(item);
             }}
+            onDragStart={(event) => onDragStartItem(item, event)}
+            onDragOver={(event) => onDragOverItem(item, event)}
+            onDragLeave={() => onDragLeaveItem(item)}
+            onDrop={(event) => onDropItem(item, event)}
           >
             <Glyph kind={item.kind} />
             <span className="label">{item.label}</span>
@@ -108,10 +206,15 @@ export function ExplorerContent({
           {items.map((item) => (
             <TableRow
               key={item.id}
-              highlighted={selectedId === item.id}
-              className={cn(item.hidden && 'is-hidden', cutItemId === item.id && 'is-cut')}
-              onClick={() => onSelect?.(item)}
+              draggable={Boolean(onItemsDrop)}
+              highlighted={selected.has(item.id)}
+              className={itemClass(item)}
+              onClick={(event) => selectFromMouse(item, event)}
               onDoubleClick={() => openItem(item)}
+              onDragStart={(event) => onDragStartItem(item, event)}
+              onDragOver={(event) => onDragOverItem(item, event)}
+              onDragLeave={() => onDragLeaveItem(item)}
+              onDrop={(event) => onDropItem(item, event)}
             >
               <td className="name-cell">
                 <Glyph kind={item.kind} />

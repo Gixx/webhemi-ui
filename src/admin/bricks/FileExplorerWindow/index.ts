@@ -24,8 +24,11 @@ export {
   cloneExplorerForest,
   canDeleteExplorerItem,
   canCutOrCopyExplorerItem,
+  canCutOrCopyExplorerItems,
   canPasteIntoExplorerLocation,
   deleteExplorerItem,
+  deleteExplorerItems,
+  moveExplorerItems,
   pasteExplorerClipboard,
   undoExplorerDelete,
   undoExplorerPaste,
@@ -33,10 +36,12 @@ export {
   findExplorerTrashRoot,
   isUnderExplorerTrash,
   type ExplorerDeleteUndo,
+  type ExplorerDeleteManyUndo,
   type ExplorerClipboard,
   type ExplorerPasteUndo,
   type ExplorerUndo,
 } from './explorerTreeOps';
+export type { ExplorerSelectModifiers } from './ExplorerContent';
 export {
   EXPLORER_FIXTURE_TREE,
   EXPLORER_FIXTURE_ITEMS,

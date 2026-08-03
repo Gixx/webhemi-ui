@@ -30,8 +30,10 @@ export {
   cloneExplorerForest,
   canDeleteExplorerItem,
   canCutOrCopyExplorerItem,
+  canCutOrCopyExplorerItems,
   canPasteIntoExplorerLocation,
   deleteExplorerItem,
+  deleteExplorerItems,
   pasteExplorerClipboard,
   undoExplorerDelete,
   undoExplorerPaste,
@@ -54,9 +56,11 @@ export {
   type ExplorerView,
   type ExplorerNodeRole,
   type ExplorerDeleteUndo,
+  type ExplorerDeleteManyUndo,
   type ExplorerClipboard,
   type ExplorerPasteUndo,
   type ExplorerUndo,
+  type ExplorerSelectModifiers,
   type SiteExplorerIdentity,
 } from './FileExplorerWindow';
 export {

@@ -42,7 +42,7 @@ export type SystemIconProps = Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> & 
   href?: string;
   draggable?: boolean;
   /** Activate (single click / Enter). Double-click also fires this then `onOpen`. */
-  onActivate?: () => void;
+  onActivate?: (event: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   /** Open (double-click). */
   onOpen?: () => void;
   linkProps?: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'children'>;
@@ -74,7 +74,7 @@ export function SystemIcon({
     if (href === '#') {
       event.preventDefault();
     }
-    onActivate?.();
+    onActivate?.(event);
   };
 
   const handleDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -82,7 +82,7 @@ export function SystemIcon({
     if (event.defaultPrevented) {
       return;
     }
-    onActivate?.();
+    onActivate?.(event);
     onOpen?.();
   };
 

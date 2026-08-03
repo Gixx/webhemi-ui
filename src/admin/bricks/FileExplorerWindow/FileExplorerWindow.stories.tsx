@@ -47,17 +47,17 @@ function ExplorerDemo(args: StoryArgs) {
   /** Which folder/root drives the content listing. */
   const [locationId, setLocationId] = useState<string>(EXPLORER_FIXTURE_SITE.id);
   /** Highlighted item in the content pane (independent of location). */
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusBarVisible, setStatusBarVisible] = useState(true);
 
   const location = useMemo(
     () => findExplorerItem(EXPLORER_FIXTURE_TREE, locationId),
     [locationId],
   );
-  const selected = useMemo(
-    () => findExplorerItem(EXPLORER_FIXTURE_TREE, selectedId),
-    [selectedId],
-  );
+  const selected = useMemo(() => {
+    const id = selectedIds[selectedIds.length - 1];
+    return findExplorerItem(EXPLORER_FIXTURE_TREE, id);
+  }, [selectedIds]);
   const items = useMemo(() => explorerContentItems(location), [location]);
   const parent = useMemo(
     () => findExplorerParent(EXPLORER_FIXTURE_TREE, locationId),
@@ -71,7 +71,7 @@ function ExplorerDemo(args: StoryArgs) {
       return;
     }
     setLocationId(item.id);
-    setSelectedId(null);
+    setSelectedIds([]);
   };
 
   return (
@@ -90,10 +90,10 @@ function ExplorerDemo(args: StoryArgs) {
       view={view}
       onViewChange={setView}
       locationId={locationId}
-      selectedId={selectedId}
+      selectedIds={selectedIds}
       onTreeSelect={goToLocation}
       onSelect={(item) => {
-        setSelectedId(item.id);
+        setSelectedIds([item.id]);
       }}
       onOpen={(item) => {
         goToLocation(item);
@@ -104,7 +104,7 @@ function ExplorerDemo(args: StoryArgs) {
           return;
         }
         setLocationId(parent.id);
-        setSelectedId(null);
+        setSelectedIds([]);
       }}
       levelUpDisabled={!parent}
       onCut={args.onCut}
@@ -154,7 +154,7 @@ function SiteExplorer({
 }) {
   const [view, setView] = useState<ExplorerView>('large-icons');
   const [locationId, setLocationId] = useState(tree[0]?.id ?? '');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const location = useMemo(() => findExplorerItem(tree, locationId), [tree, locationId]);
   const parent = useMemo(() => findExplorerParent(tree, locationId), [tree, locationId]);
@@ -163,7 +163,7 @@ function SiteExplorer({
   const goToLocation = (item: ExplorerItem) => {
     if (item.disabled || !isExplorerLocation(item)) return;
     setLocationId(item.id);
-    setSelectedId(null);
+    setSelectedIds([]);
   };
 
   return (
@@ -175,14 +175,14 @@ function SiteExplorer({
       view={view}
       onViewChange={setView}
       locationId={locationId}
-      selectedId={selectedId}
+      selectedIds={selectedIds}
       onTreeSelect={goToLocation}
-      onSelect={(item) => setSelectedId(item.id)}
+      onSelect={(item) => setSelectedIds([item.id])}
       onOpen={goToLocation}
       onLevelUp={() => {
         if (!parent) return;
         setLocationId(parent.id);
-        setSelectedId(null);
+        setSelectedIds([]);
       }}
       levelUpDisabled={!parent}
       onClose={() => {}}
@@ -201,7 +201,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Site-management explorer: File/Edit/View/Help menubar, toolbar, nav tree, media library, recycle bin, settings. Tree navigates location; content single-click selects, double-click opens. Keep `locationId` separate from `selectedId`. Menu items without handlers stay disabled; View modes and overlapping edit actions share toolbar handlers.',
+          'Site-management explorer: File/Edit/View/Help menubar, toolbar, nav tree, media library, recycle bin, settings. Tree navigates location; content click selects (Ctrl/Cmd toggle, Shift range). Keep `locationId` separate from `selectedIds`.',
       },
       source: {
         language: 'tsx',

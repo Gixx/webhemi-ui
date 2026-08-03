@@ -329,6 +329,15 @@
   opacity: 0.45;
 }
 
+.explorer-content-inner .icon.is-drag-over > a > span,
+.explorer-list-item.is-drag-over,
+.explorer-details tr.is-drag-over td,
+.explorer-tree a.is-drag-over .tree-view-label {
+  outline: 1px dotted #000080;
+  background-color: #000080;
+  color: #ffffff;
+}
+
 /* Selection only via .is-selected — not :focus (that looked like single-click activate). */
 .explorer-content-inner .icon > a:focus > span {
   outline: none;

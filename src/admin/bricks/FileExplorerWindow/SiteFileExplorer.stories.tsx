@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, fireEvent, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from './FileExplorerWindow.data';
 import { SiteFileExplorer } from './SiteFileExplorer';
 
@@ -14,7 +14,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Stateful site explorer host: navigation, menubar, Delete → Recycle Bin, Cut/Copy/Paste, Properties, Undo.',
+          'Stateful site explorer host: navigation, menubar, multi-select, Delete → Recycle Bin, Cut/Copy/Paste, drag-drop move, Properties, Undo.',
       },
     },
   },
@@ -129,5 +129,66 @@ export const Properties: Story = {
     await expect(
       canvasElement.querySelector('.explorer-properties-dialog'),
     ).not.toBeInTheDocument();
+  },
+};
+
+export const SelectAll: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = within(
+      canvasElement.querySelector('.explorer-content') as HTMLElement,
+    );
+
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Edit' }));
+    await expect(canvas.getByRole('menuitem', { name: 'Select All' })).toBeEnabled();
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Select All' }));
+
+    await expect(canvas.getByText('4 object(s) selected')).toBeVisible();
+    await expect(content.getByText('Home').closest('.icon')).toHaveClass('is-selected');
+    await expect(content.getByText('About').closest('.icon')).toHaveClass('is-selected');
+    await expect(content.getByText('Blog').closest('.icon')).toHaveClass('is-selected');
+    await expect(content.getByText('Contact').closest('.icon')).toHaveClass('is-selected');
+
+    await userEvent.click(content.getByText('Contact'));
+    await expect(canvas.getByText('1 object(s) selected')).toBeVisible();
+    await expect(content.getByText('Contact').closest('.icon')).toHaveClass('is-selected');
+    await expect(content.getByText('Home').closest('.icon')).not.toHaveClass('is-selected');
+
+    const homeLink = content.getByText('Home').closest('a');
+    await expect(homeLink).toBeTruthy();
+    fireEvent.click(homeLink!, { ctrlKey: true });
+    await expect(content.getByText('Contact').closest('.icon')).toHaveClass('is-selected');
+    await expect(content.getByText('Home').closest('.icon')).toHaveClass('is-selected');
+    await expect(canvas.getByText('2 object(s) selected')).toBeVisible();
+  },
+};
+
+function mockDataTransfer(): DataTransfer {
+  return new DataTransfer();
+}
+
+export const DragDropMove: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const content = () =>
+      within(canvasElement.querySelector('.explorer-content') as HTMLElement);
+
+    const contactIcon = content().getByText('Contact').closest('.icon') as HTMLElement;
+    const aboutIcon = content().getByText('About').closest('.icon') as HTMLElement;
+    const dataTransfer = mockDataTransfer();
+
+    fireEvent.dragStart(contactIcon, { dataTransfer });
+    fireEvent.dragOver(aboutIcon, { dataTransfer });
+    fireEvent.drop(aboutIcon, { dataTransfer });
+
+    await expect(content().queryByText('Contact')).not.toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: 'Undo' })).toBeEnabled();
+
+    await userEvent.dblClick(content().getByText('About'));
+    await expect(content().getByText('Contact')).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Undo' }));
+    await userEvent.click(canvas.getByRole('link', { name: /Example Site/ }));
+    await expect(content().getByText('Contact')).toBeVisible();
   },
 };

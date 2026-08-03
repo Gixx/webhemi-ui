@@ -4,6 +4,7 @@ import { TreeToggle, TreeView } from '../../chrome/TreeView';
 import { cn } from '../../../lib/cn';
 import { PaneWindowShell, type PaneWindowShellProps } from '../_lib/PaneWindowShell';
 import { ExplorerContent } from './ExplorerContent';
+import { endExplorerDrag, readExplorerDragIds } from './explorerDnd';
 import { ExplorerMenuBar } from './ExplorerMenuBar';
 import { ExplorerSplitter } from './ExplorerSplitter';
 import { ExplorerToolbar } from './ExplorerToolbar';
@@ -11,10 +12,12 @@ import {
   explorerTreeChildren,
   findExplorerAncestorIds,
   findExplorerItem,
+  isExplorerLocation,
   isExplorerTreeExpandable,
   type ExplorerItem,
   type ExplorerView,
 } from './types';
+import type { DragEvent as ReactDragEvent } from 'react';
 
 const DEFAULT_TREE_WIDTH = 200;
 const MIN_TREE_WIDTH = 120;
@@ -32,16 +35,21 @@ export type FileExplorerWindowProps = Omit<PaneWindowShellProps, 'children' | 'o
    * Keep separate from `selectedId` (content-pane highlight).
    */
   locationId?: string | null;
-  /** Highlighted item in the content pane. */
-  selectedId?: string | null;
-  /** Ghost the cut clipboard item in the content pane. */
-  cutItemId?: string | null;
+  /** Highlighted items in the content pane (multi-select). */
+  selectedIds?: string[];
+  /** Ghost cut clipboard items in the content pane. */
+  cutItemIds?: string[];
   /** Tree navigation (changes location / listing). */
   onTreeSelect?: (item: ExplorerItem) => void;
-  /** Content-pane single-click selection (highlight only). */
-  onSelect?: (item: ExplorerItem) => void;
+  /** Content-pane click selection (supports Ctrl/Cmd/Shift modifiers). */
+  onSelect?: (
+    item: ExplorerItem,
+    modifiers: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean },
+  ) => void;
   /** Content-pane double-click open. */
   onOpen?: (item: ExplorerItem) => void;
+  /** Drop dragged content ids onto a location (content folder or tree node). */
+  onItemsDrop?: (itemIds: string[], targetId: string) => void;
   onLevelUp?: () => void;
   /** When true, Up is disabled (forest root / no parent). */
   levelUpDisabled?: boolean;
@@ -94,16 +102,91 @@ function TreeNodeLabel({
   );
 }
 
+function readDraggedIds(event: ReactDragEvent): string[] {
+  return readExplorerDragIds(event);
+}
+
+function TreeDropLink({
+  node,
+  isCurrent,
+  onTreeSelect,
+  onItemsDrop,
+  children,
+}: {
+  node: ExplorerItem;
+  isCurrent: boolean;
+  onTreeSelect?: (item: ExplorerItem) => void;
+  onItemsDrop?: (itemIds: string[], targetId: string) => void;
+  children: ReactNode;
+}) {
+  const droppable = Boolean(onItemsDrop) && isExplorerLocation(node) && !node.disabled;
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <a
+      href="#"
+      aria-current={isCurrent ? 'true' : undefined}
+      className={cn(droppable && dragOver && 'is-drag-over')}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onTreeSelect?.(node);
+      }}
+      onDragEnter={
+        droppable
+          ? (event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }
+          : undefined
+      }
+      onDragLeave={
+        droppable
+          ? () => {
+              setDragOver(false);
+            }
+          : undefined
+      }
+      onDragOver={
+        droppable
+          ? (event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+            }
+          : undefined
+      }
+      onDrop={
+        droppable
+          ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setDragOver(false);
+              const ids = readDraggedIds(event).filter((id) => id !== node.id);
+              endExplorerDrag();
+              if (ids.length > 0) {
+                onItemsDrop?.(ids, node.id);
+              }
+            }
+          : undefined
+      }
+    >
+      {children}
+    </a>
+  );
+}
+
 function ExplorerTreeBranch({
   node,
   locationId,
   ancestorIds,
   onTreeSelect,
+  onItemsDrop,
 }: {
   node: ExplorerItem;
   locationId?: string | null;
   ancestorIds: Set<string>;
   onTreeSelect?: (item: ExplorerItem) => void;
+  onItemsDrop?: (itemIds: string[], targetId: string) => void;
 }) {
   const kids = explorerTreeChildren(node);
   const [open, setOpen] = useState(node.role === 'site' || ancestorIds.has(node.id));
@@ -138,20 +221,17 @@ function ExplorerTreeBranch({
               <TreeNodeLabel node={node} expanded={open} />
             </span>
           ) : (
-            <a
-              href="#"
-              aria-current={isCurrent ? 'true' : undefined}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onTreeSelect?.(node);
-              }}
+            <TreeDropLink
+              node={node}
+              isCurrent={isCurrent}
+              onTreeSelect={onTreeSelect}
+              onItemsDrop={onItemsDrop}
             >
               <TreeNodeLabel node={node} expanded={open} />
-            </a>
+            </TreeDropLink>
           )}
         </summary>
-        <ul>{renderTreeNodes(kids, locationId, ancestorIds, onTreeSelect)}</ul>
+        <ul>{renderTreeNodes(kids, locationId, ancestorIds, onTreeSelect, onItemsDrop)}</ul>
       </details>
     </li>
   );
@@ -162,6 +242,7 @@ function renderTreeNodes(
   locationId: string | null | undefined,
   ancestorIds: Set<string>,
   onTreeSelect?: (item: ExplorerItem) => void,
+  onItemsDrop?: (itemIds: string[], targetId: string) => void,
 ): ReactNode {
   return nodes.map((node) => {
     const canExpand = isExplorerTreeExpandable(node);
@@ -175,6 +256,7 @@ function renderTreeNodes(
           locationId={locationId}
           ancestorIds={ancestorIds}
           onTreeSelect={onTreeSelect}
+          onItemsDrop={onItemsDrop}
         />
       );
     }
@@ -186,16 +268,14 @@ function renderTreeNodes(
             <TreeNodeLabel node={node} />
           </span>
         ) : (
-          <a
-            href="#"
-            aria-current={isCurrent ? 'true' : undefined}
-            onClick={(event) => {
-              event.preventDefault();
-              onTreeSelect?.(node);
-            }}
+          <TreeDropLink
+            node={node}
+            isCurrent={isCurrent}
+            onTreeSelect={onTreeSelect}
+            onItemsDrop={onItemsDrop}
           >
             <TreeNodeLabel node={node} />
-          </a>
+          </TreeDropLink>
         )}
       </li>
     );
@@ -212,11 +292,12 @@ export function FileExplorerWindow({
   view = 'large-icons',
   onViewChange,
   locationId = null,
-  selectedId = null,
-  cutItemId = null,
+  selectedIds = [],
+  cutItemIds = [],
   onTreeSelect,
   onSelect,
   onOpen,
+  onItemsDrop,
   onLevelUp,
   levelUpDisabled = false,
   onCut,
@@ -275,8 +356,11 @@ export function FileExplorerWindow({
     [tree, locationId],
   );
 
+  const primarySelectedId = selectedIds.length > 0 ? selectedIds[selectedIds.length - 1] : null;
   const selectedItem =
-    findExplorerItem(tree, selectedId) ?? items.find((item) => item.id === selectedId) ?? null;
+    findExplorerItem(tree, primarySelectedId) ??
+    items.find((item) => item.id === primarySelectedId) ??
+    null;
 
   return (
     <PaneWindowShell
@@ -330,7 +414,9 @@ export function FileExplorerWindow({
         <div className="explorer-split">
           <FieldBorder scrollable className="panel explorer-tree" style={treeStyle}>
             <div className="explorer-tree-inner">
-              <TreeView>{renderTreeNodes(tree, locationId, ancestorIds, onTreeSelect)}</TreeView>
+              <TreeView>
+                {renderTreeNodes(tree, locationId, ancestorIds, onTreeSelect, onItemsDrop)}
+              </TreeView>
             </div>
           </FieldBorder>
           {treePaneResizable ? (
@@ -347,10 +433,11 @@ export function FileExplorerWindow({
             <ExplorerContent
               view={view}
               items={items}
-              selectedId={selectedId}
-              cutItemId={cutItemId}
+              selectedIds={selectedIds}
+              cutItemIds={cutItemIds}
               onSelect={onSelect}
               onOpen={onOpen}
+              onItemsDrop={onItemsDrop}
             />
           </FieldBorder>
         </div>

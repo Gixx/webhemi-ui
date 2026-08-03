@@ -137,25 +137,30 @@ export type ExplorerDeleteUndo =
 
 export type ExplorerClipboard = {
   mode: 'cut' | 'copy';
-  item: ExplorerItem;
-  /** Parent before cut; unused for copy. */
+  items: ExplorerItem[];
+  /** Shared parent before cut; unused for copy. */
   sourceParentId: string | null;
 };
 
 export type ExplorerPasteUndo =
   | {
       type: 'paste-copy';
-      itemId: string;
+      itemIds: string[];
       parentId: string;
     }
   | {
       type: 'paste-cut';
-      itemId: string;
+      itemIds: string[];
       fromParentId: string;
       toParentId: string;
     };
 
-export type ExplorerUndo = ExplorerDeleteUndo | ExplorerPasteUndo;
+export type ExplorerDeleteManyUndo = {
+  type: 'delete-many';
+  undos: ExplorerDeleteUndo[];
+};
+
+export type ExplorerUndo = ExplorerDeleteUndo | ExplorerPasteUndo | ExplorerDeleteManyUndo;
 
 /** Same movability rules as delete (no forest / system roots). */
 export function canCutOrCopyExplorerItem(
@@ -165,12 +170,19 @@ export function canCutOrCopyExplorerItem(
   return canDeleteExplorerItem(roots, item);
 }
 
+export function canCutOrCopyExplorerItems(
+  roots: ExplorerItem[],
+  items: ExplorerItem[],
+): boolean {
+  return items.length > 0 && items.every((item) => canCutOrCopyExplorerItem(roots, item));
+}
+
 export function canPasteIntoExplorerLocation(
   roots: ExplorerItem[],
   locationId: string | null | undefined,
   clipboard: ExplorerClipboard | null,
 ): boolean {
-  if (!clipboard || !locationId) {
+  if (!clipboard?.items.length || !locationId) {
     return false;
   }
   const location = findExplorerItem(roots, locationId);
@@ -190,14 +202,16 @@ export function canPasteIntoExplorerLocation(
   }
 
   if (clipboard.mode === 'cut') {
-    if (!findExplorerItem(roots, clipboard.item.id)) {
-      return false;
-    }
-    if (locationId === clipboard.item.id) {
-      return false;
-    }
-    if (findExplorerAncestorIds(roots, locationId).includes(clipboard.item.id)) {
-      return false;
+    for (const item of clipboard.items) {
+      if (!findExplorerItem(roots, item.id)) {
+        return false;
+      }
+      if (locationId === item.id) {
+        return false;
+      }
+      if (findExplorerAncestorIds(roots, locationId).includes(item.id)) {
+        return false;
+      }
     }
   }
 
@@ -277,50 +291,121 @@ export function cloneExplorerItemWithNewIds(
 }
 
 /**
+ * Move items into `targetId` (same rules as cut + paste).
+ * Items must share one parent; target cannot be trash/settings/self/descendant.
+ */
+export function moveExplorerItems(
+  roots: ExplorerItem[],
+  itemIds: string[],
+  targetId: string,
+): { tree: ExplorerItem[]; moved: ExplorerItem[]; undo: ExplorerPasteUndo } | null {
+  const items = itemIds
+    .map((id) => findExplorerItem(roots, id))
+    .filter((item): item is ExplorerItem => item !== null);
+  if (!canCutOrCopyExplorerItems(roots, items)) {
+    return null;
+  }
+  const sourceParent = findExplorerParent(roots, items[0].id);
+  if (!sourceParent) {
+    return null;
+  }
+  if (items.some((item) => findExplorerParent(roots, item.id)?.id !== sourceParent.id)) {
+    return null;
+  }
+  const result = pasteExplorerClipboard(roots, targetId, {
+    mode: 'cut',
+    items: cloneExplorerForest(items),
+    sourceParentId: sourceParent.id,
+  });
+  if (!result) {
+    return null;
+  }
+  return { tree: result.tree, moved: result.pasted, undo: result.undo };
+}
+
+/**
  * Paste clipboard into `locationId`.
- * Cut moves the original node; copy inserts a deep clone with new ids.
+ * Cut moves the original nodes; copy inserts deep clones with new ids.
  */
 export function pasteExplorerClipboard(
   roots: ExplorerItem[],
   locationId: string,
   clipboard: ExplorerClipboard,
-): { tree: ExplorerItem[]; pasted: ExplorerItem; undo: ExplorerPasteUndo } | null {
+): { tree: ExplorerItem[]; pasted: ExplorerItem[]; undo: ExplorerPasteUndo } | null {
   if (!canPasteIntoExplorerLocation(roots, locationId, clipboard)) {
     return null;
   }
 
   if (clipboard.mode === 'copy') {
-    const pasted = cloneExplorerItemWithNewIds(roots, clipboard.item);
+    let tree = roots;
+    const pasted: ExplorerItem[] = [];
+    for (const item of clipboard.items) {
+      const clone = cloneExplorerItemWithNewIds(tree, item);
+      tree = appendExplorerChild(tree, locationId, clone);
+      pasted.push(clone);
+    }
     return {
-      tree: appendExplorerChild(roots, locationId, pasted),
+      tree,
       pasted,
-      undo: { type: 'paste-copy', itemId: pasted.id, parentId: locationId },
+      undo: {
+        type: 'paste-copy',
+        itemIds: pasted.map((item) => item.id),
+        parentId: locationId,
+      },
     };
   }
 
-  const parent = findExplorerParent(roots, clipboard.item.id);
-  if (!parent) {
-    return null;
-  }
-  if (parent.id === locationId) {
+  const firstParent = findExplorerParent(roots, clipboard.items[0]?.id ?? '');
+  if (!firstParent || firstParent.id === locationId) {
     return null;
   }
 
-  const { tree: without, removed } = removeExplorerItem(roots, clipboard.item.id);
-  if (!removed) {
-    return null;
+  let tree = roots;
+  const pasted: ExplorerItem[] = [];
+  for (const item of clipboard.items) {
+    const parent = findExplorerParent(tree, item.id);
+    if (!parent || parent.id !== firstParent.id) {
+      return null;
+    }
+    const { tree: without, removed } = removeExplorerItem(tree, item.id);
+    if (!removed) {
+      return null;
+    }
+    tree = appendExplorerChild(without, locationId, removed);
+    pasted.push(removed);
   }
 
   return {
-    tree: appendExplorerChild(without, locationId, removed),
-    pasted: removed,
+    tree,
+    pasted,
     undo: {
       type: 'paste-cut',
-      itemId: removed.id,
-      fromParentId: parent.id,
+      itemIds: pasted.map((item) => item.id),
+      fromParentId: firstParent.id,
       toParentId: locationId,
     },
   };
+}
+
+/** Delete many items; undo restores in reverse order. */
+export function deleteExplorerItems(
+  roots: ExplorerItem[],
+  itemIds: string[],
+): { tree: ExplorerItem[]; undo: ExplorerDeleteManyUndo } | null {
+  let tree = roots;
+  const undos: ExplorerDeleteUndo[] = [];
+  for (const id of itemIds) {
+    const result = deleteExplorerItem(tree, id);
+    if (!result) {
+      continue;
+    }
+    tree = result.tree;
+    undos.push(result.undo);
+  }
+  if (undos.length === 0) {
+    return null;
+  }
+  return { tree, undo: { type: 'delete-many', undos } };
 }
 
 /** Reverse the last `deleteExplorerItem` result. */
@@ -355,15 +440,26 @@ export function undoExplorerPaste(
   entry: ExplorerPasteUndo,
 ): ExplorerItem[] | null {
   if (entry.type === 'paste-copy') {
-    const { tree, removed } = removeExplorerItem(roots, entry.itemId);
-    return removed ? tree : null;
+    let tree = roots;
+    for (const id of [...entry.itemIds].reverse()) {
+      const { tree: next, removed } = removeExplorerItem(tree, id);
+      if (!removed) {
+        return null;
+      }
+      tree = next;
+    }
+    return tree;
   }
 
-  const { tree: without, removed } = removeExplorerItem(roots, entry.itemId);
-  if (!removed || !findExplorerItem(without, entry.fromParentId)) {
-    return null;
+  let tree = roots;
+  for (const id of [...entry.itemIds].reverse()) {
+    const { tree: without, removed } = removeExplorerItem(tree, id);
+    if (!removed || !findExplorerItem(without, entry.fromParentId)) {
+      return null;
+    }
+    tree = appendExplorerChild(without, entry.fromParentId, removed);
   }
-  return appendExplorerChild(without, entry.fromParentId, removed);
+  return tree;
 }
 
 export function undoExplorerAction(
@@ -372,6 +468,17 @@ export function undoExplorerAction(
 ): ExplorerItem[] | null {
   if (entry.type === 'to-trash' || entry.type === 'permanent') {
     return undoExplorerDelete(roots, entry);
+  }
+  if (entry.type === 'delete-many') {
+    let tree = roots;
+    for (const undo of [...entry.undos].reverse()) {
+      const next = undoExplorerDelete(tree, undo);
+      if (!next) {
+        return null;
+      }
+      tree = next;
+    }
+    return tree;
   }
   return undoExplorerPaste(roots, entry);
 }
