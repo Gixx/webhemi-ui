@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   buildEmptySiteExplorerTree,
   SiteFileExplorer,
@@ -8,13 +8,20 @@ import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import { cn } from '../../lib/cn';
 import {
+  buildPersistedDesktopState,
   CONTROL_PANEL_WINDOW_ID,
   DEFAULT_WINDOW_SIZE,
+  DESKTOP_WINDOWS_STORAGE_KEY,
   DesktopWindow,
+  geometryFromPersistence,
   getDesktopWorkSize,
+  hydrateDesktopFromPersistence,
+  loadPersistedDesktop,
+  savePersistedDesktop,
   siteWindowId,
   StartMenu,
   Taskbar,
+  type PersistedDesktopState,
   type ShellBounds,
   type ShellWindowState,
 } from '../shell';
@@ -35,6 +42,11 @@ export type AdminDesktopProps = {
   explorerTreeForSite?: (site: DesktopSite) => ExplorerItem[];
   /** Logout URL for Start → Logout (Twig: `path('app_logout')`). */
   logoutHref?: string;
+  /**
+   * localStorage key for window geometry. Default product key;
+   * pass `false` to disable (Storybook interaction tests).
+   */
+  persistenceKey?: string | false;
   className?: string;
 };
 
@@ -45,6 +57,7 @@ type DesktopShellState = {
 
 const CASCADE_ORIGIN = { left: 48, top: 24 };
 const CASCADE_STEP = 28;
+const PERSIST_DEBOUNCE_MS = 200;
 
 function topVisibleWindowId(windows: ShellWindowState[]): string | null {
   return (
@@ -59,22 +72,49 @@ function topVisibleWindowId(windows: ShellWindowState[]): string | null {
 
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 5 Slice A–E: registry, drag, taskbar, Start menu, resize + maximize.
+ * Phase 5 Slice A–F: registry, drag, taskbar, Start, resize, persistence.
  */
 export function AdminDesktop({
   sites = [],
   explorerTreeForSite = buildEmptySiteExplorerTree,
   logoutHref,
+  persistenceKey = DESKTOP_WINDOWS_STORAGE_KEY,
   className,
 }: AdminDesktopProps) {
-  const nextZRef = useRef(10);
-  const cascadeRef = useRef(0);
+  const storageKey = persistenceKey === false ? null : persistenceKey;
+  const persistedRef = useRef<PersistedDesktopState | null>(
+    storageKey ? loadPersistedDesktop(storageKey) : null,
+  );
+  const hydratedRef = useRef(
+    hydrateDesktopFromPersistence(persistedRef.current, sites),
+  );
+
+  const nextZRef = useRef(hydratedRef.current.nextZ);
+  const cascadeRef = useRef(hydratedRef.current.cascade);
   const dashboardRef = useRef<HTMLDivElement>(null);
-  const [shell, setShell] = useState<DesktopShellState>({
-    windows: [],
-    activeId: null,
-  });
+  const [shell, setShell] = useState<DesktopShellState>(() => ({
+    windows: hydratedRef.current.windows,
+    activeId: hydratedRef.current.activeId,
+  }));
   const [startMenuOpen, setStartMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!storageKey) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const next = buildPersistedDesktopState(
+        persistedRef.current,
+        shell.windows,
+        shell.activeId,
+        nextZRef.current,
+        cascadeRef.current,
+      );
+      persistedRef.current = next;
+      savePersistedDesktop(next, storageKey);
+    }, PERSIST_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [shell, storageKey]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -250,8 +290,17 @@ export function AdminDesktop({
           ),
         };
       }
-      const place = allocatePlacement();
-      const size = DEFAULT_WINDOW_SIZE['control-panel'];
+      const saved = geometryFromPersistence(
+        persistedRef.current,
+        CONTROL_PANEL_WINDOW_ID,
+        'control-panel',
+      );
+      const place = saved
+        ? { left: saved.left, top: saved.top, z: raiseZ() }
+        : allocatePlacement();
+      const size = saved
+        ? { width: saved.width, height: saved.height }
+        : DEFAULT_WINDOW_SIZE['control-panel'];
       return {
         activeId: CONTROL_PANEL_WINDOW_ID,
         windows: [
@@ -289,8 +338,13 @@ export function AdminDesktop({
           ),
         };
       }
-      const place = allocatePlacement();
-      const size = DEFAULT_WINDOW_SIZE.site;
+      const saved = geometryFromPersistence(persistedRef.current, id, 'site');
+      const place = saved
+        ? { left: saved.left, top: saved.top, z: raiseZ() }
+        : allocatePlacement();
+      const size = saved
+        ? { width: saved.width, height: saved.height }
+        : DEFAULT_WINDOW_SIZE.site;
       return {
         activeId: id,
         windows: [

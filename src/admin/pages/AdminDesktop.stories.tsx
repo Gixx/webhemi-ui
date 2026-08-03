@@ -30,7 +30,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Admin desktop surface: shell windows with drag, resize, maximize, taskbar, and Start menu.',
+          'Admin desktop shell: drag, resize, maximize, taskbar, Start menu, and localStorage persistence.',
       },
       source: {
         language: 'tsx',
@@ -49,6 +49,8 @@ const meta = {
     // Rich fixture in Storybook; product PHP path uses empty roots by default.
     explorerTreeForSite: buildDemoSiteExplorerTree,
     logoutHref: '/logout',
+    // Isolation for interaction tests (product default key is enabled in app).
+    persistenceKey: false as const,
   },
 } satisfies Meta<typeof AdminDesktop>;
 
@@ -242,5 +244,59 @@ export const ResizeHandle: Story = {
 
     await expect(host.offsetWidth).toBeGreaterThan(startWidth);
     await expect(host.offsetHeight).toBeGreaterThan(startHeight);
+  },
+};
+
+const PERSISTENCE_STORY_KEY = 'webhemi.admin.desktop.windows.storybook';
+
+export const Persistence: Story = {
+  args: {
+    persistenceKey: PERSISTENCE_STORY_KEY,
+  },
+  play: async ({ canvasElement }) => {
+    localStorage.removeItem(PERSISTENCE_STORY_KEY);
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+
+    const host = canvasElement.querySelector('#control-panel') as HTMLElement;
+    const titleBar = host.querySelector('.title-bar') as HTMLElement;
+    const startLeft = host.offsetLeft;
+
+    fireEvent.pointerDown(titleBar, {
+      button: 0,
+      clientX: 120,
+      clientY: 40,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 220,
+      clientY: 100,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+    fireEvent.pointerUp(window, {
+      clientX: 220,
+      clientY: 100,
+      pointerId: 1,
+      pointerType: 'mouse',
+    });
+
+    await expect(host.offsetLeft).toBeGreaterThan(startLeft);
+
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 250);
+    });
+
+    const raw = localStorage.getItem(PERSISTENCE_STORY_KEY);
+    await expect(raw).toBeTruthy();
+    const data = JSON.parse(raw!) as {
+      entries: Record<string, { left: number; closed: boolean }>;
+    };
+    await expect(data.entries['control-panel']).toBeTruthy();
+    await expect(data.entries['control-panel'].closed).toBe(false);
+    await expect(data.entries['control-panel'].left).toBe(host.offsetLeft);
+
+    localStorage.removeItem(PERSISTENCE_STORY_KEY);
   },
 };

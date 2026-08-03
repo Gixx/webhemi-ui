@@ -28,3 +28,16 @@ export {
   type ResizeEdge,
   type ShellBounds,
 } from './resize';
+export {
+  DESKTOP_WINDOWS_STORAGE_KEY,
+  loadPersistedDesktop,
+  savePersistedDesktop,
+  hydrateDesktopFromPersistence,
+  buildPersistedDesktopState,
+  geometryFromPersistence,
+  entryFromWindow,
+  windowFromEntry,
+  type PersistedDesktopState,
+  type PersistedWindowEntry,
+  type DesktopPersistenceSite,
+} from './persistence';
