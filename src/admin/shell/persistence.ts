@@ -1,5 +1,6 @@
 import {
   CONTROL_PANEL_WINDOW_ID,
+  HOSTS_WINDOW_ID,
   SITES_WINDOW_ID,
   parseSiteWindowId,
   type ShellWindowKind,
@@ -72,7 +73,10 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   }
   const raw = value as Record<string, unknown>;
   const kind =
-    raw.kind === 'site' || raw.kind === 'control-panel' || raw.kind === 'sites'
+    raw.kind === 'site' ||
+    raw.kind === 'control-panel' ||
+    raw.kind === 'sites' ||
+    raw.kind === 'hosts'
       ? raw.kind
       : null;
   if (!kind) {
@@ -92,6 +96,9 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     return null;
   }
   if (kind === 'sites' && id !== SITES_WINDOW_ID) {
+    return null;
+  }
+  if (kind === 'hosts' && id !== HOSTS_WINDOW_ID) {
     return null;
   }
   if (kind === 'control-panel' && id !== CONTROL_PANEL_WINDOW_ID) {
@@ -209,7 +216,7 @@ export function windowFromEntry(entry: PersistedWindowEntry): ShellWindowState {
 
 /**
  * Hydrate open windows from storage for the current site list.
- * Drops unknown site ids; keeps control-panel / sites when present and open.
+ * Drops unknown site ids; keeps control-panel / sites / hosts when present and open.
  */
 export function hydrateDesktopFromPersistence(
   persisted: PersistedDesktopState | null,
@@ -237,6 +244,10 @@ export function hydrateDesktopFromPersistence(
       continue;
     }
     if (entry.kind === 'sites' && entry.id === SITES_WINDOW_ID) {
+      windows.push(windowFromEntry(entry));
+      continue;
+    }
+    if (entry.kind === 'hosts' && entry.id === HOSTS_WINDOW_ID) {
       windows.push(windowFromEntry(entry));
       continue;
     }
@@ -309,6 +320,9 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
   }
   if (kind === 'sites') {
     return DEFAULT_WINDOW_SIZE.sites;
+  }
+  if (kind === 'hosts') {
+    return DEFAULT_WINDOW_SIZE.hosts;
   }
   return DEFAULT_WINDOW_SIZE.site;
 }

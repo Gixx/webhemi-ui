@@ -27,3 +27,14 @@ export type AdminApiSite = {
   enabled: boolean;
   hostCount: number;
 };
+
+export type AdminApiHost = {
+  id: number;
+  host: string;
+  siteId: number;
+  siteSlug: string;
+  siteName: string;
+  surface: 'admin' | 'site' | 'api';
+  status: string;
+  active: boolean;
+};

@@ -49,7 +49,7 @@ export type SiteFormDialogProps = {
   onError?: (message: string) => void;
   onClose: () => void;
   /**
-   * Placeholder for Hosts → Add modal (Phase 6 Hosts slice).
+   * Opens Hosts window → Add (Phase 6 Hosts).
    * When omitted, the Add button stays disabled.
    */
   onAddHost?: () => void;

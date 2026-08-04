@@ -23,6 +23,8 @@ export type ControlPanelProps = {
   onClose: () => void;
   /** Open the Sites shell window (Phase 6). */
   onOpenSites?: () => void;
+  /** Open the Hosts shell window (Phase 6). */
+  onOpenHosts?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
   onMinimize?: () => void;
   /** Wired in Phase 5 shell; no-op until then. Requires `resizable`. */
@@ -46,11 +48,12 @@ export type ControlPanelProps = {
 
 /**
  * Control Panel product surface: IconPanelWindow + static admin icons.
- * Sites opens via `onOpenSites`; other icons are selection-only until later slices.
+ * Sites / Hosts open via callbacks; other icons are selection-only until later slices.
  */
 export function ControlPanel({
   onClose,
   onOpenSites,
+  onOpenHosts,
   onMinimize,
   onMaximize,
   onActivate,
@@ -105,16 +108,24 @@ export function ControlPanel({
         </StatusBar>
       }
     >
-      {ICONS.map((icon) => (
-        <SystemIcon
-          key={icon.kind}
-          kind={icon.kind}
-          label={icon.label}
-          labelTone="dark"
-          onActivate={() => setSelected(icon)}
-          onOpen={icon.kind === 'sites' ? onOpenSites : undefined}
-        />
-      ))}
+      {ICONS.map((icon) => {
+        const onOpen =
+          icon.kind === 'sites'
+            ? onOpenSites
+            : icon.kind === 'hosts'
+              ? onOpenHosts
+              : undefined;
+        return (
+          <SystemIcon
+            key={icon.kind}
+            kind={icon.kind}
+            label={icon.label}
+            labelTone="dark"
+            onActivate={() => setSelected(icon)}
+            onOpen={onOpen}
+          />
+        );
+      })}
     </IconPanelWindow>
   );
 }

@@ -11,8 +11,15 @@ import {
   type SitesWindowSite,
 } from '../components/SitesWindow/SitesWindow';
 import {
+  HostsWindow,
+  type HostsWindowHost,
+} from '../components/HostsWindow/HostsWindow';
+import type { HostFormSavePayload } from '../components/HostsWindow/HostFormDialog';
+import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialog';
+import {
   createAdminApiClient,
   type AdminApiClient,
+  type AdminApiHost,
   type AdminApiSite,
 } from '../api';
 import { cn } from '../../lib/cn';
@@ -24,6 +31,7 @@ import {
   DesktopWindow,
   geometryFromPersistence,
   getDesktopWorkSize,
+  HOSTS_WINDOW_ID,
   hydrateDesktopFromPersistence,
   loadPersistedDesktop,
   savePersistedDesktop,
@@ -35,7 +43,6 @@ import {
   type ShellBounds,
   type ShellWindowState,
 } from '../shell';
-
 export type DesktopSite = {
   id: number;
   name: string;
@@ -111,9 +118,30 @@ function toWindowSite(site: AdminApiSite): SitesWindowSite {
   };
 }
 
+function toWindowHost(host: AdminApiHost): HostsWindowHost {
+  return {
+    id: host.id,
+    host: host.host,
+    siteId: host.siteId,
+    siteSlug: host.siteSlug,
+    siteName: host.siteName,
+    surface: host.surface,
+    status: host.status,
+    active: host.active,
+  };
+}
+
+function toSiteFormHostOption(host: AdminApiHost | HostsWindowHost): SiteFormHostOption {
+  return {
+    id: host.id,
+    host: host.host,
+    siteId: host.siteId,
+  };
+}
+
 /**
  * Admin desktop: site icons + Control Panel; openable shell windows.
- * Phase 6 Slice C: Sites window via `/admin/api`.
+ * Phase 6: Sites + Hosts via `/admin/api`.
  */
 export function AdminDesktop({
   sites = [],
@@ -153,6 +181,14 @@ export function AdminDesktop({
   const [sitesFieldErrors, setSitesFieldErrors] = useState<
     Partial<Record<'name' | 'slug', string>>
   >({});
+  const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
+  const [hostsLoading, setHostsLoading] = useState(false);
+  const [hostsCreating, setHostsCreating] = useState(false);
+  const [hostsError, setHostsError] = useState<string | null>(null);
+  const [hostsFormError, setHostsFormError] = useState<string | null>(null);
+  const [hostsFieldErrors, setHostsFieldErrors] = useState<
+    Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>
+  >({});
 
   const api = useMemo(
     () =>
@@ -166,7 +202,22 @@ export function AdminDesktop({
   );
 
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
+  const canEditHosts = canEditSites;
   const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
+  const hostsWindowOpen = shell.windows.some((win) => win.id === HOSTS_WINDOW_ID);
+  const siteFormHosts = useMemo(
+    () => hostsRows.map(toSiteFormHostOption),
+    [hostsRows],
+  );
+  const hostFormSites = useMemo(
+    () =>
+      desktopSites.map((site) => ({
+        id: site.id,
+        name: site.name,
+        slug: site.slug,
+      })),
+    [desktopSites],
+  );
 
   useEffect(() => {
     setDesktopSites(sites);
@@ -220,6 +271,42 @@ export function AdminDesktop({
       cancelled = true;
     };
   }, [sitesWindowOpen, api]);
+
+  useEffect(() => {
+    if (!hostsWindowOpen && !sitesWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    if (hostsWindowOpen) {
+      setHostsLoading(true);
+      setHostsError(null);
+    }
+
+    void (async () => {
+      const result = await api.listHosts();
+      if (cancelled) {
+        return;
+      }
+      if (hostsWindowOpen) {
+        setHostsLoading(false);
+      }
+      if (!result.ok) {
+        if (hostsWindowOpen) {
+          setHostsError(result.error.message);
+        }
+        if (result.status === 401) {
+          window.location.assign('/login');
+        }
+        return;
+      }
+      setHostsRows(result.data.map(toWindowHost));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hostsWindowOpen, sitesWindowOpen, api]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -444,6 +531,15 @@ export function AdminDesktop({
     );
   };
 
+  const openHosts = () => {
+    openOrRaiseWindow(
+      HOSTS_WINDOW_ID,
+      'hosts',
+      'Hosts',
+      DEFAULT_WINDOW_SIZE.hosts,
+    );
+  };
+
   const openSite = (site: DesktopSite) => {
     const id = siteWindowId(site.id);
     setShell((prev) => {
@@ -580,6 +676,65 @@ export function AdminDesktop({
     });
   };
 
+  const handleSaveHost = async (payload: HostFormSavePayload) => {
+    if (payload.mode !== 'new') {
+      setHostsFormError('Editing a host is not available yet.');
+      return;
+    }
+    if (payload.siteId == null) {
+      setHostsFormError('Site is required.');
+      setHostsFieldErrors({ siteId: 'Site is required.' });
+      return;
+    }
+
+    setHostsCreating(true);
+    setHostsFormError(null);
+    setHostsFieldErrors({});
+
+    const result = await api.createHost({
+      host: payload.host,
+      siteId: payload.siteId,
+      surface: payload.surface,
+      active: payload.active,
+    });
+    setHostsCreating(false);
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setHostsFieldErrors({
+          host: result.error.fields.host,
+          siteId: result.error.fields.siteId,
+          surface: result.error.fields.surface,
+          active: result.error.fields.active,
+        });
+      }
+      setHostsFormError(result.error.message);
+      if (result.status === 401) {
+        window.location.assign('/login');
+      }
+      return;
+    }
+
+    const list = await api.listHosts();
+    if (list.ok) {
+      setHostsRows(list.data.map(toWindowHost));
+    } else {
+      const created = toWindowHost(result.data);
+      setHostsRows((prev) =>
+        [...prev.filter((row) => row.id !== created.id), created].sort((a, b) =>
+          a.host.localeCompare(b.host),
+        ),
+      );
+    }
+
+    // Refresh site host counts when Sites window is open / desktop icons.
+    const sitesList = await api.listSites();
+    if (sitesList.ok) {
+      setSitesRows(sitesList.data.map(toWindowSite));
+      setDesktopSites(sitesList.data.map(toDesktopSite));
+    }
+  };
+
   return (
     <div ref={dashboardRef} className={cn('dashboard', className)}>
       <div className="icon-list">
@@ -636,6 +791,7 @@ export function AdminDesktop({
               onMaximize={() => toggleMaximize(win.id)}
               onActivate={() => activateWindow(win.id)}
               onOpenSites={openSites}
+              onOpenHosts={openHosts}
             />,
           );
         }
@@ -647,6 +803,7 @@ export function AdminDesktop({
               inactive={!active}
               maximized={win.maximized}
               sites={sitesRows}
+              hosts={siteFormHosts}
               canEdit={canEditSites}
               loading={sitesLoading}
               saving={sitesCreating}
@@ -654,6 +811,35 @@ export function AdminDesktop({
               formError={sitesFormError}
               fieldErrors={sitesFieldErrors}
               onSave={handleSaveSite}
+              onAddHost={openHosts}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
+        if (win.kind === 'hosts') {
+          return shellFrame(
+            <HostsWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              hosts={hostsRows}
+              sites={hostFormSites}
+              canEdit={canEditHosts}
+              loading={hostsLoading}
+              saving={hostsCreating}
+              error={hostsError}
+              formError={hostsFormError}
+              fieldErrors={hostsFieldErrors}
+              onSave={handleSaveHost}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onClose={() => closeWindow(win.id)}

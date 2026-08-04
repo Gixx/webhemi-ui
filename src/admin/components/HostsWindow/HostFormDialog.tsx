@@ -1,0 +1,206 @@
+import { useEffect, useId, useState, type FormEvent } from 'react';
+import {
+  Button,
+  Checkbox,
+  FieldRow,
+  Select,
+  TextBox,
+  TitleBarControl,
+  TitleBarControls,
+  WindowBody,
+} from '../../chrome';
+import { PaneWindowShell } from '../../bricks/_lib/PaneWindowShell';
+import { cn } from '../../../lib/cn';
+
+export type HostFormSiteOption = {
+  id: number;
+  name: string;
+  slug?: string;
+};
+
+export type HostFormSurface = 'admin' | 'site' | 'api';
+
+export type HostFormMode = 'new' | 'edit';
+
+export type HostFormValues = {
+  host: string;
+  siteId: number | null;
+  surface: HostFormSurface;
+  active: boolean;
+};
+
+export type HostFormSavePayload = HostFormValues & {
+  mode: HostFormMode;
+  hostId?: number;
+};
+
+export type HostFormDialogProps = {
+  mode: HostFormMode;
+  /** Prefilled when `mode === 'edit'`. */
+  initial?: Partial<HostFormValues> & { hostId?: number; title?: string };
+  /** Sites available for the Site select. */
+  sites?: HostFormSiteOption[];
+  fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
+  saving?: boolean;
+  onSave: (payload: HostFormSavePayload) => void;
+  onError?: (message: string) => void;
+  onClose: () => void;
+  className?: string;
+};
+
+/**
+ * New / Edit Host modal (nested `.window` — not a shell window).
+ */
+export function HostFormDialog({
+  mode,
+  initial,
+  sites = [],
+  fieldErrors,
+  saving = false,
+  onSave,
+  onError,
+  onClose,
+  className,
+}: HostFormDialogProps) {
+  const hostId = useId();
+  const siteSelectId = useId();
+  const surfaceId = useId();
+  const activeId = useId();
+  const [host, setHost] = useState(initial?.host ?? '');
+  const [siteId, setSiteId] = useState<number | null>(initial?.siteId ?? null);
+  const [surface, setSurface] = useState<HostFormSurface>(initial?.surface ?? 'site');
+  const [active, setActive] = useState(initial?.active ?? true);
+  const [localErrors, setLocalErrors] = useState<
+    Partial<Record<'host' | 'siteId', string>>
+  >({});
+
+  useEffect(() => {
+    setLocalErrors({});
+  }, [fieldErrors]);
+
+  const errors = { ...localErrors, ...fieldErrors };
+  const title =
+    mode === 'new'
+      ? 'New Host'
+      : `${initial?.title ?? initial?.host ?? 'Host'} Properties`;
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (saving) {
+      return;
+    }
+
+    const nextHost = host.trim().toLowerCase();
+    const nextLocal: Partial<Record<'host' | 'siteId', string>> = {};
+    if (!nextHost) {
+      nextLocal.host = 'Hostname is required.';
+    } else if (!/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/.test(nextHost)) {
+      nextLocal.host = 'Use a valid domain name.';
+    }
+    if (siteId == null || siteId < 1) {
+      nextLocal.siteId = 'Site is required.';
+    }
+
+    setLocalErrors(nextLocal);
+    if (Object.keys(nextLocal).length > 0) {
+      onError?.(Object.values(nextLocal).join('\n'));
+      return;
+    }
+
+    onSave({
+      mode,
+      hostId: initial?.hostId,
+      host: nextHost,
+      siteId,
+      surface,
+      active,
+    });
+  };
+
+  return (
+    <PaneWindowShell
+      className={cn('host-form-dialog', 'site-form-dialog', className)}
+      width={420}
+      title={title}
+      titleIcon="hosts"
+      titleBarControls={
+        <TitleBarControls>
+          <TitleBarControl action="Close" onClick={onClose} />
+        </TitleBarControls>
+      }
+    >
+      <form className="site-form-dialog-form" onSubmit={handleSubmit} noValidate>
+        <WindowBody>
+          <FieldRow>
+            <TextBox
+              id={hostId}
+              label="Host:"
+              accessKey="h"
+              value={host}
+              disabled={saving}
+              aria-invalid={Boolean(errors.host) || undefined}
+              onChange={(event) => setHost(event.target.value)}
+            />
+          </FieldRow>
+          <FieldRow>
+            <Select
+              id={siteSelectId}
+              label="Site:"
+              accessKey="s"
+              value={siteId != null ? String(siteId) : ''}
+              disabled={saving || sites.length === 0}
+              aria-invalid={Boolean(errors.siteId) || undefined}
+              onChange={(event) => {
+                const value = event.target.value;
+                setSiteId(value === '' ? null : Number(value));
+              }}
+            >
+              <option value="">Select a site…</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </Select>
+          </FieldRow>
+          <FieldRow>
+            <Select
+              id={surfaceId}
+              label="Surface:"
+              accessKey="u"
+              value={surface}
+              disabled={saving}
+              aria-invalid={Boolean(errors.surface) || undefined}
+              onChange={(event) =>
+                setSurface(event.target.value as HostFormSurface)
+              }
+            >
+              <option value="site">site</option>
+              <option value="admin">admin</option>
+              <option value="api">api</option>
+            </Select>
+          </FieldRow>
+          <FieldRow>
+            <Checkbox
+              id={activeId}
+              label="Active"
+              accessKey="a"
+              checked={active}
+              disabled={saving}
+              onChange={(event) => setActive(event.target.checked)}
+            />
+          </FieldRow>
+        </WindowBody>
+
+        <FieldRow className="justify-end site-form-dialog-actions">
+          <Button type="submit" isDefault accessKey="o" loading={saving}>
+            OK
+          </Button>
+          <Button type="button" accessKey="c" disabled={saving} onClick={onClose}>
+            Cancel
+          </Button>
+        </FieldRow>
+      </form>
+    </PaneWindowShell>
+  );
+}

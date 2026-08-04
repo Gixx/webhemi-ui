@@ -35,6 +35,20 @@ export {
   type SiteFormSavePayload,
   type SiteFormValues,
 } from './components/SitesWindow/SiteFormDialog';
+export {
+  HostsWindow,
+  type HostsWindowProps,
+  type HostsWindowHost,
+} from './components/HostsWindow/HostsWindow';
+export {
+  HostFormDialog,
+  type HostFormDialogProps,
+  type HostFormMode,
+  type HostFormSavePayload,
+  type HostFormSiteOption,
+  type HostFormSurface,
+  type HostFormValues,
+} from './components/HostsWindow/HostFormDialog';
 export { SiteListView, type SiteListViewProps, type SiteRow } from './views/SiteListView';
 export {
   SiteHostListView,

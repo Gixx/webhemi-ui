@@ -1,5 +1,6 @@
 import type {
   AdminApiErrorBody,
+  AdminApiHost,
   AdminApiResult,
   AdminApiSite,
 } from './types';
@@ -17,6 +18,13 @@ export type CreateSiteBody = {
   name: string;
   slug: string;
   enabled?: boolean;
+};
+
+export type CreateHostBody = {
+  host: string;
+  siteId: number;
+  surface?: 'admin' | 'site' | 'api';
+  active?: boolean;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -114,6 +122,12 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
     listSites: () => request<AdminApiSite[]>('/sites'),
     createSite: (body: CreateSiteBody) =>
       request<AdminApiSite>('/sites', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    listHosts: () => request<AdminApiHost[]>('/hosts'),
+    createHost: (body: CreateHostBody) =>
+      request<AdminApiHost>('/hosts', {
         method: 'POST',
         body: JSON.stringify(body),
       }),
