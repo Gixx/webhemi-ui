@@ -151,7 +151,7 @@ export function SiteFormDialog({
         </TitleBarControls>
       }
     >
-      <form className="site-form-dialog-form" onSubmit={handleSubmit}>
+      <form className="site-form-dialog-form" onSubmit={handleSubmit} noValidate>
         <TabList>
           <Tab
             selected={tab === 'general'}

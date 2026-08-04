@@ -36,12 +36,18 @@ export function HostsPage({
       <FlashList flashes={flashes} />
       <SiteHostListView hosts={hosts || []} createHref="#create-host" />
       {canEdit ? (
-        <form id="create-host" action={createAction} method="post" style={{ marginTop: '2rem' }}>
+        <form
+          id="create-host"
+          action={createAction}
+          method="post"
+          noValidate
+          style={{ marginTop: '2rem' }}
+        >
           <FormField label="Hostname" htmlFor="host" required>
-            <Input id="host" name="host" placeholder="www.example.com" required />
+            <Input id="host" name="host" placeholder="www.example.com" />
           </FormField>
           <FormField label="Site" htmlFor="site_id" required>
-            <Select id="site_id" name="site_id" required>
+            <Select id="site_id" name="site_id">
               {(sites || []).map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}

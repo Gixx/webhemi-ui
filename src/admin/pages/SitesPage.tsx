@@ -28,12 +28,18 @@ export function SitesPage({
       <FlashList flashes={flashes} />
       <SiteListView sites={sites || []} createHref="#create-site" />
       {canEdit ? (
-        <form id="create-site" action={createAction} method="post" style={{ marginTop: '2rem' }}>
+        <form
+          id="create-site"
+          action={createAction}
+          method="post"
+          noValidate
+          style={{ marginTop: '2rem' }}
+        >
           <FormField label="Name" htmlFor="name" required>
-            <Input id="name" name="name" required />
+            <Input id="name" name="name" />
           </FormField>
           <FormField label="Slug" htmlFor="slug" required hint="Lowercase identifier">
-            <Input id="slug" name="slug" required />
+            <Input id="slug" name="slug" />
           </FormField>
           <Button type="submit">Create site</Button>
         </form>

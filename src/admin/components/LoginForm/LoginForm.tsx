@@ -23,6 +23,8 @@ export interface LoginFormProps {
 /**
  * Retro OS login dialog composed from DialogWindow + chrome form atoms.
  * Auth errors are shown by the page via MessageDialog (not inline).
+ * Native HTML5 validation is off (`noValidate`) so browser tooltips
+ * do not break the Retro OS chrome; the backend validates on submit.
  */
 export function LoginForm({
   action = '/login',
@@ -51,7 +53,13 @@ export function LoginForm({
   const bannerSrc = bannerUrl || adminAsset('system/banner-dialog-login.gif');
 
   return (
-    <form action={action} method={method} onSubmit={handleSubmit} className={cn(className)}>
+    <form
+      action={action}
+      method={method}
+      onSubmit={handleSubmit}
+      noValidate
+      className={cn(className)}
+    >
       {csrfToken ? <input type="hidden" name={csrfFieldName} value={csrfToken} /> : null}
       <DialogWindow
         title="Sign in — WebHemi CMS Admin"
@@ -74,7 +82,6 @@ export function LoginForm({
             accessKey="e"
             autoComplete="username"
             defaultValue={emailDefault}
-            required
             className="w-window-xs"
           />
         </FieldRow>
@@ -86,7 +93,6 @@ export function LoginForm({
             label="Password:"
             accessKey="p"
             autoComplete="current-password"
-            required
             className="w-window-xs"
           />
         </FieldRow>
