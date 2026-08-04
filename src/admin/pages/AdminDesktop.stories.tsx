@@ -58,13 +58,16 @@ function createMockAdminApi(
     },
     listHosts: async () => ({ ok: true, status: 200, data: [...hostRows] }),
     createHost: async (body) => {
-      const site = siteRows.find((row) => row.id === body.siteId);
+      const site =
+        body.siteId != null
+          ? siteRows.find((row) => row.id === body.siteId)
+          : undefined;
       const created: AdminApiHost = {
         id: Math.max(0, ...hostRows.map((row) => row.id)) + 1,
         host: body.host,
-        siteId: body.siteId,
-        siteSlug: site?.slug ?? 'unknown',
-        siteName: site?.name ?? 'Unknown',
+        siteId: site?.id ?? null,
+        siteSlug: site?.slug ?? null,
+        siteName: site?.name ?? null,
         surface: body.surface ?? 'site',
         status: 'pending',
         active: body.active ?? true,
@@ -76,6 +79,58 @@ function createMockAdminApi(
         );
       }
       return { ok: true, status: 201, data: created };
+    },
+    updateHost: async (id, body) => {
+      const existing = hostRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      const site =
+        body.siteId === undefined
+          ? undefined
+          : body.siteId == null
+            ? null
+            : siteRows.find((row) => row.id === body.siteId);
+      const updated: AdminApiHost = {
+        ...existing,
+        host: body.host ?? existing.host,
+        surface: body.surface ?? existing.surface,
+        active: body.active ?? existing.active,
+        siteId: site === undefined ? existing.siteId : site?.id ?? null,
+        siteSlug: site === undefined ? existing.siteSlug : site?.slug ?? null,
+        siteName: site === undefined ? existing.siteName : site?.name ?? null,
+        status:
+          site === null && existing.status === 'active'
+            ? 'verified'
+            : site && existing.status === 'verified'
+              ? 'active'
+              : existing.status,
+      };
+      hostRows = hostRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
+    },
+    unassignHost: async (id) => {
+      const existing = hostRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      const updated: AdminApiHost = {
+        ...existing,
+        siteId: null,
+        siteSlug: null,
+        siteName: null,
+        status: existing.status === 'active' ? 'verified' : existing.status,
+      };
+      hostRows = hostRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
     },
   };
 }

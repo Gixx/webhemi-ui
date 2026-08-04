@@ -25,9 +25,9 @@ import {
 export type HostsWindowHost = {
   id: number;
   host: string;
-  siteId: number;
-  siteSlug: string;
-  siteName: string;
+  siteId: number | null;
+  siteSlug: string | null;
+  siteName: string | null;
   surface: HostFormSurface;
   status: string;
   active: boolean;
@@ -191,7 +191,7 @@ export function HostsWindow({
       open: true,
       mode: 'new',
       host: '',
-      siteId: sites[0]?.id ?? null,
+      siteId: null,
       surface: 'site',
       active: true,
     });
@@ -354,7 +354,7 @@ export function HostsWindow({
                     onDoubleClick={() => openEdit(row)}
                   >
                     <td>{row.host}</td>
-                    <td>{row.siteName}</td>
+                    <td>{row.siteName?.trim() ? row.siteName : '—'}</td>
                     <td>{row.surface}</td>
                     <td>{row.status}</td>
                     <td>{row.active ? 'Yes' : 'No'}</td>

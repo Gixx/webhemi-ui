@@ -124,3 +124,7 @@
   /* Override chrome sunken padding/min-height for the dense host checklist. */
   min-height: 0;
 }
+
+.site-form-host-list > .scrollable-viewport:has(> table) {
+  padding: 0;
+}

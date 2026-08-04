@@ -53,8 +53,11 @@ export type SitesWindowProps = {
   /** @deprecated Use `onSave` with `mode: 'new'`. */
   onCreate?: (payload: SitesWindowCreatePayload) => void;
   onDelete?: (site: SitesWindowSite) => void;
-  /** Opens Hosts → Add from the form dialog (later slice). */
+  /** Opens Hosts → Add from the form dialog. */
   onAddHost?: () => void;
+  /** Unassign a host from the site being edited. */
+  onUnassignHost?: (hostId: number) => void;
+  unassigning?: boolean;
   /** Digested chord URL from Twig; Storybook uses package static path. */
   errorSoundUrl?: string;
   /** Digested ding URL — blocked-owner attention (Default Beep). */
@@ -89,7 +92,6 @@ type FormState =
       name: string;
       slug: string;
       enabled: boolean;
-      hostIds: number[];
       title?: string;
     };
 
@@ -127,6 +129,8 @@ export function SitesWindow({
   onCreate,
   onDelete,
   onAddHost,
+  onUnassignHost,
+  unassigning = false,
   errorSoundUrl,
   dingSoundUrl,
   onCancel,
@@ -196,7 +200,7 @@ export function SitesWindow({
     showErrorAlert(message);
   }, [formError, fieldErrors, form.open, showFormErrors, showErrorAlert]);
 
-  const busy = loading || saving;
+  const busy = loading || saving || unassigning;
   const selected = sites.find((site) => site.id === selectedId) ?? null;
   const hasSelection = selected != null;
   const canSave = Boolean(onSave || onCreate);
@@ -212,7 +216,6 @@ export function SitesWindow({
       name: '',
       slug: '',
       enabled: true,
-      hostIds: [],
     });
   };
 
@@ -223,9 +226,6 @@ export function SitesWindow({
     }
     setSelectedId(target.id);
     setShowFormErrors(false);
-    const assigned = hosts
-      .filter((host) => host.siteId === target.id)
-      .map((host) => host.id);
     setForm({
       open: true,
       mode: 'edit',
@@ -233,7 +233,6 @@ export function SitesWindow({
       name: target.name,
       slug: target.slug,
       enabled: target.enabled,
-      hostIds: assigned,
       title: target.name,
     });
   };
@@ -408,16 +407,17 @@ export function SitesWindow({
                 name: form.name,
                 slug: form.slug,
                 enabled: form.enabled,
-                hostIds: form.hostIds,
                 title: form.title,
               }}
               hosts={hosts}
               fieldErrors={showFormErrors ? fieldErrors : undefined}
               saving={saving}
+              unassigning={unassigning}
               onSave={handleFormSave}
               onError={showErrorAlert}
               onClose={closeForm}
               onAddHost={onAddHost}
+              onUnassignHost={onUnassignHost}
             />
           </DesktopModal>
         ) : null}

@@ -10,10 +10,10 @@ const SAMPLE_SITES: SitesWindowSite[] = [
 ];
 
 const SAMPLE_HOSTS: SiteFormHostOption[] = [
-  { id: 10, host: 'admin.example.test', siteId: 1 },
-  { id: 11, host: 'www.example.test', siteId: 1 },
-  { id: 12, host: 'blog.example.test', siteId: 2 },
-  { id: 13, host: 'unused.example.test', siteId: null },
+  { id: 10, host: 'admin.example.test', siteId: 1, siteName: 'Main site', status: 'active' },
+  { id: 11, host: 'www.example.test', siteId: 1, siteName: 'Main site', status: 'pending' },
+  { id: 12, host: 'blog.example.test', siteId: 2, siteName: 'Blog', status: 'active' },
+  { id: 13, host: 'unused.example.test', siteId: null, status: 'verified' },
 ];
 
 const meta = {
@@ -25,7 +25,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Sites list with New/Edit opening a General + Hosts tabbed form dialog. Hosts assignment is props-driven until the Hosts API slice.',
+          'Sites list with New/Edit opening a General + Hosts tabbed form. Hosts tab lists hosts assigned to the site (Name / Status) with Add… and Remove (unassign).',
       },
     },
   },
@@ -37,6 +37,7 @@ const meta = {
     onActivate: fn(),
     onSave: fn(),
     onDelete: fn(),
+    onUnassignHost: fn(),
     canEdit: true,
     sites: SAMPLE_SITES,
     hosts: SAMPLE_HOSTS,
@@ -75,31 +76,33 @@ export const NewSiteDialog: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: /^new$/i }));
     await expect(canvas.getByText('New Site', { selector: '.title-bar-text' })).toBeVisible();
-    await expect(canvas.getByRole('tab', { name: /general/i })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
     await userEvent.click(canvas.getByRole('tab', { name: /hosts/i }));
-    await expect(canvas.getByLabelText(/unused\.example\.test/i)).toBeInTheDocument();
+    await expect(canvas.getByText(/no hosts until this site is saved/i)).toBeVisible();
     await expect(canvas.getByRole('button', { name: /add/i })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: /^remove$/i })).toBeDisabled();
   },
 };
 
-export const EditSiteDialog: Story = {
+export const EditSiteHostsTab: Story = {
   args: { sites: SAMPLE_SITES, hosts: SAMPLE_HOSTS },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('row', { name: /main site/i }));
     await userEvent.click(canvas.getByRole('button', { name: /^edit$/i }));
-    await expect(
-      canvas.getByText('Main site Properties', { selector: '.title-bar-text' }),
-    ).toBeVisible();
-    await expect(canvas.getByLabelText(/name/i)).toHaveValue('Main site');
-    await expect(canvas.getByLabelText(/slug/i)).toHaveValue('main');
     await userEvent.click(canvas.getByRole('tab', { name: /hosts/i }));
-    await expect(canvas.getByLabelText(/^admin\.example\.test$/i)).toBeChecked();
-    await expect(canvas.getByLabelText(/^www\.example\.test$/i)).toBeChecked();
-    await expect(canvas.getByLabelText(/blog\.example\.test/i)).not.toBeChecked();
+
+    const table = canvas.getByRole('table', { name: 'Assigned hosts' });
+    await expect(within(table).getByText('admin.example.test')).toBeVisible();
+    await expect(within(table).getByText('www.example.test')).toBeVisible();
+    await expect(within(table).queryByText('blog.example.test')).toBeNull();
+    await expect(within(table).getByText('active')).toBeVisible();
+    await expect(within(table).getByText('pending')).toBeVisible();
+
+    await expect(canvas.getByRole('button', { name: /^remove$/i })).toBeDisabled();
+    await userEvent.click(within(table).getByText('admin.example.test'));
+    await expect(canvas.getByRole('button', { name: /^remove$/i })).toBeEnabled();
+    await userEvent.click(canvas.getByRole('button', { name: /^remove$/i }));
+    await expect(args.onUnassignHost).toHaveBeenCalledWith(10);
   },
 };
 
@@ -144,26 +147,6 @@ export const CreateSubmit: Story = {
         slug: 'docs',
         enabled: true,
       }),
-    );
-  },
-};
-
-export const SelectionEnablesEditDelete: Story = {
-  args: { sites: SAMPLE_SITES },
-  play: async ({ canvasElement, args }) => {
-    const canvas = within(canvasElement);
-    const edit = canvas.getByRole('button', { name: /^edit$/i });
-    const del = canvas.getByRole('button', { name: /^delete$/i });
-    await expect(edit).toBeDisabled();
-    await expect(del).toBeDisabled();
-
-    await userEvent.click(canvas.getByRole('row', { name: /main site/i }));
-    await expect(edit).toBeEnabled();
-    await expect(del).toBeEnabled();
-
-    await userEvent.click(del);
-    await expect(args.onDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, slug: 'main' }),
     );
   },
 };

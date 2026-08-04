@@ -71,7 +71,7 @@ export function HostFormDialog({
   const [surface, setSurface] = useState<HostFormSurface>(initial?.surface ?? 'site');
   const [active, setActive] = useState(initial?.active ?? true);
   const [localErrors, setLocalErrors] = useState<
-    Partial<Record<'host' | 'siteId', string>>
+    Partial<Record<'host', string>>
   >({});
 
   useEffect(() => {
@@ -91,14 +91,11 @@ export function HostFormDialog({
     }
 
     const nextHost = host.trim().toLowerCase();
-    const nextLocal: Partial<Record<'host' | 'siteId', string>> = {};
+    const nextLocal: Partial<Record<'host', string>> = {};
     if (!nextHost) {
       nextLocal.host = 'Hostname is required.';
     } else if (!/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/.test(nextHost)) {
       nextLocal.host = 'Use a valid domain name.';
-    }
-    if (siteId == null || siteId < 1) {
-      nextLocal.siteId = 'Site is required.';
     }
 
     setLocalErrors(nextLocal);
@@ -148,14 +145,14 @@ export function HostFormDialog({
               label="Site:"
               accessKey="s"
               value={siteId != null ? String(siteId) : ''}
-              disabled={saving || sites.length === 0}
+              disabled={saving}
               aria-invalid={Boolean(errors.siteId) || undefined}
               onChange={(event) => {
                 const value = event.target.value;
                 setSiteId(value === '' ? null : Number(value));
               }}
             >
-              <option value="">Select a site…</option>
+              <option value="">None</option>
               {sites.map((site) => (
                 <option key={site.id} value={site.id}>
                   {site.name}

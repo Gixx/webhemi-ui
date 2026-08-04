@@ -136,6 +136,13 @@ function toSiteFormHostOption(host: AdminApiHost | HostsWindowHost): SiteFormHos
     id: host.id,
     host: host.host,
     siteId: host.siteId,
+    siteName: host.siteName,
+    status:
+      host.status === 'pending' ||
+      host.status === 'verified' ||
+      host.status === 'active'
+        ? host.status
+        : 'pending',
   };
 }
 
@@ -184,6 +191,7 @@ export function AdminDesktop({
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
+  const [hostsUnassigning, setHostsUnassigning] = useState(false);
   const [hostsError, setHostsError] = useState<string | null>(null);
   const [hostsFormError, setHostsFormError] = useState<string | null>(null);
   const [hostsFieldErrors, setHostsFieldErrors] = useState<
@@ -619,7 +627,6 @@ export function AdminDesktop({
     name: string;
     slug: string;
     enabled: boolean;
-    hostIds: number[];
   }) => {
     if (payload.mode !== 'new') {
       // Update API arrives with Hosts / edit slice; keep dialog feedback for now.
@@ -652,8 +659,6 @@ export function AdminDesktop({
       return;
     }
 
-    // hostIds ignored until Hosts assignment API exists (payload reserved).
-
     const list = await api.listSites();
     if (list.ok) {
       setSitesRows(list.data.map(toWindowSite));
@@ -677,27 +682,33 @@ export function AdminDesktop({
   };
 
   const handleSaveHost = async (payload: HostFormSavePayload) => {
-    if (payload.mode !== 'new') {
-      setHostsFormError('Editing a host is not available yet.');
-      return;
-    }
-    if (payload.siteId == null) {
-      setHostsFormError('Site is required.');
-      setHostsFieldErrors({ siteId: 'Site is required.' });
-      return;
-    }
-
     setHostsCreating(true);
     setHostsFormError(null);
     setHostsFieldErrors({});
 
-    const result = await api.createHost({
-      host: payload.host,
-      siteId: payload.siteId,
-      surface: payload.surface,
-      active: payload.active,
-    });
+    const result =
+      payload.mode === 'new'
+        ? await api.createHost({
+            host: payload.host,
+            siteId: payload.siteId,
+            surface: payload.surface,
+            active: payload.active,
+          })
+        : payload.hostId != null
+          ? await api.updateHost(payload.hostId, {
+              host: payload.host,
+              siteId: payload.siteId,
+              surface: payload.surface,
+              active: payload.active,
+            })
+          : null;
+
     setHostsCreating(false);
+
+    if (!result) {
+      setHostsFormError('Editing a host is not available yet.');
+      return;
+    }
 
     if (!result.ok) {
       if (result.error.fields) {
@@ -719,15 +730,54 @@ export function AdminDesktop({
     if (list.ok) {
       setHostsRows(list.data.map(toWindowHost));
     } else {
-      const created = toWindowHost(result.data);
+      const saved = toWindowHost(result.data);
       setHostsRows((prev) =>
-        [...prev.filter((row) => row.id !== created.id), created].sort((a, b) =>
+        [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
           a.host.localeCompare(b.host),
         ),
       );
     }
 
-    // Refresh site host counts when Sites window is open / desktop icons.
+    const sitesList = await api.listSites();
+    if (sitesList.ok) {
+      setSitesRows(sitesList.data.map(toWindowSite));
+      setDesktopSites(sitesList.data.map(toDesktopSite));
+    }
+  };
+
+  const handleUnassignHost = async (hostId: number) => {
+    setHostsUnassigning(true);
+    setSitesFormError(null);
+    const result = await api.unassignHost(hostId);
+    setHostsUnassigning(false);
+
+    if (!result.ok) {
+      setSitesFormError(result.error.message);
+      if (result.status === 401) {
+        window.location.assign('/login');
+      }
+      return;
+    }
+
+    const list = await api.listHosts();
+    if (list.ok) {
+      setHostsRows(list.data.map(toWindowHost));
+    } else {
+      setHostsRows((prev) =>
+        prev.map((row) =>
+          row.id === hostId
+            ? {
+                ...row,
+                siteId: null,
+                siteSlug: null,
+                siteName: null,
+                status: row.status === 'active' ? 'verified' : row.status,
+              }
+            : row,
+        ),
+      );
+    }
+
     const sitesList = await api.listSites();
     if (sitesList.ok) {
       setSitesRows(sitesList.data.map(toWindowSite));
@@ -812,6 +862,8 @@ export function AdminDesktop({
               fieldErrors={sitesFieldErrors}
               onSave={handleSaveSite}
               onAddHost={openHosts}
+              onUnassignHost={handleUnassignHost}
+              unassigning={hostsUnassigning}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onClose={() => closeWindow(win.id)}

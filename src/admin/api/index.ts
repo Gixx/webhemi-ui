@@ -12,4 +12,5 @@ export {
   type AdminApiClientOptions,
   type CreateHostBody,
   type CreateSiteBody,
+  type UpdateHostBody,
 } from './client';

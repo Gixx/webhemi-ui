@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useState, type FormEvent } from 'react';
 import {
   Button,
   Checkbox,
@@ -7,6 +7,8 @@ import {
   Tab,
   TabList,
   TabPanel,
+  Table,
+  TableRow,
   TextBox,
   TitleBarControl,
   TitleBarControls,
@@ -15,11 +17,17 @@ import {
 import { PaneWindowShell } from '../../bricks/_lib/PaneWindowShell';
 import { cn } from '../../../lib/cn';
 
+export type SiteFormHostStatus = 'pending' | 'verified' | 'active';
+
 export type SiteFormHostOption = {
   id: number;
   host: string;
   /** Site currently owning this host, if any. */
   siteId?: number | null;
+  /** Display name of the owning site (when bound). */
+  siteName?: string | null;
+  /** Ownership lifecycle status (see Host_Ownership_Verification plan). */
+  status: SiteFormHostStatus;
 };
 
 export type SiteFormMode = 'new' | 'edit';
@@ -28,7 +36,6 @@ export type SiteFormValues = {
   name: string;
   slug: string;
   enabled: boolean;
-  hostIds: number[];
 };
 
 export type SiteFormSavePayload = SiteFormValues & {
@@ -40,11 +47,13 @@ export type SiteFormDialogProps = {
   mode: SiteFormMode;
   /** Prefilled when `mode === 'edit'`. */
   initial?: Partial<SiteFormValues> & { siteId?: number; title?: string };
-  /** Existing hosts that can be assigned (checkbox list). */
+  /** All hosts; the Hosts tab lists only those assigned to this site. */
   hosts?: SiteFormHostOption[];
   /** Marks invalid fields (no inline text — use {@link onError} / MessageDialog). */
   fieldErrors?: Partial<Record<'name' | 'slug', string>>;
   saving?: boolean;
+  /** True while an unassign request is in flight. */
+  unassigning?: boolean;
   onSave: (payload: SiteFormSavePayload) => void;
   /** Validation / user-facing errors (caller shows MessageDialog + sound). */
   onError?: (message: string) => void;
@@ -54,6 +63,8 @@ export type SiteFormDialogProps = {
    * When omitted, the Add button stays disabled.
    */
   onAddHost?: () => void;
+  /** Unassign selected host from this site (does not delete the host). */
+  onUnassignHost?: (hostId: number) => void;
   className?: string;
 };
 
@@ -68,10 +79,12 @@ export function SiteFormDialog({
   hosts = [],
   fieldErrors,
   saving = false,
+  unassigning = false,
   onSave,
   onError,
   onClose,
   onAddHost,
+  onUnassignHost,
   className,
 }: SiteFormDialogProps) {
   const nameId = useId();
@@ -81,33 +94,46 @@ export function SiteFormDialog({
   const [name, setName] = useState(initial?.name ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
-  const [hostIds, setHostIds] = useState<number[]>(initial?.hostIds ?? []);
+  const [selectedHostId, setSelectedHostId] = useState<number | null>(null);
   const [localErrors, setLocalErrors] = useState<Partial<Record<'name' | 'slug', string>>>(
     {},
   );
 
+  const assignedHosts = useMemo(() => {
+    if (initial?.siteId == null) {
+      return [];
+    }
+    return hosts.filter((host) => host.siteId === initial.siteId);
+  }, [hosts, initial?.siteId]);
+
   useEffect(() => {
     setLocalErrors({});
   }, [fieldErrors]);
+
+  useEffect(() => {
+    if (
+      selectedHostId != null &&
+      !assignedHosts.some((host) => host.id === selectedHostId)
+    ) {
+      setSelectedHostId(null);
+    }
+  }, [assignedHosts, selectedHostId]);
 
   const errors = { ...localErrors, ...fieldErrors };
   const title =
     mode === 'new'
       ? 'New Site'
       : `${initial?.title ?? initial?.name ?? 'Site'} Properties`;
-
-  const toggleHost = (id: number, checked: boolean) => {
-    setHostIds((prev) => {
-      if (checked) {
-        return prev.includes(id) ? prev : [...prev, id];
-      }
-      return prev.filter((hostId) => hostId !== id);
-    });
-  };
+  const busy = saving || unassigning;
+  const canRemove =
+    Boolean(onUnassignHost) &&
+    selectedHostId != null &&
+    initial?.siteId != null &&
+    !busy;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (saving) {
+    if (busy) {
       return;
     }
 
@@ -136,8 +162,14 @@ export function SiteFormDialog({
       name: nextName,
       slug: nextSlug,
       enabled,
-      hostIds: [...hostIds],
     });
+  };
+
+  const handleRemove = () => {
+    if (!canRemove || selectedHostId == null) {
+      return;
+    }
+    onUnassignHost?.(selectedHostId);
   };
 
   return (
@@ -186,7 +218,7 @@ export function SiteFormDialog({
                     label="Name:"
                     accessKey="n"
                     value={name}
-                    disabled={saving}
+                    disabled={busy}
                     aria-invalid={Boolean(errors.name) || undefined}
                     onChange={(event) => setName(event.target.value)}
                   />
@@ -197,7 +229,7 @@ export function SiteFormDialog({
                     label="Slug:"
                     accessKey="s"
                     value={slug}
-                    disabled={saving}
+                    disabled={busy}
                     aria-invalid={Boolean(errors.slug) || undefined}
                     onChange={(event) => setSlug(event.target.value)}
                   />
@@ -208,7 +240,7 @@ export function SiteFormDialog({
                     label="Enabled"
                     accessKey="e"
                     checked={enabled}
-                    disabled={saving}
+                    disabled={busy}
                     onChange={(event) => setEnabled(event.target.checked)}
                   />
                 </FieldRow>
@@ -216,48 +248,53 @@ export function SiteFormDialog({
             ) : (
               <>
                 <p style={{ marginTop: 0, marginBottom: 8 }}>
-                  Assign existing hosts to this site. Use Add… to open Hosts → Add.
+                  {initial?.siteId == null
+                    ? 'Save the site first, then assign hosts from Hosts (Edit) or add new ones here.'
+                    : 'Hosts assigned to this site. Remove unassigns without deleting the host.'}
                 </p>
                 <SunkenPanel
                   scrollable
                   tone="white"
                   className="site-form-host-list"
-                  role="group"
-                  aria-label="Hosts"
                 >
-                  {hosts.length === 0 ? (
-                    <p style={{ margin: 8 }}>No hosts available.</p>
+                  {assignedHosts.length === 0 ? (
+                    <p style={{ margin: 8 }}>
+                      {initial?.siteId == null
+                        ? 'No hosts until this site is saved.'
+                        : 'No hosts assigned.'}
+                    </p>
                   ) : (
-                    hosts.map((option) => {
-                      const checkboxId = `${enabledId}-host-${option.id}`;
-                      const assignedElsewhere =
-                        option.siteId != null &&
-                        (mode === 'new' || option.siteId !== initial?.siteId);
-                      return (
-                        <FieldRow key={option.id}>
-                          <Checkbox
-                            id={checkboxId}
-                            label={
-                              assignedElsewhere
-                                ? `${option.host} (site #${option.siteId})`
-                                : option.host
+                    <Table aria-label="Assigned hosts">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assignedHosts.map((row) => (
+                          <TableRow
+                            key={row.id}
+                            highlighted={selectedHostId === row.id}
+                            onClick={() =>
+                              setSelectedHostId((current) =>
+                                current === row.id ? null : row.id,
+                              )
                             }
-                            checked={hostIds.includes(option.id)}
-                            disabled={saving}
-                            onChange={(event) =>
-                              toggleHost(option.id, event.target.checked)
-                            }
-                          />
-                        </FieldRow>
-                      );
-                    })
+                          >
+                            <td>{row.host}</td>
+                            <td>{row.status}</td>
+                          </TableRow>
+                        ))}
+                      </tbody>
+                    </Table>
                   )}
                 </SunkenPanel>
                 <FieldRow className="justify-end" style={{ marginTop: 8 }}>
                   <Button
                     type="button"
                     accessKey="a"
-                    disabled={saving || !onAddHost}
+                    disabled={busy || !onAddHost}
                     title={
                       onAddHost
                         ? 'Add a new host'
@@ -266,6 +303,15 @@ export function SiteFormDialog({
                     onClick={onAddHost}
                   >
                     Add…
+                  </Button>
+                  <Button
+                    type="button"
+                    accessKey="r"
+                    disabled={!canRemove}
+                    title="Unassign selected host from this site"
+                    onClick={handleRemove}
+                  >
+                    Remove
                   </Button>
                 </FieldRow>
               </>
@@ -277,7 +323,7 @@ export function SiteFormDialog({
           <Button type="submit" isDefault accessKey="o" loading={saving}>
             OK
           </Button>
-          <Button type="button" accessKey="c" disabled={saving} onClick={onClose}>
+          <Button type="button" accessKey="c" disabled={busy} onClick={onClose}>
             Cancel
           </Button>
         </FieldRow>

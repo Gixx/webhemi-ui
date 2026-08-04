@@ -22,7 +22,14 @@ export type CreateSiteBody = {
 
 export type CreateHostBody = {
   host: string;
-  siteId: number;
+  siteId?: number | null;
+  surface?: 'admin' | 'site' | 'api';
+  active?: boolean;
+};
+
+export type UpdateHostBody = {
+  host?: string;
+  siteId?: number | null;
   surface?: 'admin' | 'site' | 'api';
   active?: boolean;
 };
@@ -130,6 +137,15 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiHost>('/hosts', {
         method: 'POST',
         body: JSON.stringify(body),
+      }),
+    updateHost: (id: number, body: UpdateHostBody) =>
+      request<AdminApiHost>(`/hosts/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    unassignHost: (id: number) =>
+      request<AdminApiHost>(`/hosts/${id}/unassign`, {
+        method: 'POST',
       }),
   };
 }

@@ -39,6 +39,16 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     status: 'pending',
     active: true,
   },
+  {
+    id: 13,
+    host: 'orphan.example.test',
+    siteId: null,
+    siteSlug: null,
+    siteName: null,
+    surface: 'site',
+    status: 'pending',
+    active: true,
+  },
 ];
 
 const meta = {
@@ -122,16 +132,25 @@ export const CreateSubmit: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: /^new$/i }));
     await userEvent.type(canvas.getByLabelText(/^host:$/i), 'docs.example.test');
-    await userEvent.selectOptions(canvas.getByLabelText(/^site:$/i), '2');
+    await expect(canvas.getByLabelText(/^site:$/i)).toHaveValue('');
     await userEvent.click(canvas.getByRole('button', { name: /^ok$/i }));
     await expect(args.onSave).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'new',
         host: 'docs.example.test',
-        siteId: 2,
+        siteId: null,
         surface: 'site',
         active: true,
       }),
     );
+  },
+};
+
+export const UnassignedSiteColumn: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const table = canvas.getByRole('table', { name: 'Hosts' });
+    await expect(within(table).getByText('orphan.example.test')).toBeVisible();
+    await expect(within(table).getByText('—')).toBeVisible();
   },
 };

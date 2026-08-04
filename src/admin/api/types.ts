@@ -31,9 +31,9 @@ export type AdminApiSite = {
 export type AdminApiHost = {
   id: number;
   host: string;
-  siteId: number;
-  siteSlug: string;
-  siteName: string;
+  siteId: number | null;
+  siteSlug: string | null;
+  siteName: string | null;
   surface: 'admin' | 'site' | 'api';
   status: string;
   active: boolean;
