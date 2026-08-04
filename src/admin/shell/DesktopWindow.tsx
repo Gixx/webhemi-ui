@@ -36,11 +36,14 @@ export type DesktopWindowProps = Omit<HTMLAttributes<HTMLDivElement>, 'onMove'> 
   onBoundsChange?: (bounds: ShellBounds) => void;
   /** Raise / focus this window. */
   onActivate?: () => void;
-  /** Title-bar Maximize / Restore / dblclick. */
+  /** Title-bar Maximize / Restore / dblclick (ignored when `resizable` is false). */
   onToggleMaximize?: () => void;
   /** When true, title-bar drag is disabled. */
   dragDisabled?: boolean;
-  /** Mount edge handles (default true). */
+  /**
+   * Mount edge handles (default true).
+   * When false, Maximize / Restore must not be offered (dblclick is no-op).
+   */
   resizable?: boolean;
   children: ReactNode;
 };
@@ -296,7 +299,7 @@ export function DesktopWindow({
   };
 
   const handleDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (!onToggleMaximize || !rootRef.current) {
+    if (!resizable || !onToggleMaximize || !rootRef.current) {
       return;
     }
     const target = event.target;

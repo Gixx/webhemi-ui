@@ -16,6 +16,20 @@ export const TITLE_BAR_CONTROL_OPTIONS: TitleBarAction[] = [
   'Close',
 ];
 
+/**
+ * Maximize / Restore are invalid when the window is not resizable.
+ * Story controls and shell props both go through this filter.
+ */
+export function titleBarActionsForResizable(
+  actions: TitleBarAction[],
+  resizable: boolean,
+): TitleBarAction[] {
+  if (resizable) {
+    return actions;
+  }
+  return actions.filter((action) => action !== 'Maximize' && action !== 'Restore');
+}
+
 /** Shared Controls / Docs args for every product window brick. */
 export type WindowBrickShellArgs = {
   title: string;
@@ -23,9 +37,9 @@ export type WindowBrickShellArgs = {
   inactive: boolean;
   /** HTML `draggable` only — shell owns real drag behavior (Phase 5). */
   draggable: boolean;
-  /** `.resizable` class only — shell owns resize handles (Phase 5). */
+  /** `.resizable` class + shell resize handles. Maximize requires this. */
   resizable: boolean;
-  /** Empty = no title-bar controls. */
+  /** Empty = no title-bar controls. Maximize/Restore ignored when `resizable` is false. */
   titleBarControls: TitleBarAction[];
 };
 
@@ -48,12 +62,14 @@ export const windowBrickShellArgTypes = {
   },
   resizable: {
     control: 'boolean',
-    description: 'Adds .resizable layout class (no resize handles until Phase 5 shell)',
+    description:
+      'Adds .resizable layout class and enables Maximize/Restore (invalid when false)',
   },
   titleBarControls: {
     control: 'check',
     options: TITLE_BAR_CONTROL_OPTIONS,
-    description: 'Which title-bar buttons to show (empty = none)',
+    description:
+      'Which title-bar buttons to show (empty = none). Maximize/Restore need resizable',
   },
 } satisfies Partial<ArgTypes<WindowBrickShellArgs>>;
 
@@ -72,13 +88,17 @@ export function renderTitleBarControls(actions: TitleBarAction[]): ReactNode | n
 
 /** Map shared story args → PaneWindowShell / brick shell props. */
 export function shellPropsFromArgs(args: WindowBrickShellArgs) {
+  const titleBarControls = titleBarActionsForResizable(
+    args.titleBarControls,
+    args.resizable,
+  );
   return {
     title: args.title,
     titleIcon: resolveTitleBarIcon(args.titleIcon),
     inactive: args.inactive,
     draggable: args.draggable,
     resizable: args.resizable,
-    titleBarControls: renderTitleBarControls(args.titleBarControls),
+    titleBarControls: renderTitleBarControls(titleBarControls),
   };
 }
 

@@ -25,7 +25,7 @@ export type ControlPanelProps = {
   onOpenSites?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
   onMinimize?: () => void;
-  /** Wired in Phase 5 shell; no-op until then. */
+  /** Wired in Phase 5 shell; no-op until then. Requires `resizable`. */
   onMaximize?: () => void;
   /** Bring this window to front (Phase 4: bump z-index via parent). */
   onActivate?: () => void;
@@ -33,6 +33,11 @@ export type ControlPanelProps = {
   inactive?: boolean;
   /** When true, Maximize control shows Restore. */
   maximized?: boolean;
+  /**
+   * Window may be resized / maximized (default true).
+   * When false, Maximize/Restore is not shown.
+   */
+  resizable?: boolean;
   className?: string;
   style?: CSSProperties;
   width?: number;
@@ -51,6 +56,7 @@ export function ControlPanel({
   onActivate,
   inactive = false,
   maximized = false,
+  resizable = true,
   className,
   style,
   width = 600,
@@ -64,17 +70,19 @@ export function ControlPanel({
       style={style}
       width={width}
       inactive={inactive}
-      resizable
+      resizable={resizable}
       paneHeight={paneHeight}
       title="Control Panel"
       titleIcon="control-panel"
       titleBarControls={
         <TitleBarControls>
           <TitleBarControl action="Minimize" onClick={onMinimize} />
-          <TitleBarControl
-            action={maximized ? 'Restore' : 'Maximize'}
-            onClick={onMaximize}
-          />
+          {resizable ? (
+            <TitleBarControl
+              action={maximized ? 'Restore' : 'Maximize'}
+              onClick={onMaximize}
+            />
+          ) : null}
           <TitleBarControl action="Close" onClick={onClose} />
         </TitleBarControls>
       }

@@ -22,6 +22,8 @@ type WindowStoryArgs = {
   inactive: boolean;
   status: string;
   titleIcon: TitleBarIconOption;
+  /** Adds `.resizable` — required for Maximize / Restore. */
+  resizable: boolean;
   showMinimize: boolean;
   showMaximize: boolean;
   showRestore: boolean;
@@ -81,6 +83,7 @@ const meta = {
     inactive: false,
     status: 'Ready',
     titleIcon: 'none' as TitleBarIconOption,
+    resizable: true,
     showMinimize: true,
     showMaximize: true,
     showRestore: false,
@@ -95,40 +98,57 @@ const meta = {
     inactive: { control: 'boolean' },
     status: { control: 'text' },
     titleIcon: { control: 'select', options: [...TITLE_BAR_ICON_OPTIONS] },
+    resizable: {
+      control: 'boolean',
+      description: 'When false, Maximize/Restore are not shown (Win98 invariant)',
+    },
     showMinimize: { control: 'boolean' },
-    showMaximize: { control: 'boolean' },
-    showRestore: { control: 'boolean' },
+    showMaximize: {
+      control: 'boolean',
+      if: { arg: 'resizable', truthy: true },
+    },
+    showRestore: {
+      control: 'boolean',
+      if: { arg: 'resizable', truthy: true },
+    },
     showHelp: { control: 'boolean' },
     showClose: { control: 'boolean' },
-    maximizeDisabled: { control: 'boolean' },
+    maximizeDisabled: {
+      control: 'boolean',
+      if: { arg: 'resizable', truthy: true },
+    },
     width: { control: { type: 'number', min: 200, max: 640 } },
   },
-  render: (args) => (
-    <Window style={{ width: args.width }}>
-      <TitleBar inactive={args.inactive}>
-        <TitleBarText className={resolveTitleBarIcon(args.titleIcon)}>{args.title}</TitleBarText>
-        <TitleBarControls>
-          {args.showMinimize ? <TitleBarControl action="Minimize" /> : null}
-          {args.showMaximize ? (
-            <TitleBarControl action="Maximize" disabled={args.maximizeDisabled} />
-          ) : null}
-          {args.showRestore ? <TitleBarControl action="Restore" /> : null}
-          {args.showHelp ? <TitleBarControl action="Help" /> : null}
-          {args.showClose ? <TitleBarControl action="Close" /> : null}
-        </TitleBarControls>
-      </TitleBar>
-      <WindowBody>
-        <p>{args.body}</p>
-      </WindowBody>
-      {args.status ? (
-        <StatusBar>
-          <StatusBarField>{args.status}</StatusBarField>
-          <StatusBarField></StatusBarField>
-          <StatusBarField></StatusBarField>
-        </StatusBar>
-      ) : null}
-    </Window>
-  ),
+  render: (args) => {
+    const showMaximize = args.resizable && args.showMaximize;
+    const showRestore = args.resizable && args.showRestore;
+    return (
+      <Window className={args.resizable ? 'resizable' : undefined} style={{ width: args.width }}>
+        <TitleBar inactive={args.inactive}>
+          <TitleBarText className={resolveTitleBarIcon(args.titleIcon)}>{args.title}</TitleBarText>
+          <TitleBarControls>
+            {args.showMinimize ? <TitleBarControl action="Minimize" /> : null}
+            {showMaximize ? (
+              <TitleBarControl action="Maximize" disabled={args.maximizeDisabled} />
+            ) : null}
+            {showRestore ? <TitleBarControl action="Restore" /> : null}
+            {args.showHelp ? <TitleBarControl action="Help" /> : null}
+            {args.showClose ? <TitleBarControl action="Close" /> : null}
+          </TitleBarControls>
+        </TitleBar>
+        <WindowBody>
+          <p>{args.body}</p>
+        </WindowBody>
+        {args.status ? (
+          <StatusBar>
+            <StatusBarField>{args.status}</StatusBarField>
+            <StatusBarField></StatusBarField>
+            <StatusBarField></StatusBarField>
+          </StatusBar>
+        ) : null}
+      </Window>
+    );
+  },
 } satisfies Meta<WindowStoryArgs>;
 
 export default meta;

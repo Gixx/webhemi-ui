@@ -76,6 +76,7 @@ export function SiteFileExplorer({
   maximizeAction = 'Maximize',
   title,
   titleIcon = 'site',
+  resizable = true,
   ...rest
 }: SiteFileExplorerProps) {
   const rootId = initialLocationId ?? tree[0]?.id ?? '';
@@ -282,6 +283,7 @@ export function SiteFileExplorer({
         title={title}
         titleIcon={titleIcon}
         {...rest}
+        resizable={resizable}
         tree={forest}
         items={items}
         view={view}
@@ -322,7 +324,9 @@ export function SiteFileExplorer({
         titleBarControls={
           <TitleBarControls>
             <TitleBarControl action="Minimize" onClick={onMinimize} />
-            <TitleBarControl action={maximizeAction} onClick={onMaximize} />
+            {resizable ? (
+              <TitleBarControl action={maximizeAction} onClick={onMaximize} />
+            ) : null}
             <TitleBarControl action="Close" onClick={onClose} />
           </TitleBarControls>
         }

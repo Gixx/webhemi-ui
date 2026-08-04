@@ -54,6 +54,11 @@ export type PaneWindowShellProps = HTMLAttributes<HTMLDivElement> & {
   inactive?: boolean;
   statusBar?: ReactNode;
   children: ReactNode;
+  /**
+   * When true, adds `.resizable` (default false for dialogs).
+   * Maximize / Restore title-bar controls are only valid when this is true —
+   * callers must not offer them on fixed-size windows.
+   */
   resizable?: boolean;
   bodyClassName?: string;
   width?: number | string;

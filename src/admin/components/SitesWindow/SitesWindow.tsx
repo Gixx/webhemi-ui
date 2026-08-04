@@ -63,10 +63,16 @@ export type SitesWindowProps = {
   onCancel?: () => void;
   onClose: () => void;
   onMinimize?: () => void;
+  /** Requires `resizable` (default true). */
   onMaximize?: () => void;
   onActivate?: () => void;
   inactive?: boolean;
   maximized?: boolean;
+  /**
+   * Window may be resized / maximized (default true).
+   * When false, Maximize/Restore is not shown.
+   */
+  resizable?: boolean;
   className?: string;
   style?: CSSProperties;
   width?: number;
@@ -130,6 +136,7 @@ export function SitesWindow({
   onActivate,
   inactive = false,
   maximized = false,
+  resizable = true,
   className,
   style,
   width = 560,
@@ -275,16 +282,18 @@ export function SitesWindow({
       className={cn('sites-window', className)}
       style={{ width, minHeight: 420, ...style }}
       inactive={inactive}
-      resizable
+      resizable={resizable}
       title="Sites"
       titleIcon="sites"
       titleBarControls={
         <TitleBarControls>
           <TitleBarControl action="Minimize" onClick={onMinimize} />
-          <TitleBarControl
-            action={maximized ? 'Restore' : 'Maximize'}
-            onClick={onMaximize}
-          />
+          {resizable ? (
+            <TitleBarControl
+              action={maximized ? 'Restore' : 'Maximize'}
+              onClick={onMaximize}
+            />
+          ) : null}
           <TitleBarControl action="Close" onClick={onClose} />
         </TitleBarControls>
       }
