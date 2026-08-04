@@ -36,6 +36,7 @@ export { TreeView, TreeToggle, type TreeViewProps, type TreeToggleProps } from '
 export {
   SunkenPanel,
   type SunkenPanelProps,
+  type SunkenPanelTone,
 } from './SunkenPanel';
 export { FieldBorder, type FieldBorderProps } from './FieldBorder';
 export { Scrollable, type ScrollableProps } from './Scrollable';

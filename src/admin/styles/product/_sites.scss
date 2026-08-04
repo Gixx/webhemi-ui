@@ -112,13 +112,15 @@
 }
 
 .site-form-host-list {
-  max-height: 160px;
+  /* Fixed height so `.scrollable` grid + custom rails get a definite viewport. */
+  height: 160px;
   min-height: 96px;
+  box-sizing: border-box;
 }
 
 .site-form-host-list > .scrollable-viewport {
   padding: 6px 8px;
   box-sizing: border-box;
-  max-height: 160px;
-  overflow: auto;
+  /* Override chrome sunken padding/min-height for the dense host checklist. */
+  min-height: 0;
 }

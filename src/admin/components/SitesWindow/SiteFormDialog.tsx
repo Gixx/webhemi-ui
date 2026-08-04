@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   FieldRow,
+  SunkenPanel,
   Tab,
   TabList,
   TabPanel,
@@ -215,39 +216,43 @@ export function SiteFormDialog({
             ) : (
               <>
                 <p style={{ marginTop: 0, marginBottom: 8 }}>
-                  Assign existing hosts to this site. Use Add… later to open Hosts → Add.
+                  Assign existing hosts to this site. Use Add… to open Hosts → Add.
                 </p>
-                <div className="site-form-host-list sunken-panel" role="group" aria-label="Hosts">
-                  <div className="scrollable-viewport">
-                    {hosts.length === 0 ? (
-                      <p style={{ margin: 8 }}>No hosts available.</p>
-                    ) : (
-                      hosts.map((option) => {
-                        const checkboxId = `${enabledId}-host-${option.id}`;
-                        const assignedElsewhere =
-                          option.siteId != null &&
-                          (mode === 'new' || option.siteId !== initial?.siteId);
-                        return (
-                          <FieldRow key={option.id}>
-                            <Checkbox
-                              id={checkboxId}
-                              label={
-                                assignedElsewhere
-                                  ? `${option.host} (site #${option.siteId})`
-                                  : option.host
-                              }
-                              checked={hostIds.includes(option.id)}
-                              disabled={saving}
-                              onChange={(event) =>
-                                toggleHost(option.id, event.target.checked)
-                              }
-                            />
-                          </FieldRow>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
+                <SunkenPanel
+                  scrollable
+                  tone="white"
+                  className="site-form-host-list"
+                  role="group"
+                  aria-label="Hosts"
+                >
+                  {hosts.length === 0 ? (
+                    <p style={{ margin: 8 }}>No hosts available.</p>
+                  ) : (
+                    hosts.map((option) => {
+                      const checkboxId = `${enabledId}-host-${option.id}`;
+                      const assignedElsewhere =
+                        option.siteId != null &&
+                        (mode === 'new' || option.siteId !== initial?.siteId);
+                      return (
+                        <FieldRow key={option.id}>
+                          <Checkbox
+                            id={checkboxId}
+                            label={
+                              assignedElsewhere
+                                ? `${option.host} (site #${option.siteId})`
+                                : option.host
+                            }
+                            checked={hostIds.includes(option.id)}
+                            disabled={saving}
+                            onChange={(event) =>
+                              toggleHost(option.id, event.target.checked)
+                            }
+                          />
+                        </FieldRow>
+                      );
+                    })
+                  )}
+                </SunkenPanel>
                 <FieldRow className="justify-end" style={{ marginTop: 8 }}>
                   <Button
                     type="button"

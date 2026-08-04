@@ -77,7 +77,7 @@ const meta = {
     highlightFirst: { control: 'boolean' },
   },
   render: (args) => (
-    <SunkenPanel className="bg-white" style={{ width: args.width, height: args.height }}>
+    <SunkenPanel tone="white" style={{ width: args.width, height: args.height }}>
       <Table interactive={args.interactive}>
         <thead>
           <tr>

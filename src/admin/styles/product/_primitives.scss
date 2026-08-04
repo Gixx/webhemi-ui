@@ -41,7 +41,8 @@
   background-color: silver;
 }
 
-/* List-view inset: whole sunk host is white (not only table rows). */
+/* Explicit white face (prop `tone="white"`) or list/table inset. */
+.sunken-panel.sunken-panel-white,
 .sunken-panel:has(table) {
   background-color: #fff;
 }

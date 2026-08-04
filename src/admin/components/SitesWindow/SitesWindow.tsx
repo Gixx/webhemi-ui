@@ -354,7 +354,7 @@ export function SitesWindow({
       <>
         <SunkenPanel
           scrollable
-          className="bg-white"
+          tone="white"
           style={tableMinHeight != null ? { minHeight: tableMinHeight } : undefined}
         >
           {loading && sites.length === 0 ? (

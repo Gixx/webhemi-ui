@@ -325,7 +325,7 @@ export function HostsWindow({
       <>
         <SunkenPanel
           scrollable
-          className="bg-white"
+          tone="white"
           style={tableMinHeight != null ? { minHeight: tableMinHeight } : undefined}
         >
           {loading && hosts.length === 0 ? (
