@@ -98,6 +98,15 @@ export const ErrorState: Story = {
     hosts: SAMPLE_HOSTS,
     error: 'Could not load hosts. Try again.',
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
+    const dialog = canvasElement.querySelector('.message-dialog');
+    await expect(dialog).not.toBeNull();
+    await expect(
+      within(dialog as HTMLElement).getByText('Could not load hosts. Try again.'),
+    ).toBeVisible();
+  },
 };
 
 export const ReadOnly: Story = {

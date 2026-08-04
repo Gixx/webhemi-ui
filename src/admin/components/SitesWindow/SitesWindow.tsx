@@ -41,11 +41,11 @@ export type SitesWindowProps = {
   hosts?: SiteFormHostOption[];
   canEdit?: boolean;
   loading?: boolean;
-  /** Window-level load error (list) — shown in status bar. */
+  /** Window-level load error — Error MessageDialog + chord; also status bar. */
   error?: string | null;
   /** Field errors from the last save attempt (MessageDialog + aria-invalid). */
   fieldErrors?: Partial<Record<'name' | 'slug', string>>;
-  /** Save error message (MessageDialog). */
+  /** Save / unassign error message (MessageDialog + chord). */
   formError?: string | null;
   /** Submit spinner on OK in the form dialog. */
   saving?: boolean;
@@ -189,11 +189,26 @@ export function SitesWindow({
     wasSavingRef.current = saving;
   }, [saving, form.open, formError, fieldErrors]);
 
+  // Load failures → Error MessageDialog + chord (no inline red banner).
   useEffect(() => {
-    if (!form.open || !showFormErrors) {
+    if (!error || loading) {
       return;
     }
-    const message = formatSaveErrors(formError, fieldErrors);
+    showErrorAlert(error);
+  }, [error, loading, showErrorAlert]);
+
+  // Save / unassign / API form errors while the form is open.
+  useEffect(() => {
+    if (!form.open) {
+      return;
+    }
+    if (!formError && !showFormErrors) {
+      return;
+    }
+    const message = formatSaveErrors(
+      formError,
+      showFormErrors ? fieldErrors : undefined,
+    );
     if (!message) {
       return;
     }
@@ -390,12 +405,6 @@ export function SitesWindow({
             </Table>
           )}
         </SunkenPanel>
-
-        {error && !loading ? (
-          <p role="alert" style={{ marginTop: 10, marginBottom: 0, color: '#800000' }}>
-            {error}
-          </p>
-        ) : null}
 
         {form.open ? (
           <DesktopModal dingSoundUrl={dingSoundUrl}>

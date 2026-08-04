@@ -39,8 +39,10 @@ export type HostsWindowProps = {
   sites?: HostFormSiteOption[];
   canEdit?: boolean;
   loading?: boolean;
+  /** Window-level load error — Error MessageDialog + chord; also status bar. */
   error?: string | null;
   fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
+  /** Save error message (MessageDialog + chord). */
   formError?: string | null;
   saving?: boolean;
   onSave?: (payload: HostFormSavePayload) => void;
@@ -166,11 +168,26 @@ export function HostsWindow({
     wasSavingRef.current = saving;
   }, [saving, form.open, formError, fieldErrors]);
 
+  // Load failures → Error MessageDialog + chord (no inline red banner).
   useEffect(() => {
-    if (!form.open || !showFormErrors) {
+    if (!error || loading) {
       return;
     }
-    const message = formatSaveErrors(formError, fieldErrors);
+    showErrorAlert(error);
+  }, [error, loading, showErrorAlert]);
+
+  // Save / API form errors while the form is open.
+  useEffect(() => {
+    if (!form.open) {
+      return;
+    }
+    if (!formError && !showFormErrors) {
+      return;
+    }
+    const message = formatSaveErrors(
+      formError,
+      showFormErrors ? fieldErrors : undefined,
+    );
     if (!message) {
       return;
     }
@@ -364,12 +381,6 @@ export function HostsWindow({
             </Table>
           )}
         </SunkenPanel>
-
-        {error && !loading ? (
-          <p role="alert" style={{ marginTop: 10, marginBottom: 0, color: '#800000' }}>
-            {error}
-          </p>
-        ) : null}
 
         {form.open ? (
           <DesktopModal dingSoundUrl={dingSoundUrl}>

@@ -64,6 +64,15 @@ export const ErrorState: Story = {
     sites: SAMPLE_SITES,
     error: 'Could not load sites. Try again.',
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
+    const dialog = canvasElement.querySelector('.message-dialog');
+    await expect(dialog).not.toBeNull();
+    await expect(
+      within(dialog as HTMLElement).getByText('Could not load sites. Try again.'),
+    ).toBeVisible();
+  },
 };
 
 export const ReadOnly: Story = {
