@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Pre-push gate: typecheck, lint, Storybook interaction tests (Vitest browser).
+# Chromatic cloud publish stays in CI — not run here.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [[ ! -f package.json ]]; then
+  echo "ERROR: pre-push expected webhemi-ui package.json at $ROOT" >&2
+  exit 1
+fi
+
+echo "==> npm run typecheck"
+npm run typecheck
+
+echo "==> npm run lint"
+npm run lint
+
+echo "==> npm run test-storybook -- --run"
+npm run test-storybook -- --run
+
+echo "pre-push checks passed."

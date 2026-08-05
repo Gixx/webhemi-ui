@@ -41,6 +41,20 @@ npm install
 npm run storybook
 ```
 
+### Git hooks
+
+Repo-managed hooks live in `.githooks/` (enable once per clone):
+
+```bash
+chmod +x .githooks/pre-commit .githooks/pre-push
+git config core.hooksPath .githooks
+```
+
+- **pre-commit** — reject staged text files with CRLF
+- **pre-push** — `typecheck`, `lint`, `test-storybook --run` (Playwright Chromium required; same Storybook interaction gate as CI)
+
+Chromatic cloud publish stays on push via GitHub Actions — not in the local hooks.
+
 ## Build library
 
 ```bash
