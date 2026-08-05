@@ -38,6 +38,7 @@ const meta = {
     onSave: fn(),
     onDelete: fn(),
     onUnassignHost: fn(),
+    onAssignHost: fn(),
     onAlertClose: fn(),
     canEdit: true,
     sites: SAMPLE_SITES,
@@ -133,6 +134,11 @@ export const EditSiteHostsTab: Story = {
     await expect(canvas.getByRole('button', { name: /^remove$/i })).toBeEnabled();
     await userEvent.click(canvas.getByRole('button', { name: /^remove$/i }));
     await expect(args.onUnassignHost).toHaveBeenCalledWith(10);
+
+    await userEvent.selectOptions(canvas.getByLabelText(/^assign:$/i), '13');
+    await expect(canvas.getByRole('button', { name: /^assign$/i })).toBeEnabled();
+    await userEvent.click(canvas.getByRole('button', { name: /^assign$/i }));
+    await expect(args.onAssignHost).toHaveBeenCalledWith(13, 1);
   },
 };
 

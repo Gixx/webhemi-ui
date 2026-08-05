@@ -79,6 +79,7 @@ type FormState =
       siteId: number | null;
       surface: HostFormSurface;
       active: boolean;
+      status?: string;
       title?: string;
     };
 
@@ -241,6 +242,7 @@ export function HostsWindow({
       siteId: target.siteId,
       surface: target.surface,
       active: target.active,
+      status: target.status,
       title: target.host,
     });
   };
@@ -425,6 +427,7 @@ export function HostsWindow({
                 siteId: form.siteId,
                 surface: form.surface,
                 active: form.active,
+                status: form.status,
                 title: form.title,
               }}
               sites={sites}

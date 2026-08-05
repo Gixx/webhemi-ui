@@ -205,6 +205,11 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiHost>(`/hosts/${id}/verify`, {
         method: 'POST',
       }),
+    assignHost: (id: number, body: { siteId: number }) =>
+      request<AdminApiHost>(`/hosts/${id}/assign`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
   };
 }
 

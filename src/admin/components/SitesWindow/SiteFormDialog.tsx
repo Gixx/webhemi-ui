@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   FieldRow,
+  Select,
   SunkenPanel,
   Tab,
   TabList,
@@ -54,6 +55,8 @@ export type SiteFormDialogProps = {
   saving?: boolean;
   /** True while an unassign request is in flight. */
   unassigning?: boolean;
+  /** True while an assign request is in flight. */
+  assigning?: boolean;
   onSave: (payload: SiteFormSavePayload) => void;
   /** Validation / user-facing errors (caller shows MessageDialog + sound). */
   onError?: (message: string) => void;
@@ -63,6 +66,8 @@ export type SiteFormDialogProps = {
    * When omitted, the Add button stays disabled.
    */
   onAddHost?: () => void;
+  /** Assign a verified, unassigned host to this site. */
+  onAssignHost?: (hostId: number) => void;
   /** Unassign selected host from this site (does not delete the host). */
   onUnassignHost?: (hostId: number) => void;
   className?: string;
@@ -80,21 +85,25 @@ export function SiteFormDialog({
   fieldErrors,
   saving = false,
   unassigning = false,
+  assigning = false,
   onSave,
   onError,
   onClose,
   onAddHost,
+  onAssignHost,
   onUnassignHost,
   className,
 }: SiteFormDialogProps) {
   const nameId = useId();
   const slugId = useId();
   const enabledId = useId();
+  const assignSelectId = useId();
   const [tab, setTab] = useState<FormTab>('general');
   const [name, setName] = useState(initial?.name ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [selectedHostId, setSelectedHostId] = useState<number | null>(null);
+  const [assignHostId, setAssignHostId] = useState<number | null>(null);
   const [localErrors, setLocalErrors] = useState<Partial<Record<'name' | 'slug', string>>>(
     {},
   );
@@ -105,6 +114,14 @@ export function SiteFormDialog({
     }
     return hosts.filter((host) => host.siteId === initial.siteId);
   }, [hosts, initial?.siteId]);
+
+  const assignableHosts = useMemo(
+    () =>
+      hosts.filter(
+        (host) => host.status === 'verified' && (host.siteId == null || host.siteId === undefined),
+      ),
+    [hosts],
+  );
 
   useEffect(() => {
     setLocalErrors({});
@@ -119,15 +136,29 @@ export function SiteFormDialog({
     }
   }, [assignedHosts, selectedHostId]);
 
+  useEffect(() => {
+    if (
+      assignHostId != null &&
+      !assignableHosts.some((host) => host.id === assignHostId)
+    ) {
+      setAssignHostId(null);
+    }
+  }, [assignableHosts, assignHostId]);
+
   const errors = { ...localErrors, ...fieldErrors };
   const title =
     mode === 'new'
       ? 'New Site'
       : `${initial?.title ?? initial?.name ?? 'Site'} Properties`;
-  const busy = saving || unassigning;
+  const busy = saving || unassigning || assigning;
   const canRemove =
     Boolean(onUnassignHost) &&
     selectedHostId != null &&
+    initial?.siteId != null &&
+    !busy;
+  const canAssign =
+    Boolean(onAssignHost) &&
+    assignHostId != null &&
     initial?.siteId != null &&
     !busy;
 
@@ -170,6 +201,13 @@ export function SiteFormDialog({
       return;
     }
     onUnassignHost?.(selectedHostId);
+  };
+
+  const handleAssign = () => {
+    if (!canAssign || assignHostId == null) {
+      return;
+    }
+    onAssignHost?.(assignHostId);
   };
 
   return (
@@ -249,8 +287,8 @@ export function SiteFormDialog({
               <>
                 <p style={{ marginTop: 0, marginBottom: 8 }}>
                   {initial?.siteId == null
-                    ? 'Save the site first, then assign hosts from Hosts (Edit) or add new ones here.'
-                    : 'Hosts assigned to this site. Remove unassigns without deleting the host.'}
+                    ? 'Save the site first, then assign verified hosts here or from Hosts.'
+                    : 'Assigned hosts below. Assign only verified, unassigned hosts; Remove unassigns without deleting.'}
                 </p>
                 <SunkenPanel
                   scrollable
@@ -290,6 +328,46 @@ export function SiteFormDialog({
                     </Table>
                   )}
                 </SunkenPanel>
+                {initial?.siteId != null ? (
+                  <FieldRow style={{ marginTop: 8 }}>
+                    <Select
+                      id={assignSelectId}
+                      label="Assign:"
+                      accessKey="i"
+                      value={assignHostId != null ? String(assignHostId) : ''}
+                      disabled={busy || !onAssignHost || assignableHosts.length === 0}
+                      title={
+                        assignableHosts.length === 0
+                          ? 'No verified, unassigned hosts available'
+                          : 'Verified hosts not bound to a site'
+                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setAssignHostId(value === '' ? null : Number(value));
+                      }}
+                    >
+                      <option value="">
+                        {assignableHosts.length === 0
+                          ? 'None available'
+                          : 'Select a host…'}
+                      </option>
+                      {assignableHosts.map((host) => (
+                        <option key={host.id} value={host.id}>
+                          {host.host}
+                        </option>
+                      ))}
+                    </Select>
+                    <Button
+                      type="button"
+                      accessKey="g"
+                      disabled={!canAssign}
+                      title="Assign selected verified host to this site"
+                      onClick={handleAssign}
+                    >
+                      Assign
+                    </Button>
+                  </FieldRow>
+                ) : null}
                 <FieldRow className="justify-end" style={{ marginTop: 8 }}>
                   <Button
                     type="button"

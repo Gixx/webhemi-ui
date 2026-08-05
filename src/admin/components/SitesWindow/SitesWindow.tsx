@@ -55,9 +55,12 @@ export type SitesWindowProps = {
   onDelete?: (site: SitesWindowSite) => void;
   /** Opens Hosts → Add from the form dialog. */
   onAddHost?: () => void;
+  /** Assign a verified, unassigned host to the site being edited. */
+  onAssignHost?: (hostId: number, siteId: number) => void;
   /** Unassign a host from the site being edited. */
   onUnassignHost?: (hostId: number) => void;
   unassigning?: boolean;
+  assigning?: boolean;
   /** Digested chord URL from Twig; Storybook uses package static path. */
   errorSoundUrl?: string;
   /** Digested ding URL — blocked-owner attention (Default Beep). */
@@ -131,8 +134,10 @@ export function SitesWindow({
   onCreate,
   onDelete,
   onAddHost,
+  onAssignHost,
   onUnassignHost,
   unassigning = false,
+  assigning = false,
   errorSoundUrl,
   dingSoundUrl,
   onAlertClose,
@@ -219,7 +224,7 @@ export function SitesWindow({
     showErrorAlert(message);
   }, [formError, fieldErrors, form.open, showFormErrors, showErrorAlert]);
 
-  const busy = loading || saving || unassigning;
+  const busy = loading || saving || unassigning || assigning;
   const selected = sites.find((site) => site.id === selectedId) ?? null;
   const hasSelection = selected != null;
   const canSave = Boolean(onSave || onCreate);
@@ -426,10 +431,16 @@ export function SitesWindow({
               fieldErrors={showFormErrors ? fieldErrors : undefined}
               saving={saving}
               unassigning={unassigning}
+              assigning={assigning}
               onSave={handleFormSave}
               onError={showErrorAlert}
               onClose={closeForm}
               onAddHost={onAddHost}
+              onAssignHost={
+                onAssignHost && form.open && form.siteId != null
+                  ? (hostId) => onAssignHost(hostId, form.siteId as number)
+                  : undefined
+              }
               onUnassignHost={onUnassignHost}
             />
           </DesktopModal>

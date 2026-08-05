@@ -194,6 +194,7 @@ export function AdminDesktop({
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
   const [hostsUnassigning, setHostsUnassigning] = useState(false);
+  const [hostsAssigning, setHostsAssigning] = useState(false);
   const [hostsVerifying, setHostsVerifying] = useState(false);
   const [hostsError, setHostsError] = useState<string | null>(null);
   const [hostsFormError, setHostsFormError] = useState<string | null>(null);
@@ -806,6 +807,34 @@ export function AdminDesktop({
     }
   };
 
+  const handleAssignHost = async (hostId: number, siteId: number) => {
+    setHostsAssigning(true);
+    setSitesFormError(null);
+    const result = await api.assignHost(hostId, { siteId });
+    setHostsAssigning(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setSitesFormError);
+      return;
+    }
+
+    const list = await api.listHosts();
+    if (list.ok) {
+      setHostsRows(list.data.map(toWindowHost));
+    } else {
+      const assigned = toWindowHost(result.data);
+      setHostsRows((prev) =>
+        prev.map((row) => (row.id === assigned.id ? assigned : row)),
+      );
+    }
+
+    const sitesList = await api.listSites();
+    if (sitesList.ok) {
+      setSitesRows(sitesList.data.map(toWindowSite));
+      setDesktopSites(sitesList.data.map(toDesktopSite));
+    }
+  };
+
   const handleVerifyHost = async (host: HostsWindowHost) => {
     setHostsVerifying(true);
     setHostsError(null);
@@ -905,8 +934,10 @@ export function AdminDesktop({
               fieldErrors={sitesFieldErrors}
               onSave={handleSaveSite}
               onAddHost={openHosts}
+              onAssignHost={handleAssignHost}
               onUnassignHost={handleUnassignHost}
               unassigning={hostsUnassigning}
+              assigning={hostsAssigning}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onAlertClose={handleAlertClose}

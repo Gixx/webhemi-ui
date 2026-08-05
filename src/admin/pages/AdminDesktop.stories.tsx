@@ -155,6 +155,46 @@ function createMockAdminApi(
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
     },
+    assignHost: async (id, body) => {
+      const existing = hostRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      if (existing.status !== 'verified' || existing.siteId != null) {
+        return {
+          ok: false,
+          status: 422,
+          error: {
+            code: 'not_assignable',
+            message: 'Only verified, unassigned hosts can be assigned to a site.',
+          },
+        };
+      }
+      const site = siteRows.find((row) => row.id === body.siteId);
+      if (!site) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'site_not_found', message: 'The selected site does not exist.' },
+        };
+      }
+      const updated: AdminApiHost = {
+        ...existing,
+        siteId: site.id,
+        siteSlug: site.slug,
+        siteName: site.name,
+        status: 'active',
+      };
+      hostRows = hostRows.map((row) => (row.id === id ? updated : row));
+      siteRows = siteRows.map((row) =>
+        row.id === site.id ? { ...row, hostCount: row.hostCount + 1 } : row,
+      );
+      return { ok: true, status: 200, data: updated };
+    },
   };
 }
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {

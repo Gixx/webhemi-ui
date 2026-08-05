@@ -37,7 +37,12 @@ export type HostFormSavePayload = HostFormValues & {
 export type HostFormDialogProps = {
   mode: HostFormMode;
   /** Prefilled when `mode === 'edit'`. */
-  initial?: Partial<HostFormValues> & { hostId?: number; title?: string };
+  initial?: Partial<HostFormValues> & {
+    hostId?: number;
+    title?: string;
+    /** Ownership status — pending hosts cannot be assigned to a site. */
+    status?: string;
+  };
   /** Sites available for the Site select. */
   sites?: HostFormSiteOption[];
   fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
@@ -83,6 +88,7 @@ export function HostFormDialog({
     mode === 'new'
       ? 'New Host'
       : `${initial?.title ?? initial?.host ?? 'Host'} Properties`;
+  const siteSelectLocked = mode === 'edit' && initial?.status === 'pending';
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -145,7 +151,12 @@ export function HostFormDialog({
               label="Site:"
               accessKey="s"
               value={siteId != null ? String(siteId) : ''}
-              disabled={saving}
+              disabled={saving || siteSelectLocked}
+              title={
+                siteSelectLocked
+                  ? 'Verify ownership before assigning a site'
+                  : undefined
+              }
               aria-invalid={Boolean(errors.siteId) || undefined}
               onChange={(event) => {
                 const value = event.target.value;
