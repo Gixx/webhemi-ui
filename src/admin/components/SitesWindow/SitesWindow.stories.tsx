@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn, expect, userEvent, within } from 'storybook/test';
+import { fn, expect, userEvent, within, waitFor } from 'storybook/test';
 import { SitesWindow, type SitesWindowSite } from './SitesWindow';
 import type { SiteFormHostOption } from './SiteFormDialog';
 
@@ -68,11 +68,14 @@ export const ErrorState: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
     await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
-    const dialog = canvasElement.querySelector('.message-dialog');
-    await expect(dialog).not.toBeNull();
     await expect(
-      within(dialog as HTMLElement).getByText('Could not load sites. Try again.'),
+      within(canvasElement.querySelector('.message-dialog') as HTMLElement).getByText(
+        'Could not load sites. Try again.',
+      ),
     ).toBeVisible();
   },
 };
@@ -84,15 +87,15 @@ export const SessionExpired: Story = {
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
     await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
-    const dialog = canvasElement.querySelector('.message-dialog');
-    await expect(dialog).not.toBeNull();
+    const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
     await expect(
-      within(dialog as HTMLElement).getByText(
-        'Your session has expired. Please sign in again.',
-      ),
+      within(dialog).getByText('Your session has expired. Please sign in again.'),
     ).toBeVisible();
-    await userEvent.click(within(dialog as HTMLElement).getByRole('button', { name: /^ok$/i }));
+    await userEvent.click(within(dialog).getByRole('button', { name: /^ok$/i }));
     await expect(args.onAlertClose).toHaveBeenCalled();
   },
 };

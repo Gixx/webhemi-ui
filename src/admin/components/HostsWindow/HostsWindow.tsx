@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Button,
   FieldRow,
@@ -179,8 +179,8 @@ export function HostsWindow({
     wasSavingRef.current = saving;
   }, [saving, form.open, formError, fieldErrors]);
 
-  // Load failures → Error MessageDialog + chord (no inline red banner).
-  useEffect(() => {
+  // Load failures → Error MessageDialog + chord before paint (Chromatic/play-safe).
+  useLayoutEffect(() => {
     if (!error || loading) {
       return;
     }

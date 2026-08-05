@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { fn, expect, userEvent, within } from 'storybook/test';
+import { fn, expect, userEvent, within, waitFor } from 'storybook/test';
 import { HostsWindow, type HostsWindowHost } from './HostsWindow';
 import type { HostFormSiteOption } from './HostFormDialog';
 
@@ -102,11 +102,14 @@ export const ErrorState: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
     await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
-    const dialog = canvasElement.querySelector('.message-dialog');
-    await expect(dialog).not.toBeNull();
     await expect(
-      within(dialog as HTMLElement).getByText('Could not load hosts. Try again.'),
+      within(canvasElement.querySelector('.message-dialog') as HTMLElement).getByText(
+        'Could not load hosts. Try again.',
+      ),
     ).toBeVisible();
   },
 };
