@@ -45,10 +45,16 @@ export type HostsWindowProps = {
   /** Save error message (MessageDialog + chord). */
   formError?: string | null;
   saving?: boolean;
+  /** True while ownership verify request is in flight. */
+  verifying?: boolean;
   onSave?: (payload: HostFormSavePayload) => void;
+  /** Run ownership probe for a pending host (`host.verify`). */
+  onVerify?: (host: HostsWindowHost) => void;
   onDelete?: (host: HostsWindowHost) => void;
   errorSoundUrl?: string;
   dingSoundUrl?: string;
+  /** Called when the Error MessageDialog is dismissed (e.g. redirect after session expiry). */
+  onAlertClose?: () => void;
   onCancel?: () => void;
   onClose: () => void;
   onMinimize?: () => void;
@@ -98,7 +104,7 @@ function formatSaveErrors(
 }
 
 /**
- * Hosts admin window: list + New/Edit/Delete/Cancel.
+ * Hosts admin window: list + New/Edit/Verify/Delete/Cancel.
  */
 export function HostsWindow({
   hosts = [],
@@ -109,10 +115,13 @@ export function HostsWindow({
   fieldErrors,
   formError = null,
   saving = false,
+  verifying = false,
   onSave,
+  onVerify,
   onDelete,
   errorSoundUrl,
   dingSoundUrl,
+  onAlertClose,
   onCancel,
   onClose,
   onMinimize,
@@ -149,7 +158,8 @@ export function HostsWindow({
   const closeAlert = useCallback(() => {
     setAlert(null);
     alertSoundKeyRef.current = null;
-  }, []);
+    onAlertClose?.();
+  }, [onAlertClose]);
 
   useEffect(() => {
     if (selectedId != null && !hosts.some((row) => row.id === selectedId)) {
@@ -194,10 +204,12 @@ export function HostsWindow({
     showErrorAlert(message);
   }, [formError, fieldErrors, form.open, showFormErrors, showErrorAlert]);
 
-  const busy = loading || saving;
+  const busy = loading || saving || verifying;
   const selected = hosts.find((row) => row.id === selectedId) ?? null;
   const hasSelection = selected != null;
   const canSave = Boolean(onSave);
+  const canVerifySelected =
+    Boolean(onVerify) && selected?.status === 'pending' && !busy;
 
   const openNew = () => {
     if (!canEdit || busy) {
@@ -248,6 +260,13 @@ export function HostsWindow({
       return;
     }
     onDelete(selected);
+  };
+
+  const handleVerify = () => {
+    if (!canVerifySelected || !selected || !onVerify) {
+      return;
+    }
+    onVerify(selected);
   };
 
   const handleCancel = () => {
@@ -310,6 +329,19 @@ export function HostsWindow({
               onClick={() => openEdit()}
             >
               Edit
+            </Button>
+            <Button
+              type="button"
+              accessKey="v"
+              disabled={!canVerifySelected}
+              title={
+                selected?.status === 'pending'
+                  ? 'Verify hostname ownership'
+                  : 'Select a pending host to verify'
+              }
+              onClick={handleVerify}
+            >
+              Verify
             </Button>
             <Button
               type="button"

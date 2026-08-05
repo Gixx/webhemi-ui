@@ -71,7 +71,9 @@ const meta = {
     onMaximize: fn(),
     onActivate: fn(),
     onSave: fn(),
+    onVerify: fn(),
     onDelete: fn(),
+    onAlertClose: fn(),
     canEdit: true,
     hosts: SAMPLE_HOSTS,
     sites: SAMPLE_SITES,
@@ -161,5 +163,26 @@ export const UnassignedSiteColumn: Story = {
     const table = canvas.getByRole('table', { name: 'Hosts' });
     await expect(within(table).getByText('orphan.example.test')).toBeVisible();
     await expect(within(table).getByText('—')).toBeVisible();
+  },
+};
+
+export const VerifyPending: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole('button', { name: /^verify$/i })).toBeDisabled();
+    await userEvent.click(canvas.getByRole('row', { name: /orphan\.example\.test/i }));
+    await expect(canvas.getByRole('button', { name: /^verify$/i })).toBeEnabled();
+    await userEvent.click(canvas.getByRole('button', { name: /^verify$/i }));
+    await expect(args.onVerify).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 13, status: 'pending' }),
+    );
+  },
+};
+
+export const VerifyDisabledWhenNotPending: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /admin\.example\.test/i }));
+    await expect(canvas.getByRole('button', { name: /^verify$/i })).toBeDisabled();
   },
 };

@@ -132,6 +132,29 @@ function createMockAdminApi(
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
     },
+    verifyHost: async (id) => {
+      const existing = hostRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      if (existing.status !== 'pending') {
+        return {
+          ok: false,
+          status: 422,
+          error: {
+            code: 'not_pending',
+            message: 'Only pending hosts can be verified.',
+          },
+        };
+      }
+      const updated: AdminApiHost = { ...existing, status: 'verified' };
+      hostRows = hostRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
+    },
   };
 }
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {

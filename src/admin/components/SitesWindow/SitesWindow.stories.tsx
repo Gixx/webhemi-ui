@@ -38,6 +38,7 @@ const meta = {
     onSave: fn(),
     onDelete: fn(),
     onUnassignHost: fn(),
+    onAlertClose: fn(),
     canEdit: true,
     sites: SAMPLE_SITES,
     hosts: SAMPLE_HOSTS,
@@ -72,6 +73,26 @@ export const ErrorState: Story = {
     await expect(
       within(dialog as HTMLElement).getByText('Could not load sites. Try again.'),
     ).toBeVisible();
+  },
+};
+
+export const SessionExpired: Story = {
+  args: {
+    sites: [],
+    error: 'Your session has expired. Please sign in again.',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
+    const dialog = canvasElement.querySelector('.message-dialog');
+    await expect(dialog).not.toBeNull();
+    await expect(
+      within(dialog as HTMLElement).getByText(
+        'Your session has expired. Please sign in again.',
+      ),
+    ).toBeVisible();
+    await userEvent.click(within(dialog as HTMLElement).getByRole('button', { name: /^ok$/i }));
+    await expect(args.onAlertClose).toHaveBeenCalled();
   },
 };
 

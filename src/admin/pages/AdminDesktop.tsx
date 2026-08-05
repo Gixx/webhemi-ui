@@ -18,8 +18,10 @@ import type { HostFormSavePayload } from '../components/HostsWindow/HostFormDial
 import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialog';
 import {
   createAdminApiClient,
+  isUnauthorizedResult,
   type AdminApiClient,
   type AdminApiHost,
+  type AdminApiResult,
   type AdminApiSite,
 } from '../api';
 import { cn } from '../../lib/cn';
@@ -192,11 +194,14 @@ export function AdminDesktop({
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
   const [hostsUnassigning, setHostsUnassigning] = useState(false);
+  const [hostsVerifying, setHostsVerifying] = useState(false);
   const [hostsError, setHostsError] = useState<string | null>(null);
   const [hostsFormError, setHostsFormError] = useState<string | null>(null);
   const [hostsFieldErrors, setHostsFieldErrors] = useState<
     Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>
   >({});
+  /** After Error modal OK — bounce to login when the API reported session loss. */
+  const pendingLoginRedirectRef = useRef(false);
 
   const api = useMemo(
     () =>
@@ -211,6 +216,33 @@ export function AdminDesktop({
 
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
   const canEditHosts = canEditSites;
+
+  const noteUnauthorized = useCallback((setError: (message: string | null) => void, message: string) => {
+    pendingLoginRedirectRef.current = true;
+    setError(message);
+  }, []);
+
+  const handleApiFailure = useCallback(
+    (result: AdminApiResult<unknown>, setError: (message: string | null) => void) => {
+      if (result.ok) {
+        return;
+      }
+      if (isUnauthorizedResult(result)) {
+        noteUnauthorized(setError, result.error.message);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setError(result.error.message);
+    },
+    [noteUnauthorized],
+  );
+
+  const handleAlertClose = useCallback(() => {
+    if (pendingLoginRedirectRef.current) {
+      window.location.assign('/login');
+    }
+  }, []);
+
   const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
   const hostsWindowOpen = shell.windows.some((win) => win.id === HOSTS_WINDOW_ID);
   const siteFormHosts = useMemo(
@@ -265,12 +297,10 @@ export function AdminDesktop({
       }
       setSitesLoading(false);
       if (!result.ok) {
-        setSitesError(result.error.message);
-        if (result.status === 401) {
-          window.location.assign('/login');
-        }
+        handleApiFailure(result, setSitesError);
         return;
       }
+      pendingLoginRedirectRef.current = false;
       setSitesRows(result.data.map(toWindowSite));
       setDesktopSites(result.data.map(toDesktopSite));
     })();
@@ -278,7 +308,7 @@ export function AdminDesktop({
     return () => {
       cancelled = true;
     };
-  }, [sitesWindowOpen, api]);
+  }, [sitesWindowOpen, api, handleApiFailure]);
 
   useEffect(() => {
     if (!hostsWindowOpen && !sitesWindowOpen) {
@@ -301,20 +331,20 @@ export function AdminDesktop({
       }
       if (!result.ok) {
         if (hostsWindowOpen) {
-          setHostsError(result.error.message);
-        }
-        if (result.status === 401) {
-          window.location.assign('/login');
+          handleApiFailure(result, setHostsError);
+        } else if (isUnauthorizedResult(result)) {
+          noteUnauthorized(setSitesError, result.error.message);
         }
         return;
       }
+      pendingLoginRedirectRef.current = false;
       setHostsRows(result.data.map(toWindowHost));
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [hostsWindowOpen, sitesWindowOpen, api]);
+  }, [hostsWindowOpen, sitesWindowOpen, api, handleApiFailure, noteUnauthorized]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -652,10 +682,7 @@ export function AdminDesktop({
           slug: result.error.fields.slug,
         });
       }
-      setSitesFormError(result.error.message);
-      if (result.status === 401) {
-        window.location.assign('/login');
-      }
+      handleApiFailure(result, setSitesFormError);
       return;
     }
 
@@ -719,10 +746,7 @@ export function AdminDesktop({
           active: result.error.fields.active,
         });
       }
-      setHostsFormError(result.error.message);
-      if (result.status === 401) {
-        window.location.assign('/login');
-      }
+      handleApiFailure(result, setHostsFormError);
       return;
     }
 
@@ -752,10 +776,7 @@ export function AdminDesktop({
     setHostsUnassigning(false);
 
     if (!result.ok) {
-      setSitesFormError(result.error.message);
-      if (result.status === 401) {
-        window.location.assign('/login');
-      }
+      handleApiFailure(result, setSitesFormError);
       return;
     }
 
@@ -782,6 +803,28 @@ export function AdminDesktop({
     if (sitesList.ok) {
       setSitesRows(sitesList.data.map(toWindowSite));
       setDesktopSites(sitesList.data.map(toDesktopSite));
+    }
+  };
+
+  const handleVerifyHost = async (host: HostsWindowHost) => {
+    setHostsVerifying(true);
+    setHostsError(null);
+    const result = await api.verifyHost(host.id);
+    setHostsVerifying(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setHostsError);
+      return;
+    }
+
+    const list = await api.listHosts();
+    if (list.ok) {
+      setHostsRows(list.data.map(toWindowHost));
+    } else {
+      const verified = toWindowHost(result.data);
+      setHostsRows((prev) =>
+        prev.map((row) => (row.id === verified.id ? verified : row)),
+      );
     }
   };
 
@@ -866,6 +909,7 @@ export function AdminDesktop({
               unassigning={hostsUnassigning}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
+              onAlertClose={handleAlertClose}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}
@@ -888,12 +932,15 @@ export function AdminDesktop({
               canEdit={canEditHosts}
               loading={hostsLoading}
               saving={hostsCreating}
+              verifying={hostsVerifying}
               error={hostsError}
               formError={hostsFormError}
               fieldErrors={hostsFieldErrors}
               onSave={handleSaveHost}
+              onVerify={handleVerifyHost}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
+              onAlertClose={handleAlertClose}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}

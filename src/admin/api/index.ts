@@ -8,6 +8,8 @@ export type {
 } from './types';
 export {
   createAdminApiClient,
+  isUnauthorizedResult,
+  SESSION_EXPIRED_MESSAGE,
   type AdminApiClient,
   type AdminApiClientOptions,
   type CreateHostBody,

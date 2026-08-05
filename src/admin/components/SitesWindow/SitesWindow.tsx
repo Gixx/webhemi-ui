@@ -62,6 +62,8 @@ export type SitesWindowProps = {
   errorSoundUrl?: string;
   /** Digested ding URL — blocked-owner attention (Default Beep). */
   dingSoundUrl?: string;
+  /** Called when the Error MessageDialog is dismissed (e.g. redirect after session expiry). */
+  onAlertClose?: () => void;
   /** Defaults to `onClose` when omitted. */
   onCancel?: () => void;
   onClose: () => void;
@@ -133,6 +135,7 @@ export function SitesWindow({
   unassigning = false,
   errorSoundUrl,
   dingSoundUrl,
+  onAlertClose,
   onCancel,
   onClose,
   onMinimize,
@@ -169,7 +172,8 @@ export function SitesWindow({
   const closeAlert = useCallback(() => {
     setAlert(null);
     alertSoundKeyRef.current = null;
-  }, []);
+    onAlertClose?.();
+  }, [onAlertClose]);
 
   useEffect(() => {
     if (selectedId != null && !sites.some((site) => site.id === selectedId)) {

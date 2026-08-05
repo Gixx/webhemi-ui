@@ -3,6 +3,7 @@ import type {
   AdminApiHost,
   AdminApiResult,
   AdminApiSite,
+  AdminApiFailure,
 } from './types';
 
 export type AdminApiClientOptions = {
@@ -36,15 +37,66 @@ export type UpdateHostBody = {
 
 const DEFAULT_BASE = '/admin/api';
 
+const SESSION_EXPIRED_MESSAGE =
+  'Your session has expired. Please sign in again.';
+
 function normalizeBase(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, '');
 }
 
+function unauthorizedResult(): AdminApiFailure {
+  return {
+    ok: false,
+    status: 401,
+    error: {
+      code: 'unauthorized',
+      message: SESSION_EXPIRED_MESSAGE,
+    },
+  };
+}
+
+function pathLooksLikeLogin(urlOrPath: string): boolean {
+  try {
+    const path = new URL(urlOrPath, 'http://localhost').pathname;
+    return path === '/login' || path.endsWith('/login');
+  } catch {
+    return /\/login(?:\?|$)/.test(urlOrPath);
+  }
+}
+
+/**
+ * Session lost: 401, opaque redirect, or 3xx Location → /login.
+ * (With `redirect: 'manual'`, the firewall's form_login bounce is not followed.)
+ */
+function isAuthFailureResponse(response: Response): boolean {
+  if (response.status === 401) {
+    return true;
+  }
+  if (response.type === 'opaqueredirect') {
+    return true;
+  }
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    const location = response.headers.get('Location');
+    return location != null && pathLooksLikeLogin(location);
+  }
+  if (response.url && pathLooksLikeLogin(response.url)) {
+    return true;
+  }
+  return false;
+}
+
 async function parseResult<T>(response: Response): Promise<AdminApiResult<T>> {
+  if (isAuthFailureResponse(response)) {
+    return unauthorizedResult();
+  }
+
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
+    if (response.status === 401 || (response.url && pathLooksLikeLogin(response.url))) {
+      return unauthorizedResult();
+    }
     return {
       ok: false,
       status: response.status,
@@ -120,6 +172,8 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       ...init,
       headers,
       credentials: 'same-origin',
+      // Detect form_login bounce to /login instead of parsing HTML as JSON.
+      redirect: 'manual',
     });
 
     return parseResult<T>(response);
@@ -147,7 +201,20 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiHost>(`/hosts/${id}/unassign`, {
         method: 'POST',
       }),
+    verifyHost: (id: number) =>
+      request<AdminApiHost>(`/hosts/${id}/verify`, {
+        method: 'POST',
+      }),
   };
 }
 
 export type AdminApiClient = ReturnType<typeof createAdminApiClient>;
+
+export function isUnauthorizedResult(result: AdminApiResult<unknown>): boolean {
+  return (
+    !result.ok &&
+    (result.status === 401 || result.error.code === 'unauthorized')
+  );
+}
+
+export { SESSION_EXPIRED_MESSAGE };
