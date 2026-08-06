@@ -268,6 +268,9 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dialog-panel-layout > .panel.dialog-typed > .dialog-icon {
@@ -299,6 +302,33 @@
 .dialog-panel-layout > .panel.dialog-typed > .dialog-body {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+}
+
+/* Fixed w-window-* controls must shrink beside the glyph, not spill past the frame. */
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body .field-row {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body .field-box {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body input[type="text"],
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body input[type="password"],
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body input[type="email"],
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body select,
+.dialog-panel-layout > .panel.dialog-typed > .dialog-body textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Override utility widths (e.g. w-window-xs); flex shrink keeps them in-frame. */
+  width: auto;
+  max-width: var(--width-window-xs);
+  box-sizing: border-box;
 }
 
 .dialog-panel-layout > .panel.dialog-typed > .dialog-body > :first-child {
