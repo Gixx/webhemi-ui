@@ -46,14 +46,13 @@ npm run storybook
 Repo-managed hooks live in `.githooks/` (enable once per clone):
 
 ```bash
-chmod +x .githooks/pre-commit .githooks/pre-push
+chmod +x .githooks/pre-commit
 git config core.hooksPath .githooks
 ```
 
 - **pre-commit** — reject staged text files with CRLF
-- **pre-push** — `typecheck`, `lint`, `test-storybook --run` (Playwright Chromium required; same Storybook interaction gate as CI)
 
-Chromatic cloud publish stays on push via GitHub Actions — not in the local hooks.
+Typecheck, lint, and Storybook interaction tests run in GitHub Actions CI; Chromatic publishes on push. No local pre-push gate (keeps PhpStorm Commit and Push reliable).
 
 ## Build library
 
