@@ -22,8 +22,8 @@ const SAMPLE_API_HOSTS: AdminApiHost[] = [
     siteSlug: 'example',
     siteName: 'Example Site',
     surface: 'admin',
-    status: 'active',
-    active: true,
+    verification: 'verified',
+    enabled: true,
   },
   {
     id: 11,
@@ -32,8 +32,8 @@ const SAMPLE_API_HOSTS: AdminApiHost[] = [
     siteSlug: 'example',
     siteName: 'Example Site',
     surface: 'site',
-    status: 'verified',
-    active: true,
+    verification: 'verified',
+    enabled: true,
   },
 ];
 
@@ -45,6 +45,17 @@ function createMockAdminApi(
   let hostRows = [...initialHosts];
   return {
     listSites: async () => ({ ok: true, status: 200, data: [...siteRows] }),
+    getSite: async (id) => {
+      const site = siteRows.find((row) => row.id === id);
+      if (!site) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Site not found.' },
+        };
+      }
+      return { ok: true, status: 200, data: site };
+    },
     createSite: async (body) => {
       const created: AdminApiSite = {
         id: Math.max(0, ...siteRows.map((row) => row.id)) + 1,
@@ -56,28 +67,84 @@ function createMockAdminApi(
       siteRows = [...siteRows, created];
       return { ok: true, status: 201, data: created };
     },
+    updateSite: async (id, body) => {
+      const existing = siteRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Site not found.' },
+        };
+      }
+      if (
+        body.slug != null &&
+        siteRows.some((row) => row.slug === body.slug && row.id !== id)
+      ) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'slug_taken',
+            message: 'A site with this slug already exists.',
+            fields: { slug: 'Slug is already taken.' },
+          },
+        };
+      }
+      const updated: AdminApiSite = {
+        ...existing,
+        name: body.name ?? existing.name,
+        slug: body.slug ?? existing.slug,
+        enabled: body.enabled ?? existing.enabled,
+      };
+      siteRows = siteRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
+    },
+    deleteSite: async (id) => {
+      const existing = siteRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Site not found.' },
+        };
+      }
+      if (hostRows.some((row) => row.siteId === id)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'hosts_assigned',
+            message: 'Unassign or delete hosts before deleting this site.',
+          },
+        };
+      }
+      siteRows = siteRows.filter((row) => row.id !== id);
+      return { ok: true, status: 204, data: undefined };
+    },
     listHosts: async () => ({ ok: true, status: 200, data: [...hostRows] }),
+    getHost: async (id) => {
+      const host = hostRows.find((row) => row.id === id);
+      if (!host) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      return { ok: true, status: 200, data: host };
+    },
     createHost: async (body) => {
-      const site =
-        body.siteId != null
-          ? siteRows.find((row) => row.id === body.siteId)
-          : undefined;
       const created: AdminApiHost = {
         id: Math.max(0, ...hostRows.map((row) => row.id)) + 1,
         host: body.host,
-        siteId: site?.id ?? null,
-        siteSlug: site?.slug ?? null,
-        siteName: site?.name ?? null,
+        siteId: null,
+        siteSlug: null,
+        siteName: null,
         surface: body.surface ?? 'site',
-        status: 'pending',
-        active: body.active ?? true,
+        verification: 'pending',
+        enabled: body.enabled ?? true,
       };
       hostRows = [...hostRows, created];
-      if (site) {
-        siteRows = siteRows.map((row) =>
-          row.id === site.id ? { ...row, hostCount: row.hostCount + 1 } : row,
-        );
-      }
       return { ok: true, status: 201, data: created };
     },
     updateHost: async (id, body) => {
@@ -95,23 +162,49 @@ function createMockAdminApi(
           : body.siteId == null
             ? null
             : siteRows.find((row) => row.id === body.siteId);
+      if (site === null && existing.siteId != null) {
+        siteRows = siteRows.map((row) =>
+          row.id === existing.siteId
+            ? { ...row, hostCount: Math.max(0, row.hostCount - 1) }
+            : row,
+        );
+      }
+      if (site && existing.siteId == null) {
+        siteRows = siteRows.map((row) =>
+          row.id === site.id ? { ...row, hostCount: row.hostCount + 1 } : row,
+        );
+      }
       const updated: AdminApiHost = {
         ...existing,
         host: body.host ?? existing.host,
         surface: body.surface ?? existing.surface,
-        active: body.active ?? existing.active,
+        enabled: body.enabled ?? existing.enabled,
         siteId: site === undefined ? existing.siteId : site?.id ?? null,
         siteSlug: site === undefined ? existing.siteSlug : site?.slug ?? null,
         siteName: site === undefined ? existing.siteName : site?.name ?? null,
-        status:
-          site === null && existing.status === 'active'
-            ? 'verified'
-            : site && existing.status === 'verified'
-              ? 'active'
-              : existing.status,
+        verification: existing.verification,
       };
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
+    },
+    deleteHost: async (id) => {
+      const existing = hostRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Host not found.' },
+        };
+      }
+      hostRows = hostRows.filter((row) => row.id !== id);
+      if (existing.siteId != null) {
+        siteRows = siteRows.map((row) =>
+          row.id === existing.siteId
+            ? { ...row, hostCount: Math.max(0, row.hostCount - 1) }
+            : row,
+        );
+      }
+      return { ok: true, status: 204, data: undefined };
     },
     unassignHost: async (id) => {
       const existing = hostRows.find((row) => row.id === id);
@@ -122,12 +215,18 @@ function createMockAdminApi(
           error: { code: 'not_found', message: 'Host not found.' },
         };
       }
+      if (existing.siteId != null) {
+        siteRows = siteRows.map((row) =>
+          row.id === existing.siteId
+            ? { ...row, hostCount: Math.max(0, row.hostCount - 1) }
+            : row,
+        );
+      }
       const updated: AdminApiHost = {
         ...existing,
         siteId: null,
         siteSlug: null,
         siteName: null,
-        status: existing.status === 'active' ? 'verified' : existing.status,
       };
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
@@ -141,7 +240,7 @@ function createMockAdminApi(
           error: { code: 'not_found', message: 'Host not found.' },
         };
       }
-      if (existing.status !== 'pending') {
+      if (existing.verification !== 'pending') {
         return {
           ok: false,
           status: 422,
@@ -151,7 +250,7 @@ function createMockAdminApi(
           },
         };
       }
-      const updated: AdminApiHost = { ...existing, status: 'verified' };
+      const updated: AdminApiHost = { ...existing, verification: 'verified' };
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
     },
@@ -164,7 +263,7 @@ function createMockAdminApi(
           error: { code: 'not_found', message: 'Host not found.' },
         };
       }
-      if (existing.status !== 'verified' || existing.siteId != null) {
+      if (existing.verification !== 'verified' || existing.siteId != null) {
         return {
           ok: false,
           status: 422,
@@ -187,7 +286,6 @@ function createMockAdminApi(
         siteId: site.id,
         siteSlug: site.slug,
         siteName: site.name,
-        status: 'active',
       };
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       siteRows = siteRows.map((row) =>

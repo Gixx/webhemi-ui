@@ -29,8 +29,8 @@ export type HostsWindowHost = {
   siteSlug: string | null;
   siteName: string | null;
   surface: HostFormSurface;
-  status: string;
-  active: boolean;
+  verification: 'pending' | 'verified';
+  enabled: boolean;
 };
 
 export type HostsWindowProps = {
@@ -41,7 +41,7 @@ export type HostsWindowProps = {
   loading?: boolean;
   /** Window-level load error — Error MessageDialog + chord. */
   error?: string | null;
-  fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
+  fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'enabled', string>>;
   /** Save error message (MessageDialog + chord). */
   formError?: string | null;
   /** Transient success / status copy for the middle status-bar field. */
@@ -49,6 +49,8 @@ export type HostsWindowProps = {
   /** Called when the window clears a success message (e.g. selection change). */
   onClearStatusMessage?: () => void;
   saving?: boolean;
+  /** True while delete request is in flight. */
+  deleting?: boolean;
   /** True while ownership verify request is in flight. */
   verifying?: boolean;
   onSave?: (payload: HostFormSavePayload) => void;
@@ -59,6 +61,8 @@ export type HostsWindowProps = {
   dingSoundUrl?: string;
   /** Called when the Error MessageDialog is dismissed (e.g. redirect after session expiry). */
   onAlertClose?: () => void;
+  /** Clear sticky save/API form errors (open/close form, dismiss alert). */
+  onClearFormError?: () => void;
   onCancel?: () => void;
   onClose: () => void;
   onMinimize?: () => void;
@@ -82,17 +86,18 @@ type FormState =
       host: string;
       siteId: number | null;
       surface: HostFormSurface;
-      active: boolean;
-      status?: string;
+      enabled: boolean;
+      verification?: 'pending' | 'verified';
       title?: string;
     };
 
 type AlertState = { title: string; message: string } | null;
+type ConfirmDeleteState = { host: HostsWindowHost } | null;
 
 function formatSaveErrors(
   formError: string | null | undefined,
   fieldErrors:
-    | Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>
+    | Partial<Record<'host' | 'siteId' | 'surface' | 'enabled', string>>
     | undefined,
 ): string | null {
   const parts = [
@@ -100,7 +105,7 @@ function formatSaveErrors(
     fieldErrors?.host,
     fieldErrors?.siteId,
     fieldErrors?.surface,
-    fieldErrors?.active,
+    fieldErrors?.enabled,
   ].filter((part): part is string => Boolean(part && part.trim()));
   if (parts.length === 0) {
     return null;
@@ -122,6 +127,7 @@ export function HostsWindow({
   statusMessage = null,
   onClearStatusMessage,
   saving = false,
+  deleting = false,
   verifying = false,
   onSave,
   onVerify,
@@ -129,6 +135,7 @@ export function HostsWindow({
   errorSoundUrl,
   dingSoundUrl,
   onAlertClose,
+  onClearFormError,
   onCancel,
   onClose,
   onMinimize,
@@ -146,8 +153,10 @@ export function HostsWindow({
   const [form, setForm] = useState<FormState>({ open: false });
   const [showFormErrors, setShowFormErrors] = useState(false);
   const [alert, setAlert] = useState<AlertState>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState>(null);
   const wasSavingRef = useRef(false);
   const alertSoundKeyRef = useRef<string | null>(null);
+  const confirmSoundKeyRef = useRef<string | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -165,14 +174,42 @@ export function HostsWindow({
   const closeAlert = useCallback(() => {
     setAlert(null);
     alertSoundKeyRef.current = null;
+    onClearFormError?.();
     onAlertClose?.();
-  }, [onAlertClose]);
+  }, [onAlertClose, onClearFormError]);
+
+  const openDeleteConfirm = useCallback(
+    (host: HostsWindowHost) => {
+      const key = `delete\0${host.id}`;
+      setConfirmDelete({ host });
+      if (confirmSoundKeyRef.current === key) {
+        return;
+      }
+      confirmSoundKeyRef.current = key;
+      playAdminSound('ding', dingSoundUrl);
+    },
+    [dingSoundUrl],
+  );
+
+  const closeDeleteConfirm = useCallback(() => {
+    setConfirmDelete(null);
+    confirmSoundKeyRef.current = null;
+  }, []);
 
   useEffect(() => {
     if (selectedId != null && !hosts.some((row) => row.id === selectedId)) {
       setSelectedId(null);
     }
   }, [hosts, selectedId]);
+
+  useEffect(() => {
+    if (
+      confirmDelete != null &&
+      !hosts.some((row) => row.id === confirmDelete.host.id)
+    ) {
+      closeDeleteConfirm();
+    }
+  }, [hosts, confirmDelete, closeDeleteConfirm]);
 
   useEffect(() => {
     const hadErrors =
@@ -208,15 +245,16 @@ export function HostsWindow({
     showErrorAlert(message);
   }, [formError, fieldErrors, form.open, showFormErrors, showErrorAlert]);
 
-  const busy = loading || saving || verifying;
+  const busy = loading || saving || verifying || deleting;
   const selected = hosts.find((row) => row.id === selectedId) ?? null;
   const hasSelection = selected != null;
   const canSave = Boolean(onSave);
   const canVerifySelected =
-    Boolean(onVerify) && selected?.status === 'pending' && !busy;
+    Boolean(onVerify) && selected?.verification === 'pending' && !busy;
 
   const selectHost = (id: number) => {
     onClearStatusMessage?.();
+    onClearFormError?.();
     setSelectedId((current) => (current === id ? null : id));
   };
 
@@ -225,6 +263,7 @@ export function HostsWindow({
       return;
     }
     onClearStatusMessage?.();
+    onClearFormError?.();
     setShowFormErrors(false);
     setForm({
       open: true,
@@ -232,7 +271,7 @@ export function HostsWindow({
       host: '',
       siteId: null,
       surface: 'site',
-      active: true,
+      enabled: true,
     });
   };
 
@@ -241,6 +280,7 @@ export function HostsWindow({
     if (!canEdit || !target || busy || !canSave) {
       return;
     }
+    onClearFormError?.();
     if (selectedId !== target.id) {
       onClearStatusMessage?.();
     }
@@ -253,8 +293,8 @@ export function HostsWindow({
       host: target.host,
       siteId: target.siteId,
       surface: target.surface,
-      active: target.active,
-      status: target.status,
+      enabled: target.enabled,
+      verification: target.verification,
       title: target.host,
     });
   };
@@ -262,6 +302,7 @@ export function HostsWindow({
   const closeForm = () => {
     setShowFormErrors(false);
     setForm({ open: false });
+    onClearFormError?.();
   };
 
   const handleFormSave = (payload: HostFormSavePayload) => {
@@ -273,7 +314,16 @@ export function HostsWindow({
     if (!canEdit || !selected || !onDelete || busy) {
       return;
     }
-    onDelete(selected);
+    openDeleteConfirm(selected);
+  };
+
+  const confirmDeleteHost = () => {
+    if (!confirmDelete || !onDelete) {
+      return;
+    }
+    const target = confirmDelete.host;
+    closeDeleteConfirm();
+    onDelete(target);
   };
 
   const handleVerify = () => {
@@ -350,7 +400,7 @@ export function HostsWindow({
               accessKey="v"
               disabled={!canVerifySelected}
               title={
-                selected?.status === 'pending'
+                selected?.verification === 'pending'
                   ? 'Verify hostname ownership'
                   : 'Select a pending host to verify'
               }
@@ -403,8 +453,8 @@ export function HostsWindow({
                   <th>Hostname</th>
                   <th>Site</th>
                   <th>Surface</th>
+                  <th>Verification</th>
                   <th>Status</th>
-                  <th>Active</th>
                 </tr>
               </thead>
               <tbody>
@@ -418,8 +468,8 @@ export function HostsWindow({
                     <td>{row.host}</td>
                     <td>{row.siteName?.trim() ? row.siteName : '—'}</td>
                     <td>{row.surface}</td>
-                    <td>{row.status}</td>
-                    <td>{row.active ? 'Yes' : 'No'}</td>
+                    <td>{row.verification}</td>
+                    <td>{row.enabled ? 'Enabled' : 'Disabled'}</td>
                   </TableRow>
                 ))}
               </tbody>
@@ -437,8 +487,8 @@ export function HostsWindow({
                 host: form.host,
                 siteId: form.siteId,
                 surface: form.surface,
-                active: form.active,
-                status: form.status,
+                enabled: form.enabled,
+                verification: form.verification,
                 title: form.title,
               }}
               sites={sites}
@@ -447,6 +497,18 @@ export function HostsWindow({
               onSave={handleFormSave}
               onError={showErrorAlert}
               onClose={closeForm}
+            />
+          </DesktopModal>
+        ) : null}
+
+        {confirmDelete ? (
+          <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
+            <MessageDialog
+              type="question"
+              title="Confirm"
+              message={`Delete host “${confirmDelete.host.host}”? This cannot be undone.`}
+              onClose={closeDeleteConfirm}
+              onConfirm={confirmDeleteHost}
             />
           </DesktopModal>
         ) : null}

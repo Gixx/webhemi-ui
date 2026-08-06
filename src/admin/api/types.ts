@@ -35,6 +35,6 @@ export type AdminApiHost = {
   siteSlug: string | null;
   siteName: string | null;
   surface: 'admin' | 'site' | 'api';
-  status: string;
-  active: boolean;
+  verification: 'pending' | 'verified';
+  enabled: boolean;
 };

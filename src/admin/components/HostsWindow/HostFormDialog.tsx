@@ -26,7 +26,7 @@ export type HostFormValues = {
   host: string;
   siteId: number | null;
   surface: HostFormSurface;
-  active: boolean;
+  enabled: boolean;
 };
 
 export type HostFormSavePayload = HostFormValues & {
@@ -40,12 +40,12 @@ export type HostFormDialogProps = {
   initial?: Partial<HostFormValues> & {
     hostId?: number;
     title?: string;
-    /** Ownership status — pending hosts cannot be assigned to a site. */
-    status?: string;
+    /** Ownership verification — pending hosts cannot be assigned to a site. */
+    verification?: 'pending' | 'verified';
   };
   /** Sites available for the Site select. */
   sites?: HostFormSiteOption[];
-  fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
+  fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'enabled', string>>;
   saving?: boolean;
   onSave: (payload: HostFormSavePayload) => void;
   onError?: (message: string) => void;
@@ -70,11 +70,11 @@ export function HostFormDialog({
   const hostId = useId();
   const siteSelectId = useId();
   const surfaceId = useId();
-  const activeId = useId();
+  const enabledId = useId();
   const [host, setHost] = useState(initial?.host ?? '');
   const [siteId, setSiteId] = useState<number | null>(initial?.siteId ?? null);
   const [surface, setSurface] = useState<HostFormSurface>(initial?.surface ?? 'site');
-  const [active, setActive] = useState(initial?.active ?? true);
+  const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [localErrors, setLocalErrors] = useState<
     Partial<Record<'host', string>>
   >({});
@@ -88,7 +88,8 @@ export function HostFormDialog({
     mode === 'new'
       ? 'New Host'
       : `${initial?.title ?? initial?.host ?? 'Host'} Properties`;
-  const siteSelectLocked = mode === 'edit' && initial?.status === 'pending';
+  const siteSelectLocked =
+    mode === 'new' || (mode === 'edit' && initial?.verification === 'pending');
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -114,9 +115,10 @@ export function HostFormDialog({
       mode,
       hostId: initial?.hostId,
       host: nextHost,
-      siteId,
+      // New hosts stay unassigned; assign after verify.
+      siteId: mode === 'new' ? null : siteId,
       surface,
-      active,
+      enabled,
     });
   };
 
@@ -153,9 +155,11 @@ export function HostFormDialog({
               value={siteId != null ? String(siteId) : ''}
               disabled={saving || siteSelectLocked}
               title={
-                siteSelectLocked
-                  ? 'Verify ownership before assigning a site'
-                  : undefined
+                mode === 'new'
+                  ? 'Assign a site after ownership is verified'
+                  : siteSelectLocked
+                    ? 'Verify ownership before assigning a site'
+                    : undefined
               }
               aria-invalid={Boolean(errors.siteId) || undefined}
               onChange={(event) => {
@@ -190,12 +194,13 @@ export function HostFormDialog({
           </FieldRow>
           <FieldRow>
             <Checkbox
-              id={activeId}
-              label="Active"
-              accessKey="a"
-              checked={active}
+              id={enabledId}
+              label="Enabled"
+              accessKey="e"
+              checked={enabled}
               disabled={saving}
-              onChange={(event) => setActive(event.target.checked)}
+              aria-invalid={Boolean(errors.enabled) || undefined}
+              onChange={(event) => setEnabled(event.target.checked)}
             />
           </FieldRow>
         </WindowBody>

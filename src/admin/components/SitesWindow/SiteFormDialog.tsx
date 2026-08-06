@@ -18,7 +18,7 @@ import {
 import { PaneWindowShell } from '../../bricks/_lib/PaneWindowShell';
 import { cn } from '../../../lib/cn';
 
-export type SiteFormHostStatus = 'pending' | 'verified' | 'active';
+export type SiteFormHostStatus = 'pending' | 'verified';
 
 export type SiteFormHostOption = {
   id: number;
@@ -27,7 +27,7 @@ export type SiteFormHostOption = {
   siteId?: number | null;
   /** Display name of the owning site (when bound). */
   siteName?: string | null;
-  /** Ownership lifecycle status (see Host_Ownership_Verification plan). */
+  /** Ownership verification (pending → verified); assign when verified + unassigned. */
   status: SiteFormHostStatus;
 };
 
@@ -306,7 +306,7 @@ export function SiteFormDialog({
                       <thead>
                         <tr>
                           <th>Name</th>
-                          <th>Status</th>
+                          <th>Verification</th>
                         </tr>
                       </thead>
                       <tbody>

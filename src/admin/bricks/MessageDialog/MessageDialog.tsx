@@ -6,10 +6,20 @@ export type MessageDialogProps = {
   type?: Exclude<DialogWindowType, 'none'>;
   title?: string;
   message: string;
+  /** Dismiss (OK when no confirm; Cancel/No/Close when confirm). */
   onClose: () => void;
+  /**
+   * When set, shows Cancel + Confirm (Win98 question box).
+   * Confirm runs this; Cancel / title Close call {@link onClose}.
+   */
+  onConfirm?: () => void;
   className?: string;
-  /** Override OK label. */
+  /** OK label when {@link onConfirm} is omitted. */
   okLabel?: string;
+  /** Confirm button label when {@link onConfirm} is set. */
+  confirmLabel?: string;
+  /** Cancel button label when {@link onConfirm} is set. */
+  cancelLabel?: string;
 };
 
 const DEFAULT_TITLES: Record<Exclude<DialogWindowType, 'none'>, string> = {
@@ -20,7 +30,7 @@ const DEFAULT_TITLES: Record<Exclude<DialogWindowType, 'none'>, string> = {
 };
 
 /**
- * Classic Win98 message box (icon + message + OK). Pair with {@link DesktopModal}.
+ * Classic Win98 message box. Pair with {@link DesktopModal}.
  * Sound is played by the caller when opening (once).
  */
 export function MessageDialog({
@@ -28,9 +38,14 @@ export function MessageDialog({
   title,
   message,
   onClose,
+  onConfirm,
   className,
   okLabel = 'OK',
+  confirmLabel = 'Yes',
+  cancelLabel = 'No',
 }: MessageDialogProps) {
+  const isConfirm = typeof onConfirm === 'function';
+
   return (
     <DialogWindow
       className={cn('message-dialog', className)}
@@ -43,9 +58,20 @@ export function MessageDialog({
       }
       actions={
         <FieldRow className="justify-center">
-          <Button type="button" isDefault accessKey="o" onClick={onClose}>
-            {okLabel}
-          </Button>
+          {isConfirm ? (
+            <>
+              <Button type="button" isDefault accessKey="y" onClick={onConfirm}>
+                {confirmLabel}
+              </Button>
+              <Button type="button" accessKey="n" onClick={onClose}>
+                {cancelLabel}
+              </Button>
+            </>
+          ) : (
+            <Button type="button" isDefault accessKey="o" onClick={onClose}>
+              {okLabel}
+            </Button>
+          )}
         </FieldRow>
       }
     >

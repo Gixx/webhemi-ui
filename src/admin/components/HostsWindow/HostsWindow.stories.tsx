@@ -16,8 +16,8 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     siteSlug: 'main',
     siteName: 'Main site',
     surface: 'admin',
-    status: 'active',
-    active: true,
+    verification: 'verified',
+    enabled: true,
   },
   {
     id: 11,
@@ -26,8 +26,8 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     siteSlug: 'main',
     siteName: 'Main site',
     surface: 'site',
-    status: 'verified',
-    active: true,
+    verification: 'verified',
+    enabled: true,
   },
   {
     id: 12,
@@ -36,8 +36,8 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     siteSlug: 'blog',
     siteName: 'Blog',
     surface: 'site',
-    status: 'pending',
-    active: true,
+    verification: 'pending',
+    enabled: true,
   },
   {
     id: 13,
@@ -46,8 +46,8 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     siteSlug: null,
     siteName: null,
     surface: 'site',
-    status: 'pending',
-    active: true,
+    verification: 'pending',
+    enabled: true,
   },
 ];
 
@@ -124,7 +124,7 @@ export const NewHostDialog: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /^new$/i }));
     await expect(canvas.getByText('New Host', { selector: '.title-bar-text' })).toBeVisible();
     await expect(canvas.getByLabelText(/^host:$/i)).toBeVisible();
-    await expect(canvas.getByLabelText(/^site:$/i)).toBeVisible();
+    await expect(canvas.getByLabelText(/^site:$/i)).toBeDisabled();
   },
 };
 
@@ -154,7 +154,7 @@ export const CreateSubmit: Story = {
         host: 'docs.example.test',
         siteId: null,
         surface: 'site',
-        active: true,
+        enabled: true,
       }),
     );
   },
@@ -177,7 +177,7 @@ export const VerifyPending: Story = {
     await expect(canvas.getByRole('button', { name: /^verify$/i })).toBeEnabled();
     await userEvent.click(canvas.getByRole('button', { name: /^verify$/i }));
     await expect(args.onVerify).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 13, status: 'pending' }),
+      expect.objectContaining({ id: 13, verification: 'pending' }),
     );
   },
 };
@@ -198,5 +198,24 @@ export const StatusMessage: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText('Host verified.')).toBeVisible();
+  },
+};
+
+export const DeleteConfirm: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /orphan\.example\.test/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^delete$/i }));
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
+    const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
+    await expect(
+      within(dialog).getByText(/Delete host “orphan\.example\.test”/i),
+    ).toBeVisible();
+    await userEvent.click(within(dialog).getByRole('button', { name: /^yes$/i }));
+    await expect(args.onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 13, host: 'orphan.example.test' }),
+    );
   },
 };

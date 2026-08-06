@@ -8,8 +8,8 @@ export interface HostRow {
   host: string;
   siteName: string;
   surface: 'admin' | 'site' | 'api';
-  status: 'pending' | 'verified' | 'active';
-  active: boolean;
+  verification: 'pending' | 'verified';
+  enabled: boolean;
 }
 
 export interface SiteHostListViewProps {
@@ -19,10 +19,9 @@ export interface SiteHostListViewProps {
   verifyHref?: (host: HostRow) => string;
 }
 
-const statusTone = {
+const verificationTone = {
   pending: 'warning',
   verified: 'accent',
-  active: 'success',
 } as const;
 
 export function SiteHostListView({
@@ -56,15 +55,22 @@ export function SiteHostListView({
             render: (row) => <Badge tone="accent">{row.surface}</Badge>,
           },
           {
+            key: 'verification',
+            header: 'Verification',
+            render: (row) => (
+              <Badge tone={verificationTone[row.verification]}>{row.verification}</Badge>
+            ),
+          },
+          {
             key: 'status',
             header: 'Status',
-            render: (row) => <Badge tone={statusTone[row.status]}>{row.status}</Badge>,
+            render: (row) => (row.enabled ? 'Enabled' : 'Disabled'),
           },
           {
             key: 'actions',
             header: '',
             render: (row) =>
-              row.status === 'pending' ? (
+              row.verification === 'pending' ? (
                 <a href={verifyHref(row)} className="text-[var(--wh-color-accent)] underline">
                   Verify
                 </a>

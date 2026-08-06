@@ -128,8 +128,8 @@ function toWindowHost(host: AdminApiHost): HostsWindowHost {
     siteSlug: host.siteSlug,
     siteName: host.siteName,
     surface: host.surface,
-    status: host.status,
-    active: host.active,
+    verification: host.verification,
+    enabled: host.enabled,
   };
 }
 
@@ -139,12 +139,7 @@ function toSiteFormHostOption(host: AdminApiHost | HostsWindowHost): SiteFormHos
     host: host.host,
     siteId: host.siteId,
     siteName: host.siteName,
-    status:
-      host.status === 'pending' ||
-      host.status === 'verified' ||
-      host.status === 'active'
-        ? host.status
-        : 'pending',
+    status: host.verification === 'verified' ? 'verified' : 'pending',
   };
 }
 
@@ -185,6 +180,7 @@ export function AdminDesktop({
   const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
   const [sitesLoading, setSitesLoading] = useState(false);
   const [sitesCreating, setSitesCreating] = useState(false);
+  const [sitesDeleting, setSitesDeleting] = useState(false);
   const [sitesError, setSitesError] = useState<string | null>(null);
   const [sitesFormError, setSitesFormError] = useState<string | null>(null);
   const [sitesFieldErrors, setSitesFieldErrors] = useState<
@@ -193,13 +189,14 @@ export function AdminDesktop({
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
+  const [hostsDeleting, setHostsDeleting] = useState(false);
   const [hostsUnassigning, setHostsUnassigning] = useState(false);
   const [hostsAssigning, setHostsAssigning] = useState(false);
   const [hostsVerifying, setHostsVerifying] = useState(false);
   const [hostsError, setHostsError] = useState<string | null>(null);
   const [hostsFormError, setHostsFormError] = useState<string | null>(null);
   const [hostsFieldErrors, setHostsFieldErrors] = useState<
-    Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>
+    Partial<Record<'host' | 'siteId' | 'surface' | 'enabled', string>>
   >({});
   const [sitesStatusMessage, setSitesStatusMessage] = useState<string | null>(null);
   const [hostsStatusMessage, setHostsStatusMessage] = useState<string | null>(null);
@@ -724,22 +721,31 @@ export function AdminDesktop({
     enabled: boolean;
   }) => {
     clearSitesStatusMessage();
-    if (payload.mode !== 'new') {
-      // Update API arrives with Hosts / edit slice; keep dialog feedback for now.
-      setSitesFormError('Editing a site is not available yet.');
-      return;
-    }
-
     setSitesCreating(true);
     setSitesFormError(null);
     setSitesFieldErrors({});
 
-    const result = await api.createSite({
-      name: payload.name,
-      slug: payload.slug,
-      enabled: payload.enabled,
-    });
+    const result =
+      payload.mode === 'new'
+        ? await api.createSite({
+            name: payload.name,
+            slug: payload.slug,
+            enabled: payload.enabled,
+          })
+        : payload.siteId != null
+          ? await api.updateSite(payload.siteId, {
+              name: payload.name,
+              slug: payload.slug,
+              enabled: payload.enabled,
+            })
+          : null;
+
     setSitesCreating(false);
+
+    if (!result) {
+      setSitesFormError('Site could not be saved.');
+      return;
+    }
 
     if (!result.ok) {
       if (result.error.fields) {
@@ -752,7 +758,7 @@ export function AdminDesktop({
       return;
     }
 
-    flashSitesStatus('Site created.');
+    flashSitesStatus(payload.mode === 'new' ? 'Site created.' : 'Site updated.');
 
     const list = await api.listSites();
     if (list.ok) {
@@ -761,19 +767,43 @@ export function AdminDesktop({
       return;
     }
 
-    const created = toWindowSite(result.data);
+    const saved = toWindowSite(result.data);
     setSitesRows((prev) =>
-      [...prev.filter((row) => row.id !== created.id), created].sort((a, b) =>
+      [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
         a.name.localeCompare(b.name),
       ),
     );
     setDesktopSites((prev) => {
       const next = [
-        ...prev.filter((row) => row.id !== created.id),
-        toDesktopSite(created),
+        ...prev.filter((row) => row.id !== saved.id),
+        toDesktopSite(saved),
       ];
       return next.sort((a, b) => a.name.localeCompare(b.name));
     });
+  };
+
+  const handleDeleteSite = async (site: SitesWindowSite) => {
+    clearSitesStatusMessage();
+    setSitesDeleting(true);
+    setSitesError(null);
+    const result = await api.deleteSite(site.id);
+    setSitesDeleting(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setSitesError);
+      return;
+    }
+
+    flashSitesStatus('Site deleted.');
+
+    const list = await api.listSites();
+    if (list.ok) {
+      setSitesRows(list.data.map(toWindowSite));
+      setDesktopSites(list.data.map(toDesktopSite));
+    } else {
+      setSitesRows((prev) => prev.filter((row) => row.id !== site.id));
+      setDesktopSites((prev) => prev.filter((row) => row.id !== site.id));
+    }
   };
 
   const handleSaveHost = async (payload: HostFormSavePayload) => {
@@ -788,21 +818,21 @@ export function AdminDesktop({
             host: payload.host,
             siteId: payload.siteId,
             surface: payload.surface,
-            active: payload.active,
+            enabled: payload.enabled,
           })
         : payload.hostId != null
           ? await api.updateHost(payload.hostId, {
               host: payload.host,
               siteId: payload.siteId,
               surface: payload.surface,
-              active: payload.active,
+              enabled: payload.enabled,
             })
           : null;
 
     setHostsCreating(false);
 
     if (!result) {
-      setHostsFormError('Editing a host is not available yet.');
+      setHostsFormError('Host could not be saved.');
       return;
     }
 
@@ -812,7 +842,7 @@ export function AdminDesktop({
           host: result.error.fields.host,
           siteId: result.error.fields.siteId,
           surface: result.error.fields.surface,
-          active: result.error.fields.active,
+          enabled: result.error.fields.enabled ?? result.error.fields.active,
         });
       }
       handleApiFailure(result, setHostsFormError);
@@ -837,6 +867,42 @@ export function AdminDesktop({
     if (sitesList.ok) {
       setSitesRows(sitesList.data.map(toWindowSite));
       setDesktopSites(sitesList.data.map(toDesktopSite));
+    }
+  };
+
+  const handleDeleteHost = async (host: HostsWindowHost) => {
+    clearHostsStatusMessage();
+    setHostsDeleting(true);
+    setHostsError(null);
+    const result = await api.deleteHost(host.id);
+    setHostsDeleting(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setHostsError);
+      return;
+    }
+
+    flashHostsStatus('Host deleted.');
+
+    const list = await api.listHosts();
+    if (list.ok) {
+      setHostsRows(list.data.map(toWindowHost));
+    } else {
+      setHostsRows((prev) => prev.filter((row) => row.id !== host.id));
+    }
+
+    const sitesList = await api.listSites();
+    if (sitesList.ok) {
+      setSitesRows(sitesList.data.map(toWindowSite));
+      setDesktopSites(sitesList.data.map(toDesktopSite));
+    } else if (host.siteId != null) {
+      setSitesRows((prev) =>
+        prev.map((row) =>
+          row.id === host.siteId
+            ? { ...row, hostCount: Math.max(0, row.hostCount - 1) }
+            : row,
+        ),
+      );
     }
   };
 
@@ -866,7 +932,7 @@ export function AdminDesktop({
                 siteId: null,
                 siteSlug: null,
                 siteName: null,
-                status: row.status === 'active' ? 'verified' : row.status,
+                status: row.verification,
               }
             : row,
         ),
@@ -1008,12 +1074,14 @@ export function AdminDesktop({
               canEdit={canEditSites}
               loading={sitesLoading}
               saving={sitesCreating}
+              deleting={sitesDeleting}
               error={sitesError}
               formError={sitesFormError}
               fieldErrors={sitesFieldErrors}
               statusMessage={sitesStatusMessage}
               onClearStatusMessage={clearSitesStatusMessage}
               onSave={handleSaveSite}
+              onDelete={handleDeleteSite}
               onAddHost={openHosts}
               onAssignHost={handleAssignHost}
               onUnassignHost={handleUnassignHost}
@@ -1044,13 +1112,19 @@ export function AdminDesktop({
               canEdit={canEditHosts}
               loading={hostsLoading}
               saving={hostsCreating}
+              deleting={hostsDeleting}
               verifying={hostsVerifying}
               error={hostsError}
               formError={hostsFormError}
               fieldErrors={hostsFieldErrors}
               statusMessage={hostsStatusMessage}
               onClearStatusMessage={clearHostsStatusMessage}
+              onClearFormError={() => {
+                setHostsFormError(null);
+                setHostsFieldErrors({});
+              }}
               onSave={handleSaveHost}
+              onDelete={handleDeleteHost}
               onVerify={handleVerifyHost}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}

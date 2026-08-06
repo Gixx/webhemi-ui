@@ -53,6 +53,8 @@ export type SitesWindowProps = {
   onClearStatusMessage?: () => void;
   /** Submit spinner on OK in the form dialog. */
   saving?: boolean;
+  /** True while delete request is in flight. */
+  deleting?: boolean;
   onSave?: (payload: SiteFormSavePayload) => void;
   /** @deprecated Use `onSave` with `mode: 'new'`. */
   onCreate?: (payload: SitesWindowCreatePayload) => void;
@@ -105,6 +107,7 @@ type FormState =
     };
 
 type AlertState = { title: string; message: string } | null;
+type ConfirmDeleteState = { site: SitesWindowSite } | null;
 
 function formatSaveErrors(
   formError: string | null | undefined,
@@ -136,6 +139,7 @@ export function SitesWindow({
   statusMessage = null,
   onClearStatusMessage,
   saving = false,
+  deleting = false,
   onSave,
   onCreate,
   onDelete,
@@ -164,8 +168,10 @@ export function SitesWindow({
   const [form, setForm] = useState<FormState>({ open: false });
   const [showFormErrors, setShowFormErrors] = useState(false);
   const [alert, setAlert] = useState<AlertState>(null);
+  const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState>(null);
   const wasSavingRef = useRef(false);
   const alertSoundKeyRef = useRef<string | null>(null);
+  const confirmSoundKeyRef = useRef<string | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -186,11 +192,38 @@ export function SitesWindow({
     onAlertClose?.();
   }, [onAlertClose]);
 
+  const openDeleteConfirm = useCallback(
+    (site: SitesWindowSite) => {
+      const key = `delete\0${site.id}`;
+      setConfirmDelete({ site });
+      if (confirmSoundKeyRef.current === key) {
+        return;
+      }
+      confirmSoundKeyRef.current = key;
+      playAdminSound('ding', dingSoundUrl);
+    },
+    [dingSoundUrl],
+  );
+
+  const closeDeleteConfirm = useCallback(() => {
+    setConfirmDelete(null);
+    confirmSoundKeyRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (selectedId != null && !sites.some((site) => site.id === selectedId)) {
       setSelectedId(null);
     }
   }, [sites, selectedId]);
+
+  useEffect(() => {
+    if (
+      confirmDelete != null &&
+      !sites.some((site) => site.id === confirmDelete.site.id)
+    ) {
+      closeDeleteConfirm();
+    }
+  }, [sites, confirmDelete, closeDeleteConfirm]);
 
   // Close the form after success; API errors open MessageDialog via formError effect.
   useEffect(() => {
@@ -227,7 +260,7 @@ export function SitesWindow({
     showErrorAlert(message);
   }, [formError, fieldErrors, form.open, showFormErrors, showErrorAlert]);
 
-  const busy = loading || saving || unassigning || assigning;
+  const busy = loading || saving || unassigning || assigning || deleting;
   const selected = sites.find((site) => site.id === selectedId) ?? null;
   const hasSelection = selected != null;
   const canSave = Boolean(onSave || onCreate);
@@ -294,7 +327,16 @@ export function SitesWindow({
     if (!canEdit || !selected || !onDelete || busy) {
       return;
     }
-    onDelete(selected);
+    openDeleteConfirm(selected);
+  };
+
+  const confirmDeleteSite = () => {
+    if (!confirmDelete || !onDelete) {
+      return;
+    }
+    const target = confirmDelete.site;
+    closeDeleteConfirm();
+    onDelete(target);
   };
 
   const handleCancel = () => {
@@ -452,6 +494,18 @@ export function SitesWindow({
                   : undefined
               }
               onUnassignHost={onUnassignHost}
+            />
+          </DesktopModal>
+        ) : null}
+
+        {confirmDelete ? (
+          <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
+            <MessageDialog
+              type="question"
+              title="Confirm"
+              message={`Delete site “${confirmDelete.site.name}”? This cannot be undone.`}
+              onClose={closeDeleteConfirm}
+              onConfirm={confirmDeleteSite}
             />
           </DesktopModal>
         ) : null}

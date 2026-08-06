@@ -10,9 +10,9 @@ const SAMPLE_SITES: SitesWindowSite[] = [
 ];
 
 const SAMPLE_HOSTS: SiteFormHostOption[] = [
-  { id: 10, host: 'admin.example.test', siteId: 1, siteName: 'Main site', status: 'active' },
+  { id: 10, host: 'admin.example.test', siteId: 1, siteName: 'Main site', status: 'verified' },
   { id: 11, host: 'www.example.test', siteId: 1, siteName: 'Main site', status: 'pending' },
-  { id: 12, host: 'blog.example.test', siteId: 2, siteName: 'Blog', status: 'active' },
+  { id: 12, host: 'blog.example.test', siteId: 2, siteName: 'Blog', status: 'verified' },
   { id: 13, host: 'unused.example.test', siteId: null, status: 'verified' },
 ];
 
@@ -129,7 +129,7 @@ export const EditSiteHostsTab: Story = {
     await expect(within(table).getByText('admin.example.test')).toBeVisible();
     await expect(within(table).getByText('www.example.test')).toBeVisible();
     await expect(within(table).queryByText('blog.example.test')).toBeNull();
-    await expect(within(table).getByText('active')).toBeVisible();
+    await expect(within(table).getByText('verified')).toBeVisible();
     await expect(within(table).getByText('pending')).toBeVisible();
 
     await expect(canvas.getByRole('button', { name: /^remove$/i })).toBeDisabled();
@@ -218,5 +218,36 @@ export const FormErrorWhenClosed: Story = {
         'Only verified hosts can be assigned.',
       ),
     ).toBeVisible();
+  },
+};
+
+export const DeleteConfirm: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /archive/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^delete$/i }));
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
+    const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
+    await expect(within(dialog).getByText(/Delete site “Archive”/i)).toBeVisible();
+    await userEvent.click(within(dialog).getByRole('button', { name: /^yes$/i }));
+    await expect(args.onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 3, name: 'Archive' }),
+    );
+  },
+};
+
+export const DeleteConfirmCancel: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /archive/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^delete$/i }));
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
+    const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
+    await userEvent.click(within(dialog).getByRole('button', { name: /^no$/i }));
+    await expect(args.onDelete).not.toHaveBeenCalled();
   },
 };

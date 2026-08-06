@@ -25,14 +25,20 @@ export type CreateHostBody = {
   host: string;
   siteId?: number | null;
   surface?: 'admin' | 'site' | 'api';
-  active?: boolean;
+  enabled?: boolean;
+};
+
+export type UpdateSiteBody = {
+  name?: string;
+  slug?: string;
+  enabled?: boolean;
 };
 
 export type UpdateHostBody = {
   host?: string;
   siteId?: number | null;
   surface?: 'admin' | 'site' | 'api';
-  active?: boolean;
+  enabled?: boolean;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -88,6 +94,10 @@ function isAuthFailureResponse(response: Response): boolean {
 async function parseResult<T>(response: Response): Promise<AdminApiResult<T>> {
   if (isAuthFailureResponse(response)) {
     return unauthorizedResult();
+  }
+
+  if (response.status === 204) {
+    return { ok: true, status: 204, data: undefined as T };
   }
 
   let payload: unknown;
@@ -181,12 +191,23 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
 
   return {
     listSites: () => request<AdminApiSite[]>('/sites'),
+    getSite: (id: number) => request<AdminApiSite>(`/sites/${id}`),
     createSite: (body: CreateSiteBody) =>
       request<AdminApiSite>('/sites', {
         method: 'POST',
         body: JSON.stringify(body),
       }),
+    updateSite: (id: number, body: UpdateSiteBody) =>
+      request<AdminApiSite>(`/sites/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    deleteSite: (id: number) =>
+      request<undefined>(`/sites/${id}`, {
+        method: 'DELETE',
+      }),
     listHosts: () => request<AdminApiHost[]>('/hosts'),
+    getHost: (id: number) => request<AdminApiHost>(`/hosts/${id}`),
     createHost: (body: CreateHostBody) =>
       request<AdminApiHost>('/hosts', {
         method: 'POST',
@@ -196,6 +217,10 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiHost>(`/hosts/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(body),
+      }),
+    deleteHost: (id: number) =>
+      request<undefined>(`/hosts/${id}`, {
+        method: 'DELETE',
       }),
     unassignHost: (id: number) =>
       request<AdminApiHost>(`/hosts/${id}/unassign`, {
