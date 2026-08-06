@@ -41,12 +41,16 @@ export type SitesWindowProps = {
   hosts?: SiteFormHostOption[];
   canEdit?: boolean;
   loading?: boolean;
-  /** Window-level load error — Error MessageDialog + chord; also status bar. */
+  /** Window-level load error — Error MessageDialog + chord. */
   error?: string | null;
   /** Field errors from the last save attempt (MessageDialog + aria-invalid). */
   fieldErrors?: Partial<Record<'name' | 'slug', string>>;
-  /** Save / unassign error message (MessageDialog + chord). */
+  /** Save / assign / unassign error message (MessageDialog + chord). */
   formError?: string | null;
+  /** Transient success / status copy for the middle status-bar field. */
+  statusMessage?: string | null;
+  /** Called when the window clears a success message (e.g. selection change). */
+  onClearStatusMessage?: () => void;
   /** Submit spinner on OK in the form dialog. */
   saving?: boolean;
   onSave?: (payload: SiteFormSavePayload) => void;
@@ -129,6 +133,8 @@ export function SitesWindow({
   error = null,
   fieldErrors,
   formError = null,
+  statusMessage = null,
+  onClearStatusMessage,
   saving = false,
   onSave,
   onCreate,
@@ -206,17 +212,14 @@ export function SitesWindow({
     showErrorAlert(error);
   }, [error, loading, showErrorAlert]);
 
-  // Save / unassign / API form errors while the form is open.
+  // Save / assign / unassign / API form errors (form open or closed).
   useEffect(() => {
-    if (!form.open) {
-      return;
-    }
-    if (!formError && !showFormErrors) {
+    if (!formError && !(form.open && showFormErrors)) {
       return;
     }
     const message = formatSaveErrors(
       formError,
-      showFormErrors ? fieldErrors : undefined,
+      form.open && showFormErrors ? fieldErrors : undefined,
     );
     if (!message) {
       return;
@@ -229,10 +232,16 @@ export function SitesWindow({
   const hasSelection = selected != null;
   const canSave = Boolean(onSave || onCreate);
 
+  const selectSite = (id: number) => {
+    onClearStatusMessage?.();
+    setSelectedId((current) => (current === id ? null : id));
+  };
+
   const openNew = () => {
     if (!canEdit || busy) {
       return;
     }
+    onClearStatusMessage?.();
     setShowFormErrors(false);
     setForm({
       open: true,
@@ -247,6 +256,9 @@ export function SitesWindow({
     const target = site ?? selected;
     if (!canEdit || !target || busy || !canSave) {
       return;
+    }
+    if (selectedId !== target.id) {
+      onClearStatusMessage?.();
     }
     setSelectedId(target.id);
     setShowFormErrors(false);
@@ -293,7 +305,7 @@ export function SitesWindow({
     ? 'Loading…'
     : `${sites.length} site${sites.length === 1 ? '' : 's'}`;
   const statusMid =
-    error ??
+    statusMessage ??
     (selected
       ? selected.name
       : canEdit
@@ -399,9 +411,7 @@ export function SitesWindow({
                   <TableRow
                     key={site.id}
                     highlighted={selectedId === site.id}
-                    onClick={() =>
-                      setSelectedId((current) => (current === site.id ? null : site.id))
-                    }
+                    onClick={() => selectSite(site.id)}
                     onDoubleClick={() => openEdit(site)}
                   >
                     <td>{site.name}</td>

@@ -189,3 +189,14 @@ export const VerifyDisabledWhenNotPending: Story = {
     await expect(canvas.getByRole('button', { name: /^verify$/i })).toBeDisabled();
   },
 };
+
+export const StatusMessage: Story = {
+  args: {
+    hosts: SAMPLE_HOSTS,
+    statusMessage: 'Host verified.',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Host verified.')).toBeVisible();
+  },
+};

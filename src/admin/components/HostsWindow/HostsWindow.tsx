@@ -39,11 +39,15 @@ export type HostsWindowProps = {
   sites?: HostFormSiteOption[];
   canEdit?: boolean;
   loading?: boolean;
-  /** Window-level load error — Error MessageDialog + chord; also status bar. */
+  /** Window-level load error — Error MessageDialog + chord. */
   error?: string | null;
   fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>;
   /** Save error message (MessageDialog + chord). */
   formError?: string | null;
+  /** Transient success / status copy for the middle status-bar field. */
+  statusMessage?: string | null;
+  /** Called when the window clears a success message (e.g. selection change). */
+  onClearStatusMessage?: () => void;
   saving?: boolean;
   /** True while ownership verify request is in flight. */
   verifying?: boolean;
@@ -115,6 +119,8 @@ export function HostsWindow({
   error = null,
   fieldErrors,
   formError = null,
+  statusMessage = null,
+  onClearStatusMessage,
   saving = false,
   verifying = false,
   onSave,
@@ -187,17 +193,14 @@ export function HostsWindow({
     showErrorAlert(error);
   }, [error, loading, showErrorAlert]);
 
-  // Save / API form errors while the form is open.
+  // Save / API form errors (form open or closed).
   useEffect(() => {
-    if (!form.open) {
-      return;
-    }
-    if (!formError && !showFormErrors) {
+    if (!formError && !(form.open && showFormErrors)) {
       return;
     }
     const message = formatSaveErrors(
       formError,
-      showFormErrors ? fieldErrors : undefined,
+      form.open && showFormErrors ? fieldErrors : undefined,
     );
     if (!message) {
       return;
@@ -212,10 +215,16 @@ export function HostsWindow({
   const canVerifySelected =
     Boolean(onVerify) && selected?.status === 'pending' && !busy;
 
+  const selectHost = (id: number) => {
+    onClearStatusMessage?.();
+    setSelectedId((current) => (current === id ? null : id));
+  };
+
   const openNew = () => {
     if (!canEdit || busy) {
       return;
     }
+    onClearStatusMessage?.();
     setShowFormErrors(false);
     setForm({
       open: true,
@@ -231,6 +240,9 @@ export function HostsWindow({
     const target = row ?? selected;
     if (!canEdit || !target || busy || !canSave) {
       return;
+    }
+    if (selectedId !== target.id) {
+      onClearStatusMessage?.();
     }
     setSelectedId(target.id);
     setShowFormErrors(false);
@@ -268,6 +280,7 @@ export function HostsWindow({
     if (!canVerifySelected || !selected || !onVerify) {
       return;
     }
+    onClearStatusMessage?.();
     onVerify(selected);
   };
 
@@ -279,7 +292,7 @@ export function HostsWindow({
     ? 'Loading…'
     : `${hosts.length} host${hosts.length === 1 ? '' : 's'}`;
   const statusMid =
-    error ??
+    statusMessage ??
     (selected
       ? selected.host
       : canEdit
@@ -399,9 +412,7 @@ export function HostsWindow({
                   <TableRow
                     key={row.id}
                     highlighted={selectedId === row.id}
-                    onClick={() =>
-                      setSelectedId((current) => (current === row.id ? null : row.id))
-                    }
+                    onClick={() => selectHost(row.id)}
                     onDoubleClick={() => openEdit(row)}
                   >
                     <td>{row.host}</td>

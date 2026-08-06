@@ -189,3 +189,34 @@ export const CreateSubmit: Story = {
     );
   },
 };
+
+export const StatusMessage: Story = {
+  args: {
+    sites: SAMPLE_SITES,
+    statusMessage: 'Site created.',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText('Site created.')).toBeVisible();
+  },
+};
+
+export const FormErrorWhenClosed: Story = {
+  name: 'Form Error When Closed',
+  args: {
+    sites: SAMPLE_SITES,
+    formError: 'Only verified hosts can be assigned.',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
+    await expect(canvas.getByText('Error', { selector: '.title-bar-text' })).toBeVisible();
+    await expect(
+      within(canvasElement.querySelector('.message-dialog') as HTMLElement).getByText(
+        'Only verified hosts can be assigned.',
+      ),
+    ).toBeVisible();
+  },
+};

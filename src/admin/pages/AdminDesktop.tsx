@@ -201,8 +201,12 @@ export function AdminDesktop({
   const [hostsFieldErrors, setHostsFieldErrors] = useState<
     Partial<Record<'host' | 'siteId' | 'surface' | 'active', string>>
   >({});
+  const [sitesStatusMessage, setSitesStatusMessage] = useState<string | null>(null);
+  const [hostsStatusMessage, setHostsStatusMessage] = useState<string | null>(null);
   /** After Error modal OK — bounce to login when the API reported session loss. */
   const pendingLoginRedirectRef = useRef(false);
+  const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hostsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const api = useMemo(
     () =>
@@ -217,6 +221,57 @@ export function AdminDesktop({
 
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
   const canEditHosts = canEditSites;
+
+  const clearSitesStatusMessage = useCallback(() => {
+    if (sitesStatusTimerRef.current != null) {
+      clearTimeout(sitesStatusTimerRef.current);
+      sitesStatusTimerRef.current = null;
+    }
+    setSitesStatusMessage(null);
+  }, []);
+
+  const clearHostsStatusMessage = useCallback(() => {
+    if (hostsStatusTimerRef.current != null) {
+      clearTimeout(hostsStatusTimerRef.current);
+      hostsStatusTimerRef.current = null;
+    }
+    setHostsStatusMessage(null);
+  }, []);
+
+  const flashSitesStatus = useCallback(
+    (message: string) => {
+      clearSitesStatusMessage();
+      setSitesStatusMessage(message);
+      sitesStatusTimerRef.current = setTimeout(() => {
+        sitesStatusTimerRef.current = null;
+        setSitesStatusMessage(null);
+      }, 4000);
+    },
+    [clearSitesStatusMessage],
+  );
+
+  const flashHostsStatus = useCallback(
+    (message: string) => {
+      clearHostsStatusMessage();
+      setHostsStatusMessage(message);
+      hostsStatusTimerRef.current = setTimeout(() => {
+        hostsStatusTimerRef.current = null;
+        setHostsStatusMessage(null);
+      }, 4000);
+    },
+    [clearHostsStatusMessage],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (sitesStatusTimerRef.current != null) {
+        clearTimeout(sitesStatusTimerRef.current);
+      }
+      if (hostsStatusTimerRef.current != null) {
+        clearTimeout(hostsStatusTimerRef.current);
+      }
+    };
+  }, []);
 
   const noteUnauthorized = useCallback((setError: (message: string | null) => void, message: string) => {
     pendingLoginRedirectRef.current = true;
@@ -290,6 +345,7 @@ export function AdminDesktop({
     let cancelled = false;
     setSitesLoading(true);
     setSitesError(null);
+    clearSitesStatusMessage();
 
     void (async () => {
       const result = await api.listSites();
@@ -309,7 +365,7 @@ export function AdminDesktop({
     return () => {
       cancelled = true;
     };
-  }, [sitesWindowOpen, api, handleApiFailure]);
+  }, [sitesWindowOpen, api, handleApiFailure, clearSitesStatusMessage]);
 
   useEffect(() => {
     if (!hostsWindowOpen && !sitesWindowOpen) {
@@ -320,6 +376,7 @@ export function AdminDesktop({
     if (hostsWindowOpen) {
       setHostsLoading(true);
       setHostsError(null);
+      clearHostsStatusMessage();
     }
 
     void (async () => {
@@ -345,7 +402,14 @@ export function AdminDesktop({
     return () => {
       cancelled = true;
     };
-  }, [hostsWindowOpen, sitesWindowOpen, api, handleApiFailure, noteUnauthorized]);
+  }, [
+    hostsWindowOpen,
+    sitesWindowOpen,
+    api,
+    handleApiFailure,
+    noteUnauthorized,
+    clearHostsStatusMessage,
+  ]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -659,6 +723,7 @@ export function AdminDesktop({
     slug: string;
     enabled: boolean;
   }) => {
+    clearSitesStatusMessage();
     if (payload.mode !== 'new') {
       // Update API arrives with Hosts / edit slice; keep dialog feedback for now.
       setSitesFormError('Editing a site is not available yet.');
@@ -687,6 +752,8 @@ export function AdminDesktop({
       return;
     }
 
+    flashSitesStatus('Site created.');
+
     const list = await api.listSites();
     if (list.ok) {
       setSitesRows(list.data.map(toWindowSite));
@@ -710,6 +777,7 @@ export function AdminDesktop({
   };
 
   const handleSaveHost = async (payload: HostFormSavePayload) => {
+    clearHostsStatusMessage();
     setHostsCreating(true);
     setHostsFormError(null);
     setHostsFieldErrors({});
@@ -751,6 +819,8 @@ export function AdminDesktop({
       return;
     }
 
+    flashHostsStatus(payload.mode === 'new' ? 'Host created.' : 'Host updated.');
+
     const list = await api.listHosts();
     if (list.ok) {
       setHostsRows(list.data.map(toWindowHost));
@@ -771,6 +841,7 @@ export function AdminDesktop({
   };
 
   const handleUnassignHost = async (hostId: number) => {
+    clearSitesStatusMessage();
     setHostsUnassigning(true);
     setSitesFormError(null);
     const result = await api.unassignHost(hostId);
@@ -780,6 +851,8 @@ export function AdminDesktop({
       handleApiFailure(result, setSitesFormError);
       return;
     }
+
+    flashSitesStatus('Host removed from site.');
 
     const list = await api.listHosts();
     if (list.ok) {
@@ -808,6 +881,7 @@ export function AdminDesktop({
   };
 
   const handleAssignHost = async (hostId: number, siteId: number) => {
+    clearSitesStatusMessage();
     setHostsAssigning(true);
     setSitesFormError(null);
     const result = await api.assignHost(hostId, { siteId });
@@ -817,6 +891,8 @@ export function AdminDesktop({
       handleApiFailure(result, setSitesFormError);
       return;
     }
+
+    flashSitesStatus('Host assigned.');
 
     const list = await api.listHosts();
     if (list.ok) {
@@ -836,6 +912,7 @@ export function AdminDesktop({
   };
 
   const handleVerifyHost = async (host: HostsWindowHost) => {
+    clearHostsStatusMessage();
     setHostsVerifying(true);
     setHostsError(null);
     const result = await api.verifyHost(host.id);
@@ -845,6 +922,8 @@ export function AdminDesktop({
       handleApiFailure(result, setHostsError);
       return;
     }
+
+    flashHostsStatus('Host verified.');
 
     const list = await api.listHosts();
     if (list.ok) {
@@ -932,6 +1011,8 @@ export function AdminDesktop({
               error={sitesError}
               formError={sitesFormError}
               fieldErrors={sitesFieldErrors}
+              statusMessage={sitesStatusMessage}
+              onClearStatusMessage={clearSitesStatusMessage}
               onSave={handleSaveSite}
               onAddHost={openHosts}
               onAssignHost={handleAssignHost}
@@ -967,6 +1048,8 @@ export function AdminDesktop({
               error={hostsError}
               formError={hostsFormError}
               fieldErrors={hostsFieldErrors}
+              statusMessage={hostsStatusMessage}
+              onClearStatusMessage={clearHostsStatusMessage}
               onSave={handleSaveHost}
               onVerify={handleVerifyHost}
               errorSoundUrl={errorSoundUrl}
