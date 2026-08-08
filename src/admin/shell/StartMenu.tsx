@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '../../lib/cn';
+import { assignSafeAppPath, isSafeAppPath } from '../lib/safeAppPath';
 
 export type StartMenuProps = {
   open: boolean;
@@ -80,13 +81,14 @@ export function StartMenu({
       id: 'logout',
       label: 'Logout',
       className: 'logout',
-      disabled: !logoutHref,
-      onSelect: logoutHref
-        ? () => {
-            onClose();
-            window.location.assign(logoutHref);
-          }
-        : undefined,
+      disabled: !logoutHref || !isSafeAppPath(logoutHref),
+      onSelect:
+        logoutHref && isSafeAppPath(logoutHref)
+          ? () => {
+              onClose();
+              assignSafeAppPath(logoutHref, '/admin/logout');
+            }
+          : undefined,
     },
   ];
 

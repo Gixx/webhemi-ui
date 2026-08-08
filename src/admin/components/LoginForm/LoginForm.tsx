@@ -27,7 +27,7 @@ export interface LoginFormProps {
  * do not break the Retro OS chrome; the backend validates on submit.
  */
 export function LoginForm({
-  action = '/login',
+  action = '/admin/login',
   method = 'post',
   csrfToken,
   csrfFieldName = '_csrf_token',

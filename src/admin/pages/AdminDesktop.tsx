@@ -25,6 +25,7 @@ import {
   type AdminApiSite,
 } from '../api';
 import { cn } from '../../lib/cn';
+import { assignSafeAppPath } from '../lib/safeAppPath';
 import {
   buildPersistedDesktopState,
   CONTROL_PANEL_WINDOW_ID,
@@ -59,8 +60,10 @@ export type AdminDesktopProps = {
    * (`buildEmptySiteExplorerTree`) until PHP supplies real data.
    */
   explorerTreeForSite?: (site: DesktopSite) => ExplorerItem[];
-  /** Logout URL for Start → Logout (Twig: `path('app_logout')`). */
+  /** Logout URL for Start → Logout (Twig: `path('admin_logout')`). */
   logoutHref?: string;
+  /** Session-expired redirect (Twig: `path('admin_login')`). Default `/admin/login`. */
+  loginHref?: string;
   /** CSRF token for `POST /admin/api/*` (`csrf_token('admin_api')`). */
   apiCsrfToken?: string;
   /** Digested chord.mp3 URL for error dialogs (`asset('admin/sounds/chord.mp3')`). */
@@ -151,6 +154,7 @@ export function AdminDesktop({
   sites = [],
   explorerTreeForSite = buildEmptySiteExplorerTree,
   logoutHref,
+  loginHref = '/admin/login',
   apiCsrfToken,
   errorSoundUrl,
   dingSoundUrl,
@@ -292,9 +296,9 @@ export function AdminDesktop({
 
   const handleAlertClose = useCallback(() => {
     if (pendingLoginRedirectRef.current) {
-      window.location.assign('/login');
+      assignSafeAppPath(loginHref, '/admin/login');
     }
-  }, []);
+  }, [loginHref]);
 
   const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
   const hostsWindowOpen = shell.windows.some((win) => win.id === HOSTS_WINDOW_ID);

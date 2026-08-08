@@ -182,7 +182,7 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       ...init,
       headers,
       credentials: 'same-origin',
-      // Detect form_login bounce to /login instead of parsing HTML as JSON.
+      // Detect form_login bounce to /login or /admin/login instead of parsing HTML as JSON.
       redirect: 'manual',
     });
 
