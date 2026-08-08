@@ -83,9 +83,18 @@ export function wouldLoseDomainAdmin(options: {
   nextSurface: HostFormSurface;
   nextEnabled: boolean;
   nextSiteId: number | null;
+  nextHost?: string;
 }): boolean {
-  const { mode, adminAccess, initial, sites, nextSurface, nextEnabled, nextSiteId } =
-    options;
+  const {
+    mode,
+    adminAccess,
+    initial,
+    sites,
+    nextSurface,
+    nextEnabled,
+    nextSiteId,
+    nextHost,
+  } = options;
   if (mode !== 'edit' || adminAccess === 'path') {
     return false;
   }
@@ -113,7 +122,18 @@ export function wouldLoseDomainAdmin(options: {
     return true;
   }
   const nextSite = sites.find((site) => site.id === nextSiteId);
-  return nextSite?.slug !== MAIN_SITE_SLUG;
+  if (nextSite?.slug !== MAIN_SITE_SLUG) {
+    return true;
+  }
+  // Hostname change reverts verification to pending → admin host no longer healthy.
+  if (
+    nextHost != null &&
+    initial.host != null &&
+    nextHost !== initial.host.trim().toLowerCase()
+  ) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -243,6 +263,7 @@ export function HostFormDialog({
         nextSurface: payload.surface,
         nextEnabled: payload.enabled,
         nextSiteId: payload.siteId,
+        nextHost: payload.host,
       })
     ) {
       onAccessModeResetConfirm(payload);
