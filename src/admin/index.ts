@@ -35,6 +35,7 @@ export {
 } from './components/HostsWindow/HostsWindow';
 export {
   HostFormDialog,
+  MAIN_SITE_SLUG,
   type HostFormDialogProps,
   type HostFormMode,
   type HostFormSavePayload,

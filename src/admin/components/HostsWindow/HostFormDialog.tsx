@@ -20,6 +20,9 @@ export type HostFormSiteOption = {
 
 export type HostFormSurface = 'admin' | 'site';
 
+/** Main site slug — must match PHP `HostAdminSurfaceRules::MAIN_SLUG`. */
+export const MAIN_SITE_SLUG = 'main';
+
 export type HostFormMode = 'new' | 'edit';
 
 export type HostFormValues = {
@@ -79,9 +82,19 @@ export function HostFormDialog({
     Partial<Record<'host', string>>
   >({});
 
+  const selectedSite = sites.find((site) => site.id === siteId);
+  const surfaceLockedToSite =
+    siteId != null && selectedSite?.slug !== MAIN_SITE_SLUG;
+
   useEffect(() => {
     setLocalErrors({});
   }, [fieldErrors]);
+
+  useEffect(() => {
+    if (surfaceLockedToSite && surface !== 'site') {
+      setSurface('site');
+    }
+  }, [surfaceLockedToSite, surface]);
 
   const errors = { ...localErrors, ...fieldErrors };
   const title =
@@ -105,6 +118,8 @@ export function HostFormDialog({
       nextLocal.host = 'Use a valid domain name.';
     }
 
+    const nextSurface: HostFormSurface = surfaceLockedToSite ? 'site' : surface;
+
     setLocalErrors(nextLocal);
     if (Object.keys(nextLocal).length > 0) {
       onError?.(Object.values(nextLocal).join('\n'));
@@ -117,7 +132,7 @@ export function HostFormDialog({
       host: nextHost,
       // New hosts stay unassigned; assign after verify.
       siteId: mode === 'new' ? null : siteId,
-      surface,
+      surface: nextSurface,
       enabled,
     });
   };
@@ -180,15 +195,20 @@ export function HostFormDialog({
               id={surfaceId}
               label="Surface:"
               accessKey="u"
-              value={surface}
-              disabled={saving}
+              value={surfaceLockedToSite ? 'site' : surface}
+              disabled={saving || surfaceLockedToSite}
+              title={
+                surfaceLockedToSite
+                  ? 'Admin surface is only available on the Main site'
+                  : undefined
+              }
               aria-invalid={Boolean(errors.surface) || undefined}
               onChange={(event) =>
                 setSurface(event.target.value as HostFormSurface)
               }
             >
               <option value="site">site</option>
-              <option value="admin">admin</option>
+              {!surfaceLockedToSite ? <option value="admin">admin</option> : null}
             </Select>
           </FieldRow>
           <FieldRow>
