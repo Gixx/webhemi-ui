@@ -79,6 +79,7 @@ const meta = {
     onDelete: fn(),
     onAlertClose: fn(),
     canEdit: true,
+    adminAccess: 'path',
     hosts: SAMPLE_HOSTS,
     sites: SAMPLE_SITES,
     tableMinHeight: 180,

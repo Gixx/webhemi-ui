@@ -186,7 +186,10 @@ function createMockAdminApi(
         siteId: site === undefined ? existing.siteId : site?.id ?? null,
         siteSlug: site === undefined ? existing.siteSlug : site?.slug ?? null,
         siteName: site === undefined ? existing.siteName : site?.name ?? null,
-        verification: existing.verification,
+        verification:
+          body.host != null && body.host !== existing.host
+            ? 'pending'
+            : existing.verification,
       };
       hostRows = hostRows.map((row) => (row.id === id ? updated : row));
       return { ok: true, status: 200, data: updated };
@@ -296,6 +299,58 @@ function createMockAdminApi(
         row.id === site.id ? { ...row, hostCount: row.hostCount + 1 } : row,
       );
       return { ok: true, status: 200, data: updated };
+    },
+    getSettings: async () => {
+      const admin = hostRows.find(
+        (row) =>
+          row.surface === 'admin' &&
+          row.verification === 'verified' &&
+          row.enabled &&
+          row.siteSlug === 'main',
+      );
+      return {
+        ok: true as const,
+        status: 200,
+        data: {
+          adminAccess: 'path' as const,
+          effectiveAdminAccess: 'path' as const,
+          domainAvailable: admin != null,
+          adminHost: admin ? { id: admin.id, host: admin.host } : null,
+          paths: {
+            admin: '/admin',
+            adminApi: '/admin/api',
+            publicApi: '/api',
+            login: '/login',
+            register: '/register',
+          },
+        },
+      };
+    },
+    updateSettings: async (body) => {
+      const admin = hostRows.find(
+        (row) =>
+          row.surface === 'admin' &&
+          row.verification === 'verified' &&
+          row.enabled &&
+          row.siteSlug === 'main',
+      );
+      return {
+        ok: true as const,
+        status: 200,
+        data: {
+          adminAccess: body.adminAccess,
+          effectiveAdminAccess: body.adminAccess,
+          domainAvailable: admin != null,
+          adminHost: admin ? { id: admin.id, host: admin.host } : null,
+          paths: {
+            admin: '/admin',
+            adminApi: '/admin/api',
+            publicApi: '/api',
+            login: '/login',
+            register: '/register',
+          },
+        },
+      };
     },
   };
 }

@@ -76,6 +76,7 @@ const meta = {
     onAssignHost: fn(),
     onAlertClose: fn(),
     canEdit: true,
+    adminAccess: 'path',
     sites: SAMPLE_SITES,
     hosts: SAMPLE_HOSTS,
     tableMinHeight: 180,
