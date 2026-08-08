@@ -25,6 +25,8 @@ export type ControlPanelProps = {
   onOpenSites?: () => void;
   /** Open the Hosts shell window (Phase 6). */
   onOpenHosts?: () => void;
+  /** Open the Settings shell window. */
+  onOpenSettings?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
   onMinimize?: () => void;
   /** Wired in Phase 5 shell; no-op until then. Requires `resizable`. */
@@ -54,6 +56,7 @@ export function ControlPanel({
   onClose,
   onOpenSites,
   onOpenHosts,
+  onOpenSettings,
   onMinimize,
   onMaximize,
   onActivate,
@@ -114,7 +117,9 @@ export function ControlPanel({
             ? onOpenSites
             : icon.kind === 'hosts'
               ? onOpenHosts
-              : undefined;
+              : icon.kind === 'settings'
+                ? onOpenSettings
+                : undefined;
         return (
           <SystemIcon
             key={icon.kind}

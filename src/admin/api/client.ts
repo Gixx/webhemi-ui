@@ -2,6 +2,7 @@ import type {
   AdminApiErrorBody,
   AdminApiHost,
   AdminApiResult,
+  AdminApiSettings,
   AdminApiSite,
   AdminApiFailure,
 } from './types';
@@ -39,6 +40,10 @@ export type UpdateHostBody = {
   siteId?: number | null;
   surface?: 'admin' | 'site';
   enabled?: boolean;
+};
+
+export type UpdateSettingsBody = {
+  adminAccess: 'path' | 'domain';
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -233,6 +238,12 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
     assignHost: (id: number, body: { siteId: number }) =>
       request<AdminApiHost>(`/hosts/${id}/assign`, {
         method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    getSettings: () => request<AdminApiSettings>('/settings'),
+    updateSettings: (body: UpdateSettingsBody) =>
+      request<AdminApiSettings>('/settings', {
+        method: 'PATCH',
         body: JSON.stringify(body),
       }),
   };

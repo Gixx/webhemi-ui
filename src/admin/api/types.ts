@@ -38,3 +38,20 @@ export type AdminApiHost = {
   verification: 'pending' | 'verified';
   enabled: boolean;
 };
+
+export type AdminApiSettings = {
+  adminAccess: 'path' | 'domain';
+  effectiveAdminAccess: 'path' | 'domain';
+  domainAvailable: boolean;
+  adminHost: { id: number; host: string } | null;
+  paths: {
+    admin: string;
+    adminApi: string;
+    publicApi: string;
+    login: string;
+    register: string;
+  };
+  /** Present after PATCH when access mode changed (absolute admin login URL). */
+  loginUrl?: string;
+  sessionEnded?: boolean;
+};

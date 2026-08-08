@@ -1,6 +1,7 @@
 import {
   CONTROL_PANEL_WINDOW_ID,
   HOSTS_WINDOW_ID,
+  SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   parseSiteWindowId,
   type ShellWindowKind,
@@ -99,6 +100,9 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     return null;
   }
   if (kind === 'hosts' && id !== HOSTS_WINDOW_ID) {
+    return null;
+  }
+  if (kind === 'settings' && id !== SETTINGS_WINDOW_ID) {
     return null;
   }
   if (kind === 'control-panel' && id !== CONTROL_PANEL_WINDOW_ID) {
@@ -251,6 +255,10 @@ export function hydrateDesktopFromPersistence(
       windows.push(windowFromEntry(entry));
       continue;
     }
+    if (entry.kind === 'settings' && entry.id === SETTINGS_WINDOW_ID) {
+      windows.push(windowFromEntry(entry));
+      continue;
+    }
     if (entry.kind === 'site' && entry.siteId != null && siteIds.has(entry.siteId)) {
       windows.push({
         ...windowFromEntry(entry),
@@ -323,6 +331,9 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
   }
   if (kind === 'hosts') {
     return DEFAULT_WINDOW_SIZE.hosts;
+  }
+  if (kind === 'settings') {
+    return DEFAULT_WINDOW_SIZE.settings;
   }
   return DEFAULT_WINDOW_SIZE.site;
 }

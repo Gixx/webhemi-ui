@@ -34,6 +34,11 @@ export {
   type HostsWindowHost,
 } from './components/HostsWindow/HostsWindow';
 export {
+  SettingsWindow,
+  type SettingsWindowProps,
+  type AdminAccessModeValue,
+} from './components/SettingsWindow/SettingsWindow';
+export {
   HostFormDialog,
   MAIN_SITE_SLUG,
   type HostFormDialogProps,

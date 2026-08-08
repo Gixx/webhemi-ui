@@ -22,10 +22,11 @@ import {
   type AdminApiClient,
   type AdminApiHost,
   type AdminApiResult,
+  type AdminApiSettings,
   type AdminApiSite,
 } from '../api';
 import { cn } from '../../lib/cn';
-import { assignSafeAppPath } from '../lib/safeAppPath';
+import { assignSafeAppPath, assignSafeNavigationUrl } from '../lib/safeAppPath';
 import {
   buildPersistedDesktopState,
   CONTROL_PANEL_WINDOW_ID,
@@ -39,6 +40,7 @@ import {
   loadPersistedDesktop,
   savePersistedDesktop,
   siteWindowId,
+  SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   StartMenu,
   Taskbar,
@@ -46,6 +48,10 @@ import {
   type ShellBounds,
   type ShellWindowState,
 } from '../shell';
+import {
+  SettingsWindow,
+  type AdminAccessModeValue,
+} from '../components/SettingsWindow/SettingsWindow';
 export type DesktopSite = {
   id: number;
   name: string;
@@ -204,10 +210,18 @@ export function AdminDesktop({
   >({});
   const [sitesStatusMessage, setSitesStatusMessage] = useState<string | null>(null);
   const [hostsStatusMessage, setHostsStatusMessage] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AdminApiSettings | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsStatusMessage, setSettingsStatusMessage] = useState<string | null>(
+    null,
+  );
   /** After Error modal OK — bounce to login when the API reported session loss. */
   const pendingLoginRedirectRef = useRef(false);
   const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hostsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const api = useMemo(
     () =>
@@ -222,6 +236,7 @@ export function AdminDesktop({
 
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
   const canEditHosts = canEditSites;
+  const canEditSettings = canEditSites;
 
   const clearSitesStatusMessage = useCallback(() => {
     if (sitesStatusTimerRef.current != null) {
@@ -263,6 +278,26 @@ export function AdminDesktop({
     [clearHostsStatusMessage],
   );
 
+  const clearSettingsStatusMessage = useCallback(() => {
+    if (settingsStatusTimerRef.current != null) {
+      clearTimeout(settingsStatusTimerRef.current);
+      settingsStatusTimerRef.current = null;
+    }
+    setSettingsStatusMessage(null);
+  }, []);
+
+  const flashSettingsStatus = useCallback(
+    (message: string) => {
+      clearSettingsStatusMessage();
+      setSettingsStatusMessage(message);
+      settingsStatusTimerRef.current = setTimeout(() => {
+        settingsStatusTimerRef.current = null;
+        setSettingsStatusMessage(null);
+      }, 4000);
+    },
+    [clearSettingsStatusMessage],
+  );
+
   useEffect(() => {
     return () => {
       if (sitesStatusTimerRef.current != null) {
@@ -270,6 +305,9 @@ export function AdminDesktop({
       }
       if (hostsStatusTimerRef.current != null) {
         clearTimeout(hostsStatusTimerRef.current);
+      }
+      if (settingsStatusTimerRef.current != null) {
+        clearTimeout(settingsStatusTimerRef.current);
       }
     };
   }, []);
@@ -296,12 +334,30 @@ export function AdminDesktop({
 
   const handleAlertClose = useCallback(() => {
     if (pendingLoginRedirectRef.current) {
+      pendingLoginRedirectRef.current = false;
       assignSafeAppPath(loginHref, '/admin/login');
     }
   }, [loginHref]);
 
+  const dismissSitesAlert = useCallback(() => {
+    setSitesError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
+  const dismissHostsAlert = useCallback(() => {
+    setHostsError(null);
+    setHostsFormError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
+  const dismissSettingsAlert = useCallback(() => {
+    setSettingsError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
   const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
   const hostsWindowOpen = shell.windows.some((win) => win.id === HOSTS_WINDOW_ID);
+  const settingsWindowOpen = shell.windows.some((win) => win.id === SETTINGS_WINDOW_ID);
   const siteFormHosts = useMemo(
     () => hostsRows.map(toSiteFormHostOption),
     [hostsRows],
@@ -411,6 +467,35 @@ export function AdminDesktop({
     noteUnauthorized,
     clearHostsStatusMessage,
   ]);
+
+  useEffect(() => {
+    if (!settingsWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    setSettingsLoading(true);
+    setSettingsError(null);
+    clearSettingsStatusMessage();
+
+    void (async () => {
+      const result = await api.getSettings();
+      if (cancelled) {
+        return;
+      }
+      setSettingsLoading(false);
+      if (!result.ok) {
+        handleApiFailure(result, setSettingsError);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setSettings(result.data);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [settingsWindowOpen, api, handleApiFailure, clearSettingsStatusMessage]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -643,6 +728,43 @@ export function AdminDesktop({
       DEFAULT_WINDOW_SIZE.hosts,
     );
   };
+
+  const openSettings = () => {
+    openOrRaiseWindow(
+      SETTINGS_WINDOW_ID,
+      'settings',
+      'Settings',
+      DEFAULT_WINDOW_SIZE.settings,
+    );
+  };
+
+  const handleSaveSettings = useCallback(
+    async (adminAccess: AdminAccessModeValue) => {
+      setSettingsSaving(true);
+      setSettingsError(null);
+      clearSettingsStatusMessage();
+      const result = await api.updateSettings({ adminAccess });
+      setSettingsSaving(false);
+      if (!result.ok) {
+        handleApiFailure(result, setSettingsError);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setSettings(result.data);
+      if (result.data.sessionEnded && result.data.loginUrl) {
+        assignSafeNavigationUrl(result.data.loginUrl, loginHref);
+        return;
+      }
+      flashSettingsStatus('Settings saved.');
+    },
+    [
+      api,
+      handleApiFailure,
+      clearSettingsStatusMessage,
+      flashSettingsStatus,
+      loginHref,
+    ],
+  );
 
   const openSite = (site: DesktopSite) => {
     const id = siteWindowId(site.id);
@@ -1063,6 +1185,7 @@ export function AdminDesktop({
               onActivate={() => activateWindow(win.id)}
               onOpenSites={openSites}
               onOpenHosts={openHosts}
+              onOpenSettings={openSettings}
             />,
           );
         }
@@ -1093,7 +1216,7 @@ export function AdminDesktop({
               assigning={hostsAssigning}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
-              onAlertClose={handleAlertClose}
+              onAlertClose={dismissSitesAlert}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}
@@ -1132,7 +1255,36 @@ export function AdminDesktop({
               onVerify={handleVerifyHost}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
-              onAlertClose={handleAlertClose}
+              onAlertClose={dismissHostsAlert}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
+        if (win.kind === 'settings') {
+          return shellFrame(
+            <SettingsWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              adminAccess={settings?.adminAccess ?? 'path'}
+              domainAvailable={settings?.domainAvailable ?? false}
+              canEdit={canEditSettings}
+              loading={settingsLoading}
+              saving={settingsSaving}
+              error={settingsError}
+              statusMessage={settingsStatusMessage}
+              onClearStatusMessage={clearSettingsStatusMessage}
+              onSave={handleSaveSettings}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onAlertClose={dismissSettingsAlert}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}

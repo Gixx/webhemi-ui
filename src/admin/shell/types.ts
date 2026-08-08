@@ -2,6 +2,7 @@
 export const CONTROL_PANEL_WINDOW_ID = 'control-panel';
 export const SITES_WINDOW_ID = 'sites';
 export const HOSTS_WINDOW_ID = 'hosts';
+export const SETTINGS_WINDOW_ID = 'settings';
 
 export function siteWindowId(siteId: number): string {
   return `site-${siteId}`;
@@ -12,7 +13,12 @@ export function parseSiteWindowId(id: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
-export type ShellWindowKind = 'control-panel' | 'site' | 'sites' | 'hosts';
+export type ShellWindowKind =
+  | 'control-panel'
+  | 'site'
+  | 'sites'
+  | 'hosts'
+  | 'settings';
 
 /**
  * One open desktop shell window.

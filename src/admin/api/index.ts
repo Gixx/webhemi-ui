@@ -2,6 +2,7 @@ export type {
   AdminApiErrorBody,
   AdminApiHost,
   AdminApiResult,
+  AdminApiSettings,
   AdminApiSite,
   AdminApiSuccess,
   AdminApiFailure,
@@ -15,4 +16,5 @@ export {
   type CreateHostBody,
   type CreateSiteBody,
   type UpdateHostBody,
+  type UpdateSettingsBody,
 } from './client';
