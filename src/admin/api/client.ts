@@ -24,7 +24,7 @@ export type CreateSiteBody = {
 export type CreateHostBody = {
   host: string;
   siteId?: number | null;
-  surface?: 'admin' | 'site' | 'api';
+  surface?: 'admin' | 'site';
   enabled?: boolean;
 };
 
@@ -37,7 +37,7 @@ export type UpdateSiteBody = {
 export type UpdateHostBody = {
   host?: string;
   siteId?: number | null;
-  surface?: 'admin' | 'site' | 'api';
+  surface?: 'admin' | 'site';
   enabled?: boolean;
 };
 

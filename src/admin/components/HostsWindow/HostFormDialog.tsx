@@ -18,7 +18,7 @@ export type HostFormSiteOption = {
   slug?: string;
 };
 
-export type HostFormSurface = 'admin' | 'site' | 'api';
+export type HostFormSurface = 'admin' | 'site';
 
 export type HostFormMode = 'new' | 'edit';
 
@@ -189,7 +189,6 @@ export function HostFormDialog({
             >
               <option value="site">site</option>
               <option value="admin">admin</option>
-              <option value="api">api</option>
             </Select>
           </FieldRow>
           <FieldRow>

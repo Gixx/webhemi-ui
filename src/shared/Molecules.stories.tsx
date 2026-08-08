@@ -30,7 +30,6 @@ function MoleculesShowcase() {
         <Select id="surface" defaultValue="site">
           <option value="admin">admin</option>
           <option value="site">site</option>
-          <option value="api">api</option>
         </Select>
       </FormField>
       <Checkbox label="Active" defaultChecked />

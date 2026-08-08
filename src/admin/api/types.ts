@@ -34,7 +34,7 @@ export type AdminApiHost = {
   siteId: number | null;
   siteSlug: string | null;
   siteName: string | null;
-  surface: 'admin' | 'site' | 'api';
+  surface: 'admin' | 'site';
   verification: 'pending' | 'verified';
   enabled: boolean;
 };
