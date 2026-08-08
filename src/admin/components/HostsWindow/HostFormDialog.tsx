@@ -20,7 +20,7 @@ export type HostFormSiteOption = {
 
 export type HostFormSurface = 'admin' | 'site';
 
-/** Main site slug — must match PHP `HostAdminSurfaceRules::MAIN_SLUG`. */
+/** Main site slug — must match PHP `Site::MAIN_SLUG`. */
 export const MAIN_SITE_SLUG = 'main';
 
 export type HostFormMode = 'new' | 'edit';
