@@ -17,6 +17,7 @@ import {
 } from '../../chrome';
 import { PaneWindowShell } from '../../bricks/_lib/PaneWindowShell';
 import { cn } from '../../../lib/cn';
+import { MAIN_SITE_SLUG } from '../HostsWindow/HostFormDialog';
 
 export type SiteFormHostStatus = 'pending' | 'verified';
 
@@ -29,6 +30,9 @@ export type SiteFormHostOption = {
   siteName?: string | null;
   /** Ownership verification (pending → verified); assign when verified + unassigned. */
   status: SiteFormHostStatus;
+  surface?: 'admin' | 'site';
+  enabled?: boolean;
+  protected?: boolean;
 };
 
 export type SiteFormMode = 'new' | 'edit';
@@ -47,9 +51,18 @@ export type SiteFormSavePayload = SiteFormValues & {
 export type SiteFormDialogProps = {
   mode: SiteFormMode;
   /** Prefilled when `mode === 'edit'`. */
-  initial?: Partial<SiteFormValues> & { siteId?: number; title?: string };
+  initial?: Partial<SiteFormValues> & {
+    siteId?: number;
+    title?: string;
+    protected?: boolean;
+  };
   /** All hosts; the Hosts tab lists only those assigned to this site. */
   hosts?: SiteFormHostOption[];
+  /**
+   * Configured install access mode. `null` = unknown — treat unassigning
+   * the admin host as risky when domain may be active.
+   */
+  adminAccess?: 'path' | 'domain' | null;
   /** Marks invalid fields (no inline text — use {@link onError} / MessageDialog). */
   fieldErrors?: Partial<Record<'name' | 'slug', string>>;
   saving?: boolean;
@@ -70,6 +83,11 @@ export type SiteFormDialogProps = {
   onAssignHost?: (hostId: number) => void;
   /** Unassign selected host from this site (does not delete the host). */
   onUnassignHost?: (hostId: number) => void;
+  /**
+   * When set, called instead of {@link onUnassignHost} if unassign would force
+   * access.admin domain→path. Parent shows a sibling alert modal.
+   */
+  onAccessModeResetUnassign?: (hostId: number) => void;
   className?: string;
 };
 
@@ -82,6 +100,7 @@ export function SiteFormDialog({
   mode,
   initial,
   hosts = [],
+  adminAccess = null,
   fieldErrors,
   saving = false,
   unassigning = false,
@@ -92,6 +111,7 @@ export function SiteFormDialog({
   onAddHost,
   onAssignHost,
   onUnassignHost,
+  onAccessModeResetUnassign,
   className,
 }: SiteFormDialogProps) {
   const nameId = useId();
@@ -151,11 +171,13 @@ export function SiteFormDialog({
       ? 'New Site'
       : `${initial?.title ?? initial?.name ?? 'Site'} Properties`;
   const busy = saving || unassigning || assigning;
+  const siteProtected = Boolean(initial?.protected);
   const canRemove =
     Boolean(onUnassignHost) &&
     selectedHostId != null &&
     initial?.siteId != null &&
-    !busy;
+    !busy &&
+    !assignedHosts.find((host) => host.id === selectedHostId)?.protected;
   const canAssign =
     Boolean(onAssignHost) &&
     assignHostId != null &&
@@ -198,6 +220,18 @@ export function SiteFormDialog({
 
   const handleRemove = () => {
     if (!canRemove || selectedHostId == null) {
+      return;
+    }
+    const selected = assignedHosts.find((host) => host.id === selectedHostId);
+    const losesDomainAdmin =
+      adminAccess !== 'path' &&
+      selected?.surface === 'admin' &&
+      selected.enabled !== false &&
+      selected.status === 'verified' &&
+      (initial?.slug === MAIN_SITE_SLUG || slug.trim().toLowerCase() === MAIN_SITE_SLUG);
+
+    if (losesDomainAdmin && onAccessModeResetUnassign) {
+      onAccessModeResetUnassign(selectedHostId);
       return;
     }
     onUnassignHost?.(selectedHostId);
@@ -267,7 +301,12 @@ export function SiteFormDialog({
                     label="Slug:"
                     accessKey="s"
                     value={slug}
-                    disabled={busy}
+                    disabled={busy || siteProtected}
+                    title={
+                      siteProtected
+                        ? 'Protected system site slug cannot be changed'
+                        : undefined
+                    }
                     aria-invalid={Boolean(errors.slug) || undefined}
                     onChange={(event) => setSlug(event.target.value)}
                   />
@@ -278,7 +317,12 @@ export function SiteFormDialog({
                     label="Enabled"
                     accessKey="e"
                     checked={enabled}
-                    disabled={busy}
+                    disabled={busy || siteProtected}
+                    title={
+                      siteProtected
+                        ? 'Protected system site cannot be disabled'
+                        : undefined
+                    }
                     onChange={(event) => setEnabled(event.target.checked)}
                   />
                 </FieldRow>
@@ -386,7 +430,12 @@ export function SiteFormDialog({
                     type="button"
                     accessKey="r"
                     disabled={!canRemove}
-                    title="Unassign selected host from this site"
+                    title={
+                      assignedHosts.find((host) => host.id === selectedHostId)
+                        ?.protected
+                        ? 'Protected system host cannot be unassigned'
+                        : 'Unassign selected host from this site'
+                    }
                     onClick={handleRemove}
                   >
                     Remove

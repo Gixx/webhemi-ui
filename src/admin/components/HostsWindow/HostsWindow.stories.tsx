@@ -3,7 +3,7 @@ import { fn, expect, userEvent, within, waitFor } from 'storybook/test';
 import { HostsWindow, type HostsWindowHost } from './HostsWindow';
 import type { HostFormSiteOption } from './HostFormDialog';
 
-const SAMPLE_SITES: HostFormSiteOption[] = [
+  const SAMPLE_SITES: HostFormSiteOption[] = [
   { id: 1, name: 'Main site', slug: 'main' },
   { id: 2, name: 'Blog', slug: 'blog' },
 ];
@@ -18,6 +18,7 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     surface: 'admin',
     verification: 'verified',
     enabled: true,
+    protected: false,
   },
   {
     id: 11,
@@ -28,6 +29,7 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     surface: 'site',
     verification: 'verified',
     enabled: true,
+    protected: true,
   },
   {
     id: 12,
@@ -38,6 +40,7 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     surface: 'site',
     verification: 'pending',
     enabled: true,
+    protected: false,
   },
   {
     id: 13,
@@ -48,6 +51,7 @@ const SAMPLE_HOSTS: HostsWindowHost[] = [
     surface: 'site',
     verification: 'pending',
     enabled: true,
+    protected: false,
   },
 ];
 
@@ -217,5 +221,36 @@ export const DeleteConfirm: Story = {
     await expect(args.onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ id: 13, host: 'orphan.example.test' }),
     );
+  },
+};
+
+export const DeleteAdminAccessConfirm: Story = {
+  args: {
+    adminAccess: 'domain',
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /admin\.example\.test/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^delete$/i }));
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.message-dialog')).not.toBeNull();
+    });
+    const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
+    await expect(within(dialog).getByText(/^Warning$/i)).toBeVisible();
+    await expect(
+      within(dialog).getByText(/switch Admin access to path/i),
+    ).toBeVisible();
+    await userEvent.click(within(dialog).getByRole('button', { name: /^yes$/i }));
+    await expect(args.onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 10, host: 'admin.example.test', surface: 'admin' }),
+    );
+  },
+};
+
+export const ProtectedHostDeleteDisabled: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /www\.example\.test/i }));
+    await expect(canvas.getByRole('button', { name: /^delete$/i })).toBeDisabled();
   },
 };

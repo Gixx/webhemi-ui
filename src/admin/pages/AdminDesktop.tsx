@@ -125,6 +125,7 @@ function toWindowSite(site: AdminApiSite): SitesWindowSite {
     name: site.name,
     slug: site.slug,
     enabled: site.enabled,
+    protected: site.protected,
     hostCount: site.hostCount,
   };
 }
@@ -139,6 +140,7 @@ function toWindowHost(host: AdminApiHost): HostsWindowHost {
     surface: host.surface,
     verification: host.verification,
     enabled: host.enabled,
+    protected: host.protected,
   };
 }
 
@@ -149,6 +151,9 @@ function toSiteFormHostOption(host: AdminApiHost | HostsWindowHost): SiteFormHos
     siteId: host.siteId,
     siteName: host.siteName,
     status: host.verification === 'verified' ? 'verified' : 'pending',
+    surface: host.surface,
+    enabled: host.enabled,
+    protected: host.protected,
   };
 }
 
@@ -469,23 +474,29 @@ export function AdminDesktop({
   ]);
 
   useEffect(() => {
-    if (!settingsWindowOpen) {
+    if (!settingsWindowOpen && !hostsWindowOpen && !sitesWindowOpen) {
       return;
     }
 
     let cancelled = false;
-    setSettingsLoading(true);
-    setSettingsError(null);
-    clearSettingsStatusMessage();
+    if (settingsWindowOpen) {
+      setSettingsLoading(true);
+      setSettingsError(null);
+      clearSettingsStatusMessage();
+    }
 
     void (async () => {
       const result = await api.getSettings();
       if (cancelled) {
         return;
       }
-      setSettingsLoading(false);
+      if (settingsWindowOpen) {
+        setSettingsLoading(false);
+      }
       if (!result.ok) {
-        handleApiFailure(result, setSettingsError);
+        if (settingsWindowOpen) {
+          handleApiFailure(result, setSettingsError);
+        }
         return;
       }
       pendingLoginRedirectRef.current = false;
@@ -495,7 +506,14 @@ export function AdminDesktop({
     return () => {
       cancelled = true;
     };
-  }, [settingsWindowOpen, api, handleApiFailure, clearSettingsStatusMessage]);
+  }, [
+    settingsWindowOpen,
+    hostsWindowOpen,
+    sitesWindowOpen,
+    api,
+    handleApiFailure,
+    clearSettingsStatusMessage,
+  ]);
 
   const closeStartMenu = useCallback(() => setStartMenuOpen(false), []);
   const toggleStartMenu = useCallback(() => {
@@ -738,6 +756,15 @@ export function AdminDesktop({
     );
   };
 
+  const refreshSettings = useCallback(async () => {
+    const result = await api.getSettings();
+    if (!result.ok) {
+      return;
+    }
+    pendingLoginRedirectRef.current = false;
+    setSettings(result.data);
+  }, [api]);
+
   const handleSaveSettings = useCallback(
     async (adminAccess: AdminAccessModeValue) => {
       setSettingsSaving(true);
@@ -975,6 +1002,11 @@ export function AdminDesktop({
       return;
     }
 
+    if (result.data.sessionEnded && result.data.loginUrl) {
+      assignSafeNavigationUrl(result.data.loginUrl, loginHref);
+      return;
+    }
+
     flashHostsStatus(payload.mode === 'new' ? 'Host created.' : 'Host updated.');
 
     const list = await api.listHosts();
@@ -994,6 +1026,8 @@ export function AdminDesktop({
       setSitesRows(sitesList.data.map(toWindowSite));
       setDesktopSites(sitesList.data.map(toDesktopSite));
     }
+
+    await refreshSettings();
   };
 
   const handleDeleteHost = async (host: HostsWindowHost) => {
@@ -1005,6 +1039,11 @@ export function AdminDesktop({
 
     if (!result.ok) {
       handleApiFailure(result, setHostsError);
+      return;
+    }
+
+    if (result.data.sessionEnded && result.data.loginUrl) {
+      assignSafeNavigationUrl(result.data.loginUrl, loginHref);
       return;
     }
 
@@ -1030,6 +1069,8 @@ export function AdminDesktop({
         ),
       );
     }
+
+    await refreshSettings();
   };
 
   const handleUnassignHost = async (hostId: number) => {
@@ -1041,6 +1082,11 @@ export function AdminDesktop({
 
     if (!result.ok) {
       handleApiFailure(result, setSitesFormError);
+      return;
+    }
+
+    if (result.data.sessionEnded && result.data.loginUrl) {
+      assignSafeNavigationUrl(result.data.loginUrl, loginHref);
       return;
     }
 
@@ -1070,6 +1116,8 @@ export function AdminDesktop({
       setSitesRows(sitesList.data.map(toWindowSite));
       setDesktopSites(sitesList.data.map(toDesktopSite));
     }
+
+    await refreshSettings();
   };
 
   const handleAssignHost = async (hostId: number, siteId: number) => {
@@ -1101,6 +1149,8 @@ export function AdminDesktop({
       setSitesRows(sitesList.data.map(toWindowSite));
       setDesktopSites(sitesList.data.map(toDesktopSite));
     }
+
+    await refreshSettings();
   };
 
   const handleVerifyHost = async (host: HostsWindowHost) => {
@@ -1198,6 +1248,7 @@ export function AdminDesktop({
               maximized={win.maximized}
               sites={sitesRows}
               hosts={siteFormHosts}
+              adminAccess={settings?.adminAccess ?? null}
               canEdit={canEditSites}
               loading={sitesLoading}
               saving={sitesCreating}
@@ -1236,6 +1287,7 @@ export function AdminDesktop({
               maximized={win.maximized}
               hosts={hostsRows}
               sites={hostFormSites}
+              adminAccess={settings?.adminAccess ?? null}
               canEdit={canEditHosts}
               loading={hostsLoading}
               saving={hostsCreating}

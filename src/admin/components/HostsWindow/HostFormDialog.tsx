@@ -45,16 +45,76 @@ export type HostFormDialogProps = {
     title?: string;
     /** Ownership verification — pending hosts cannot be assigned to a site. */
     verification?: 'pending' | 'verified';
+    /** Primary www host — site/surface/enabled locked. */
+    protected?: boolean;
   };
   /** Sites available for the Site select. */
   sites?: HostFormSiteOption[];
+  /**
+   * Id of the host that currently has surface=admin (if any).
+   * Used to lock Surface when another admin host already exists.
+   */
+  adminSurfaceHostId?: number | null;
+  /**
+   * Configured install access mode. `null` = unknown — treat losing
+   * the healthy admin host as risky when domain may be active.
+   */
+  adminAccess?: 'path' | 'domain' | null;
   fieldErrors?: Partial<Record<'host' | 'siteId' | 'surface' | 'enabled', string>>;
   saving?: boolean;
   onSave: (payload: HostFormSavePayload) => void;
+  /**
+   * When set, called instead of {@link onSave} if the edit would force
+   * access.admin domain→path. Parent must show a sibling `DesktopModal`
+   * alert (nested modals inside this form do not stack correctly).
+   */
+  onAccessModeResetConfirm?: (payload: HostFormSavePayload) => void;
   onError?: (message: string) => void;
   onClose: () => void;
   className?: string;
 };
+
+/** Whether saving these values would drop the healthy Main admin host under domain mode. */
+export function wouldLoseDomainAdmin(options: {
+  mode: HostFormMode;
+  adminAccess: 'path' | 'domain' | null;
+  initial?: HostFormDialogProps['initial'];
+  sites: HostFormSiteOption[];
+  nextSurface: HostFormSurface;
+  nextEnabled: boolean;
+  nextSiteId: number | null;
+}): boolean {
+  const { mode, adminAccess, initial, sites, nextSurface, nextEnabled, nextSiteId } =
+    options;
+  if (mode !== 'edit' || adminAccess === 'path') {
+    return false;
+  }
+  if (initial?.surface !== 'admin') {
+    return false;
+  }
+  if (initial.enabled === false) {
+    return false;
+  }
+  if (initial.verification === 'pending') {
+    return false;
+  }
+  const initialSite = sites.find((site) => site.id === initial.siteId);
+  if (initialSite?.slug !== MAIN_SITE_SLUG) {
+    return false;
+  }
+
+  if (nextSurface !== 'admin') {
+    return true;
+  }
+  if (!nextEnabled) {
+    return true;
+  }
+  if (nextSiteId == null) {
+    return true;
+  }
+  const nextSite = sites.find((site) => site.id === nextSiteId);
+  return nextSite?.slug !== MAIN_SITE_SLUG;
+}
 
 /**
  * New / Edit Host modal (nested `.window` — not a shell window).
@@ -63,9 +123,12 @@ export function HostFormDialog({
   mode,
   initial,
   sites = [],
+  adminSurfaceHostId = null,
+  adminAccess = null,
   fieldErrors,
   saving = false,
   onSave,
+  onAccessModeResetConfirm,
   onError,
   onClose,
   className,
@@ -83,26 +146,60 @@ export function HostFormDialog({
   >({});
 
   const selectedSite = sites.find((site) => site.id === siteId);
-  const surfaceLockedToSite =
-    siteId != null && selectedSite?.slug !== MAIN_SITE_SLUG;
+  const hostProtected = Boolean(initial?.protected);
+  const siteSelectLocked =
+    mode === 'new' ||
+    hostProtected ||
+    (mode === 'edit' && initial?.verification === 'pending');
+  const isMainSelected =
+    siteId != null && selectedSite?.slug === MAIN_SITE_SLUG;
+  const otherAdminExists =
+    adminSurfaceHostId != null && adminSurfaceHostId !== initial?.hostId;
+  const surfaceSelectable =
+    mode === 'edit' &&
+    !hostProtected &&
+    !siteSelectLocked &&
+    siteId != null &&
+    isMainSelected &&
+    !otherAdminExists;
 
   useEffect(() => {
     setLocalErrors({});
   }, [fieldErrors]);
 
   useEffect(() => {
-    if (surfaceLockedToSite && surface !== 'site') {
+    if (!surfaceSelectable && surface !== 'site') {
       setSurface('site');
     }
-  }, [surfaceLockedToSite, surface]);
+  }, [surfaceSelectable, surface]);
 
   const errors = { ...localErrors, ...fieldErrors };
   const title =
     mode === 'new'
       ? 'New Host'
       : `${initial?.title ?? initial?.host ?? 'Host'} Properties`;
-  const siteSelectLocked =
-    mode === 'new' || (mode === 'edit' && initial?.verification === 'pending');
+
+  const surfaceTitle = (() => {
+    if (mode === 'new') {
+      return 'Admin surface is set after the host is assigned to the Main site';
+    }
+    if (hostProtected) {
+      return 'Protected system host must keep the site surface';
+    }
+    if (siteSelectLocked) {
+      return 'Verify ownership before assigning a site';
+    }
+    if (siteId == null) {
+      return 'Assign a site before choosing surface';
+    }
+    if (!isMainSelected) {
+      return 'Admin surface is only available on the Main site';
+    }
+    if (otherAdminExists) {
+      return 'Another host already uses the admin surface';
+    }
+    return undefined;
+  })();
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -118,7 +215,7 @@ export function HostFormDialog({
       nextLocal.host = 'Use a valid domain name.';
     }
 
-    const nextSurface: HostFormSurface = surfaceLockedToSite ? 'site' : surface;
+    const nextSurface: HostFormSurface = surfaceSelectable ? surface : 'site';
 
     setLocalErrors(nextLocal);
     if (Object.keys(nextLocal).length > 0) {
@@ -126,15 +223,33 @@ export function HostFormDialog({
       return;
     }
 
-    onSave({
+    const payload: HostFormSavePayload = {
       mode,
       hostId: initial?.hostId,
       host: nextHost,
       // New hosts stay unassigned; assign after verify.
       siteId: mode === 'new' ? null : siteId,
-      surface: nextSurface,
+      surface: mode === 'new' ? 'site' : nextSurface,
       enabled,
-    });
+    };
+
+    if (
+      onAccessModeResetConfirm &&
+      wouldLoseDomainAdmin({
+        mode,
+        adminAccess,
+        initial,
+        sites,
+        nextSurface: payload.surface,
+        nextEnabled: payload.enabled,
+        nextSiteId: payload.siteId,
+      })
+    ) {
+      onAccessModeResetConfirm(payload);
+      return;
+    }
+
+    onSave(payload);
   };
 
   return (
@@ -172,9 +287,11 @@ export function HostFormDialog({
               title={
                 mode === 'new'
                   ? 'Assign a site after ownership is verified'
-                  : siteSelectLocked
-                    ? 'Verify ownership before assigning a site'
-                    : undefined
+                  : hostProtected
+                    ? 'Protected system host stays on the Main site'
+                    : siteSelectLocked
+                      ? 'Verify ownership before assigning a site'
+                      : undefined
               }
               aria-invalid={Boolean(errors.siteId) || undefined}
               onChange={(event) => {
@@ -195,20 +312,16 @@ export function HostFormDialog({
               id={surfaceId}
               label="Surface:"
               accessKey="u"
-              value={surfaceLockedToSite ? 'site' : surface}
-              disabled={saving || surfaceLockedToSite}
-              title={
-                surfaceLockedToSite
-                  ? 'Admin surface is only available on the Main site'
-                  : undefined
-              }
+              value={surfaceSelectable ? surface : 'site'}
+              disabled={saving || !surfaceSelectable}
+              title={surfaceTitle}
               aria-invalid={Boolean(errors.surface) || undefined}
               onChange={(event) =>
                 setSurface(event.target.value as HostFormSurface)
               }
             >
               <option value="site">site</option>
-              {!surfaceLockedToSite ? <option value="admin">admin</option> : null}
+              {surfaceSelectable ? <option value="admin">admin</option> : null}
             </Select>
           </FieldRow>
           <FieldRow>
@@ -217,7 +330,12 @@ export function HostFormDialog({
               label="Enabled"
               accessKey="e"
               checked={enabled}
-              disabled={saving}
+              disabled={saving || hostProtected}
+              title={
+                hostProtected
+                  ? 'Protected system host cannot be disabled'
+                  : undefined
+              }
               aria-invalid={Boolean(errors.enabled) || undefined}
               onChange={(event) => setEnabled(event.target.checked)}
             />

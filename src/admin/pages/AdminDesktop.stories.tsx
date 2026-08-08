@@ -10,8 +10,8 @@ const SAMPLE_SITES = [
 ];
 
 const SAMPLE_API_SITES: AdminApiSite[] = [
-  { id: 1, name: 'Example Site', slug: 'example', enabled: true, hostCount: 2 },
-  { id: 2, name: 'Docs', slug: 'docs', enabled: true, hostCount: 1 },
+  { id: 1, name: 'Example Site', slug: 'example', enabled: true, protected: false, hostCount: 2 },
+  { id: 2, name: 'Docs', slug: 'docs', enabled: true, protected: false, hostCount: 1 },
 ];
 
 const SAMPLE_API_HOSTS: AdminApiHost[] = [
@@ -24,6 +24,7 @@ const SAMPLE_API_HOSTS: AdminApiHost[] = [
     surface: 'admin',
     verification: 'verified',
     enabled: true,
+    protected: false,
   },
   {
     id: 11,
@@ -34,6 +35,7 @@ const SAMPLE_API_HOSTS: AdminApiHost[] = [
     surface: 'site',
     verification: 'verified',
     enabled: true,
+    protected: false,
   },
 ];
 
@@ -62,6 +64,7 @@ function createMockAdminApi(
         name: body.name,
         slug: body.slug,
         enabled: body.enabled ?? true,
+        protected: false,
         hostCount: 0,
       };
       siteRows = [...siteRows, created];
@@ -143,6 +146,7 @@ function createMockAdminApi(
         surface: body.surface ?? 'site',
         verification: 'pending',
         enabled: body.enabled ?? true,
+        protected: false,
       };
       hostRows = [...hostRows, created];
       return { ok: true, status: 201, data: created };
@@ -204,7 +208,7 @@ function createMockAdminApi(
             : row,
         );
       }
-      return { ok: true, status: 204, data: undefined };
+      return { ok: true, status: 200, data: { deleted: true as const } };
     },
     unassignHost: async (id) => {
       const existing = hostRows.find((row) => row.id === id);

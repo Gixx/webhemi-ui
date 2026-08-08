@@ -25,6 +25,7 @@ export type AdminApiSite = {
   slug: string;
   name: string;
   enabled: boolean;
+  protected: boolean;
   hostCount: number;
 };
 
@@ -37,6 +38,11 @@ export type AdminApiHost = {
   surface: 'admin' | 'site';
   verification: 'pending' | 'verified';
   enabled: boolean;
+  protected: boolean;
+  /** Present after PATCH/unassign when domain access was forced to path. */
+  accessModeReset?: boolean;
+  loginUrl?: string;
+  sessionEnded?: boolean;
 };
 
 export type AdminApiSettings = {
@@ -52,6 +58,14 @@ export type AdminApiSettings = {
     register: string;
   };
   /** Present after PATCH when access mode changed (absolute admin login URL). */
+  loginUrl?: string;
+  sessionEnded?: boolean;
+};
+
+/** DELETE /hosts/{id} — sessionEnded when domain access was forced back to path. */
+export type AdminApiHostDeleteResult = {
+  deleted: true;
+  accessModeReset?: boolean;
   loginUrl?: string;
   sessionEnded?: boolean;
 };

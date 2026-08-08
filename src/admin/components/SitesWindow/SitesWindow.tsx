@@ -13,6 +13,7 @@ import {
 import { DesktopModal } from '../../bricks/DesktopModal';
 import { HeadingPanelWindow } from '../../bricks/HeadingPanelWindow';
 import { MessageDialog } from '../../bricks/MessageDialog';
+import { ACCESS_MODE_RESET_WARNING } from '../../lib/accessModeResetWarning';
 import { playAdminSound } from '../../lib/playAdminSound';
 import { cn } from '../../../lib/cn';
 import {
@@ -26,6 +27,8 @@ export type SitesWindowSite = {
   slug: string;
   name: string;
   enabled: boolean;
+  /** Installer/seed Main site — not deletable/disableable; slug locked. */
+  protected?: boolean;
   hostCount: number;
 };
 
@@ -39,6 +42,11 @@ export type SitesWindowProps = {
   sites?: SitesWindowSite[];
   /** Hosts available for assignment in New/Edit (props until Hosts API). */
   hosts?: SiteFormHostOption[];
+  /**
+   * Configured install access mode — escalates unassign when removing the
+   * admin host under domain mode.
+   */
+  adminAccess?: 'path' | 'domain' | null;
   canEdit?: boolean;
   loading?: boolean;
   /** Window-level load error — Error MessageDialog + chord. */
@@ -103,6 +111,7 @@ type FormState =
       name: string;
       slug: string;
       enabled: boolean;
+      protected?: boolean;
       title?: string;
     };
 
@@ -131,6 +140,7 @@ function formatSaveErrors(
 export function SitesWindow({
   sites = [],
   hosts = [],
+  adminAccess = null,
   canEdit = false,
   loading = false,
   error = null,
@@ -169,9 +179,13 @@ export function SitesWindow({
   const [showFormErrors, setShowFormErrors] = useState(false);
   const [alert, setAlert] = useState<AlertState>(null);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState>(null);
+  const [pendingAccessResetUnassign, setPendingAccessResetUnassign] = useState<
+    number | null
+  >(null);
   const wasSavingRef = useRef(false);
   const alertSoundKeyRef = useRef<string | null>(null);
   const confirmSoundKeyRef = useRef<string | null>(null);
+  const accessResetSoundKeyRef = useRef<string | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -209,6 +223,34 @@ export function SitesWindow({
     setConfirmDelete(null);
     confirmSoundKeyRef.current = null;
   }, []);
+
+  const openAccessResetUnassign = useCallback(
+    (hostId: number) => {
+      const key = `access-reset-unassign\0${hostId}`;
+      setPendingAccessResetUnassign(hostId);
+      if (accessResetSoundKeyRef.current === key) {
+        return;
+      }
+      accessResetSoundKeyRef.current = key;
+      playAdminSound('chord', errorSoundUrl);
+    },
+    [errorSoundUrl],
+  );
+
+  const closeAccessResetUnassign = useCallback(() => {
+    setPendingAccessResetUnassign(null);
+    accessResetSoundKeyRef.current = null;
+  }, []);
+
+  const confirmAccessResetUnassign = useCallback(() => {
+    if (pendingAccessResetUnassign == null || !onUnassignHost) {
+      closeAccessResetUnassign();
+      return;
+    }
+    const hostId = pendingAccessResetUnassign;
+    closeAccessResetUnassign();
+    onUnassignHost(hostId);
+  }, [pendingAccessResetUnassign, closeAccessResetUnassign, onUnassignHost]);
 
   useEffect(() => {
     if (selectedId != null && !sites.some((site) => site.id === selectedId)) {
@@ -302,6 +344,7 @@ export function SitesWindow({
       name: target.name,
       slug: target.slug,
       enabled: target.enabled,
+      protected: target.protected,
       title: target.name,
     });
   };
@@ -309,6 +352,7 @@ export function SitesWindow({
   const closeForm = () => {
     setShowFormErrors(false);
     setForm({ open: false });
+    closeAccessResetUnassign();
   };
 
   const handleFormSave = (payload: SiteFormSavePayload) => {
@@ -324,7 +368,7 @@ export function SitesWindow({
   };
 
   const handleDelete = () => {
-    if (!canEdit || !selected || !onDelete || busy) {
+    if (!canEdit || !selected || !onDelete || busy || selected.protected) {
       return;
     }
     openDeleteConfirm(selected);
@@ -403,7 +447,14 @@ export function SitesWindow({
             <Button
               type="button"
               accessKey="d"
-              disabled={busy || !hasSelection || !onDelete}
+              disabled={
+                busy || !hasSelection || !onDelete || Boolean(selected?.protected)
+              }
+              title={
+                selected?.protected
+                  ? 'Protected system site cannot be deleted'
+                  : undefined
+              }
               onClick={handleDelete}
             >
               Delete
@@ -477,9 +528,11 @@ export function SitesWindow({
                 name: form.name,
                 slug: form.slug,
                 enabled: form.enabled,
+                protected: form.protected,
                 title: form.title,
               }}
               hosts={hosts}
+              adminAccess={adminAccess}
               fieldErrors={showFormErrors ? fieldErrors : undefined}
               saving={saving}
               unassigning={unassigning}
@@ -494,6 +547,21 @@ export function SitesWindow({
                   : undefined
               }
               onUnassignHost={onUnassignHost}
+              onAccessModeResetUnassign={openAccessResetUnassign}
+            />
+          </DesktopModal>
+        ) : null}
+
+        {pendingAccessResetUnassign != null ? (
+          <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
+            <MessageDialog
+              type="warning"
+              title="Warning"
+              message={ACCESS_MODE_RESET_WARNING}
+              confirmLabel="OK"
+              cancelLabel="Cancel"
+              onClose={closeAccessResetUnassign}
+              onConfirm={confirmAccessResetUnassign}
             />
           </DesktopModal>
         ) : null}

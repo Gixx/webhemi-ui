@@ -77,7 +77,8 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     raw.kind === 'site' ||
     raw.kind === 'control-panel' ||
     raw.kind === 'sites' ||
-    raw.kind === 'hosts'
+    raw.kind === 'hosts' ||
+    raw.kind === 'settings'
       ? raw.kind
       : null;
   if (!kind) {
@@ -220,7 +221,7 @@ export function windowFromEntry(entry: PersistedWindowEntry): ShellWindowState {
 
 /**
  * Hydrate open windows from storage for the current site list.
- * Drops unknown site ids; keeps control-panel / sites / hosts when present and open.
+ * Drops unknown site ids; keeps control-panel / sites / hosts / settings when present and open.
  */
 export function hydrateDesktopFromPersistence(
   persisted: PersistedDesktopState | null,

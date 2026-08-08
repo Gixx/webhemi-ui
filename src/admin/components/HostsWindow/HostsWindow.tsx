@@ -13,6 +13,10 @@ import {
 import { DesktopModal } from '../../bricks/DesktopModal';
 import { HeadingPanelWindow } from '../../bricks/HeadingPanelWindow';
 import { MessageDialog } from '../../bricks/MessageDialog';
+import {
+  ACCESS_MODE_RESET_WARNING,
+  DELETE_ADMIN_HOST_ACCESS_RESET_WARNING,
+} from '../../lib/accessModeResetWarning';
 import { playAdminSound } from '../../lib/playAdminSound';
 import { cn } from '../../../lib/cn';
 import {
@@ -31,12 +35,21 @@ export type HostsWindowHost = {
   surface: HostFormSurface;
   verification: 'pending' | 'verified';
   enabled: boolean;
+  /** Primary www (site-surface) host — not deletable/disableable. */
+  protected?: boolean;
 };
 
 export type HostsWindowProps = {
   hosts?: HostsWindowHost[];
   /** Sites for the New/Edit Site select. */
   sites?: HostFormSiteOption[];
+  /**
+   * Configured install access mode (`access.admin`).
+   * `null` = unknown (e.g. settings not loaded) — treat admin-surface delete as risky.
+   * When `domain`, deleting the admin-surface host shows an escalated confirm
+   * (path fallback + re-login).
+   */
+  adminAccess?: 'path' | 'domain' | null;
   canEdit?: boolean;
   loading?: boolean;
   /** Window-level load error — Error MessageDialog + chord. */
@@ -88,11 +101,15 @@ type FormState =
       surface: HostFormSurface;
       enabled: boolean;
       verification?: 'pending' | 'verified';
+      protected?: boolean;
       title?: string;
     };
 
 type AlertState = { title: string; message: string } | null;
-type ConfirmDeleteState = { host: HostsWindowHost } | null;
+type ConfirmDeleteState = {
+  host: HostsWindowHost;
+  resetsAccessMode: boolean;
+} | null;
 
 function formatSaveErrors(
   formError: string | null | undefined,
@@ -119,6 +136,7 @@ function formatSaveErrors(
 export function HostsWindow({
   hosts = [],
   sites = [],
+  adminAccess = null,
   canEdit = false,
   loading = false,
   error = null,
@@ -154,9 +172,12 @@ export function HostsWindow({
   const [showFormErrors, setShowFormErrors] = useState(false);
   const [alert, setAlert] = useState<AlertState>(null);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState>(null);
+  const [pendingAccessReset, setPendingAccessReset] =
+    useState<HostFormSavePayload | null>(null);
   const wasSavingRef = useRef(false);
   const alertSoundKeyRef = useRef<string | null>(null);
   const confirmSoundKeyRef = useRef<string | null>(null);
+  const accessResetSoundKeyRef = useRef<string | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -180,21 +201,51 @@ export function HostsWindow({
 
   const openDeleteConfirm = useCallback(
     (host: HostsWindowHost) => {
-      const key = `delete\0${host.id}`;
-      setConfirmDelete({ host });
+      const resetsAccessMode =
+        host.surface === 'admin' && adminAccess !== 'path';
+      const key = `delete\0${host.id}\0${resetsAccessMode ? 'reset' : 'plain'}`;
+      setConfirmDelete({ host, resetsAccessMode });
       if (confirmSoundKeyRef.current === key) {
         return;
       }
       confirmSoundKeyRef.current = key;
-      playAdminSound('ding', dingSoundUrl);
+      playAdminSound(resetsAccessMode ? 'chord' : 'ding', dingSoundUrl);
     },
-    [dingSoundUrl],
+    [adminAccess, dingSoundUrl],
   );
 
   const closeDeleteConfirm = useCallback(() => {
     setConfirmDelete(null);
     confirmSoundKeyRef.current = null;
   }, []);
+
+  const openAccessResetConfirm = useCallback(
+    (payload: HostFormSavePayload) => {
+      const key = `access-reset\0${payload.hostId ?? 'new'}\0${payload.surface}\0${payload.enabled}\0${payload.siteId}`;
+      setPendingAccessReset(payload);
+      if (accessResetSoundKeyRef.current === key) {
+        return;
+      }
+      accessResetSoundKeyRef.current = key;
+      playAdminSound('chord', errorSoundUrl);
+    },
+    [errorSoundUrl],
+  );
+
+  const closeAccessResetConfirm = useCallback(() => {
+    setPendingAccessReset(null);
+    accessResetSoundKeyRef.current = null;
+  }, []);
+
+  const confirmAccessResetSave = useCallback(() => {
+    if (!pendingAccessReset) {
+      return;
+    }
+    const payload = pendingAccessReset;
+    closeAccessResetConfirm();
+    setShowFormErrors(true);
+    onSave?.(payload);
+  }, [pendingAccessReset, closeAccessResetConfirm, onSave]);
 
   useEffect(() => {
     if (selectedId != null && !hosts.some((row) => row.id === selectedId)) {
@@ -295,6 +346,7 @@ export function HostsWindow({
       surface: target.surface,
       enabled: target.enabled,
       verification: target.verification,
+      protected: target.protected,
       title: target.host,
     });
   };
@@ -302,6 +354,7 @@ export function HostsWindow({
   const closeForm = () => {
     setShowFormErrors(false);
     setForm({ open: false });
+    closeAccessResetConfirm();
     onClearFormError?.();
   };
 
@@ -311,7 +364,7 @@ export function HostsWindow({
   };
 
   const handleDelete = () => {
-    if (!canEdit || !selected || !onDelete || busy) {
+    if (!canEdit || !selected || !onDelete || busy || selected.protected) {
       return;
     }
     openDeleteConfirm(selected);
@@ -411,7 +464,14 @@ export function HostsWindow({
             <Button
               type="button"
               accessKey="d"
-              disabled={busy || !hasSelection || !onDelete}
+              disabled={
+                busy || !hasSelection || !onDelete || Boolean(selected?.protected)
+              }
+              title={
+                selected?.protected
+                  ? 'Protected system host cannot be deleted'
+                  : undefined
+              }
               onClick={handleDelete}
             >
               Delete
@@ -489,14 +549,34 @@ export function HostsWindow({
                 surface: form.surface,
                 enabled: form.enabled,
                 verification: form.verification,
+                protected: form.protected,
                 title: form.title,
               }}
               sites={sites}
+              adminSurfaceHostId={
+                hosts.find((row) => row.surface === 'admin')?.id ?? null
+              }
+              adminAccess={adminAccess}
               fieldErrors={showFormErrors ? fieldErrors : undefined}
               saving={saving}
               onSave={handleFormSave}
+              onAccessModeResetConfirm={openAccessResetConfirm}
               onError={showErrorAlert}
               onClose={closeForm}
+            />
+          </DesktopModal>
+        ) : null}
+
+        {pendingAccessReset ? (
+          <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
+            <MessageDialog
+              type="warning"
+              title="Warning"
+              message={ACCESS_MODE_RESET_WARNING}
+              confirmLabel="OK"
+              cancelLabel="Cancel"
+              onClose={closeAccessResetConfirm}
+              onConfirm={confirmAccessResetSave}
             />
           </DesktopModal>
         ) : null}
@@ -504,9 +584,13 @@ export function HostsWindow({
         {confirmDelete ? (
           <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
             <MessageDialog
-              type="question"
-              title="Confirm"
-              message={`Delete host “${confirmDelete.host.host}”? This cannot be undone.`}
+              type={confirmDelete.resetsAccessMode ? 'warning' : 'question'}
+              title={confirmDelete.resetsAccessMode ? 'Warning' : 'Confirm'}
+              message={
+                confirmDelete.resetsAccessMode
+                  ? `Delete host “${confirmDelete.host.host}”?\n\n${DELETE_ADMIN_HOST_ACCESS_RESET_WARNING}`
+                  : `Delete host “${confirmDelete.host.host}”? This cannot be undone.`
+              }
               onClose={closeDeleteConfirm}
               onConfirm={confirmDeleteHost}
             />

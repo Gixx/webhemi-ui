@@ -1,6 +1,7 @@
 import type {
   AdminApiErrorBody,
   AdminApiHost,
+  AdminApiHostDeleteResult,
   AdminApiResult,
   AdminApiSettings,
   AdminApiSite,
@@ -224,7 +225,7 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
         body: JSON.stringify(body),
       }),
     deleteHost: (id: number) =>
-      request<undefined>(`/hosts/${id}`, {
+      request<AdminApiHostDeleteResult>(`/hosts/${id}`, {
         method: 'DELETE',
       }),
     unassignHost: (id: number) =>

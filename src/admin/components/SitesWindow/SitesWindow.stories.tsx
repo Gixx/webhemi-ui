@@ -4,16 +4,51 @@ import { SitesWindow, type SitesWindowSite } from './SitesWindow';
 import type { SiteFormHostOption } from './SiteFormDialog';
 
 const SAMPLE_SITES: SitesWindowSite[] = [
-  { id: 1, name: 'Main site', slug: 'main', enabled: true, hostCount: 2 },
-  { id: 2, name: 'Blog', slug: 'blog', enabled: true, hostCount: 1 },
-  { id: 3, name: 'Archive', slug: 'archive', enabled: false, hostCount: 0 },
+  { id: 1, name: 'Main site', slug: 'main', enabled: true, protected: true, hostCount: 2 },
+  { id: 2, name: 'Blog', slug: 'blog', enabled: true, protected: false, hostCount: 1 },
+  { id: 3, name: 'Archive', slug: 'archive', enabled: false, protected: false, hostCount: 0 },
 ];
 
 const SAMPLE_HOSTS: SiteFormHostOption[] = [
-  { id: 10, host: 'admin.example.test', siteId: 1, siteName: 'Main site', status: 'verified' },
-  { id: 11, host: 'www.example.test', siteId: 1, siteName: 'Main site', status: 'pending' },
-  { id: 12, host: 'blog.example.test', siteId: 2, siteName: 'Blog', status: 'verified' },
-  { id: 13, host: 'unused.example.test', siteId: null, status: 'verified' },
+  {
+    id: 10,
+    host: 'admin.example.test',
+    siteId: 1,
+    siteName: 'Main site',
+    status: 'verified',
+    surface: 'admin',
+    enabled: true,
+    protected: false,
+  },
+  {
+    id: 11,
+    host: 'www.example.test',
+    siteId: 1,
+    siteName: 'Main site',
+    status: 'pending',
+    surface: 'site',
+    enabled: true,
+    protected: true,
+  },
+  {
+    id: 12,
+    host: 'blog.example.test',
+    siteId: 2,
+    siteName: 'Blog',
+    status: 'verified',
+    surface: 'site',
+    enabled: true,
+    protected: false,
+  },
+  {
+    id: 13,
+    host: 'unused.example.test',
+    siteId: null,
+    status: 'verified',
+    surface: 'site',
+    enabled: true,
+    protected: false,
+  },
 ];
 
 const meta = {
@@ -249,5 +284,13 @@ export const DeleteConfirmCancel: Story = {
     const dialog = canvasElement.querySelector('.message-dialog') as HTMLElement;
     await userEvent.click(within(dialog).getByRole('button', { name: /^no$/i }));
     await expect(args.onDelete).not.toHaveBeenCalled();
+  },
+};
+
+export const ProtectedSiteDeleteDisabled: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('row', { name: /main site/i }));
+    await expect(canvas.getByRole('button', { name: /^delete$/i })).toBeDisabled();
   },
 };
