@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
 import { Badge } from './components/Badge/Badge';
 import { Button } from './components/Button/Button';
 import { Checkbox } from './components/Checkbox/Checkbox';
@@ -7,8 +6,6 @@ import { FormField } from './components/FormField/FormField';
 import { Icon } from './components/Icon/Icon';
 import { Input } from './components/Input/Input';
 import { Select } from './components/Select/Select';
-import { Modal } from '../admin/components/Modal/Modal';
-import { Pagination } from '../admin/components/Pagination/Pagination';
 
 const meta = {
   title: 'Shared/Molecules',
@@ -17,10 +14,8 @@ const meta = {
 
 export default meta;
 
-/** Shared atoms composed with Admin Theme chrome (Modal, Pagination). */
+/** Shared leftover atoms (moving into themes/default). */
 function MoleculesShowcase() {
-  const [open, setOpen] = useState(false);
-
   return (
     <div className="wh-ui space-y-6 p-4">
       <div className="flex gap-2">
@@ -39,23 +34,7 @@ function MoleculesShowcase() {
         </Select>
       </FormField>
       <Checkbox label="Active" defaultChecked />
-      <Pagination page={2} pageCount={5} onPageChange={() => undefined} />
-      <Button onClick={() => setOpen(true)}>Open modal</Button>
-      <Modal
-        open={open}
-        title="Confirm"
-        onClose={() => setOpen(false)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setOpen(false)}>Confirm</Button>
-          </>
-        }
-      >
-        Verify ownership for this host?
-      </Modal>
+      <Button type="button">Save</Button>
     </div>
   );
 }
