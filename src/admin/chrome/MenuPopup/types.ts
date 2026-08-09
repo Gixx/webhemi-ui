@@ -49,7 +49,12 @@ export function isAdminMenuCheckable(
   return item.role === 'menuitemcheckbox' || item.role === 'menuitemradio';
 }
 
-/** Derive leading gutter: pure check menus → check; else icon column if any icon. */
+/**
+ * Leading gutter:
+ * - any checkable row → check column (View-style; command rows get an empty check cell)
+ * - else any command icon → icon column
+ * - else none
+ */
 export function resolveMenuGutterMode(items: AdminMenuItem[]): MenuGutterMode {
   const rows = items.filter(
     (item): item is Extract<AdminMenuItem, { kind: 'item' }> => item.kind === 'item',
@@ -57,8 +62,7 @@ export function resolveMenuGutterMode(items: AdminMenuItem[]): MenuGutterMode {
   if (rows.length === 0) {
     return 'none';
   }
-  const allCheckable = rows.every((item) => isAdminMenuCheckable(item));
-  if (allCheckable) {
+  if (rows.some((item) => isAdminMenuCheckable(item))) {
     return 'check';
   }
   const anyIcon = rows.some(

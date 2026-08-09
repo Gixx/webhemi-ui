@@ -11,6 +11,8 @@ import {
 
 export type MenuPopupProps = {
   items: AdminMenuItem[];
+  /** Optional DOM id (e.g. menubar `aria-controls` target). */
+  id?: string;
   /** Accessible name for the `role="menu"` surface. */
   'aria-label'?: string;
   className?: string;
@@ -58,12 +60,14 @@ function LeadingGutter({
  */
 export function MenuPopup({
   items,
+  id,
   'aria-label': ariaLabel = 'Menu',
   className,
   style,
   onItemActivate,
 }: MenuPopupProps) {
-  const baseId = useId();
+  const generatedId = useId();
+  const baseId = id ?? generatedId;
   const rootRef = useRef<HTMLDivElement>(null);
   const gutterMode = resolveMenuGutterMode(items);
 

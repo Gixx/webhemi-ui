@@ -77,79 +77,13 @@
   text-shadow: none;
 }
 
-.explorer-menu {
+/* Dropdown panel: shared MenuPopup chrome; this only anchors under the menubar. */
+.explorer-menu.menu-popup {
   position: absolute;
   top: 100%;
   left: 0;
   z-index: 20;
   min-width: 180px;
-  margin: 0;
-  padding: 2px;
-  background: var(--surface, #c0c0c0);
-  @include bevel-raised;
-  box-sizing: border-box;
-}
-
-.explorer-menu-separator {
-  height: 0;
-  margin: 3px 2px;
-  border: none;
-  border-top: 1px solid var(--button-shadow, #808080);
-  border-bottom: 1px solid var(--button-highlight, #fff);
-}
-
-.explorer-menu-item {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  height: auto;
-  margin: 0;
-  padding: 2px 12px 2px 4px;
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  color: #000;
-  font: inherit;
-  text-align: left;
-  cursor: default;
-}
-
-.explorer-menu-item:not(:disabled):hover,
-.explorer-menu-item:not(:disabled):focus {
-  background: var(--dialog-blue, #000080);
-  color: var(--button-highlight, #fff);
-  box-shadow: none;
-  outline: none;
-}
-
-.explorer-menu-item:disabled,
-.explorer-menu-item.is-disabled {
-  color: var(--button-shadow, #808080);
-  text-shadow: 1px 1px 0 var(--button-highlight, #fff);
-}
-
-.explorer-menu-item:disabled:hover,
-.explorer-menu-item:disabled:focus {
-  background: transparent;
-  color: var(--button-shadow, #808080);
-}
-
-.explorer-menu-check {
-  display: inline-flex;
-  flex: 0 0 14px;
-  width: 14px;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-}
-
-.explorer-menu-label {
-  flex: 1 1 auto;
-  white-space: nowrap;
 }
 
 .explorer-panel-layout > .explorer-chrome-separator {

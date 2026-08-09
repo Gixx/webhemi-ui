@@ -4,7 +4,9 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
+import { MenuPopup, type AdminMenuItem } from '../../chrome/MenuPopup';
 import { underlineAccessKey } from '../../chrome/_lib/underlineAccessKey';
 import { cn } from '../../../lib/cn';
 import type { ExplorerView } from './types';
@@ -35,24 +37,15 @@ export type ExplorerMenuBarProps = {
 
 type MenuId = 'file' | 'edit' | 'view' | 'help';
 
-type MenuItem =
-  | { kind: 'separator'; id: string }
-  | {
-      kind: 'item';
-      id: string;
-      label: string;
-      accessKey: string;
-      disabled?: boolean;
-      checked?: boolean;
-      role?: 'menuitem' | 'menuitemradio' | 'menuitemcheckbox';
-      onSelect?: () => void;
-    };
-
 function MenuLabel({ text, accessKey }: { text: string; accessKey: string }) {
   return <>{underlineAccessKey(text, accessKey)}</>;
 }
 
-function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
+function menuGlyph(kind: string): ReactNode {
+  return <span className={`menu-popup-glyph ${kind}`} />;
+}
+
+function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, AdminMenuItem[]> {
   const {
     view,
     onViewChange,
@@ -115,6 +108,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'delete',
         label: 'Delete',
         accessKey: 'D',
+        icon: menuGlyph('delete'),
         disabled: !onDelete,
         onSelect: onDelete,
       },
@@ -123,6 +117,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'properties',
         label: 'Properties',
         accessKey: 'R',
+        icon: menuGlyph('properties'),
         disabled: !onProperties,
         onSelect: onProperties,
       },
@@ -142,6 +137,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'undo',
         label: 'Undo',
         accessKey: 'U',
+        icon: menuGlyph('undo'),
         disabled: !onUndo,
         onSelect: onUndo,
       },
@@ -151,6 +147,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'cut',
         label: 'Cut',
         accessKey: 'T',
+        icon: menuGlyph('cut'),
         disabled: !onCut,
         onSelect: onCut,
       },
@@ -159,6 +156,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'copy',
         label: 'Copy',
         accessKey: 'C',
+        icon: menuGlyph('copy'),
         disabled: !onCopy,
         onSelect: onCopy,
       },
@@ -167,6 +165,7 @@ function buildMenus(props: ExplorerMenuBarProps): Record<MenuId, MenuItem[]> {
         id: 'paste',
         label: 'Paste',
         accessKey: 'P',
+        icon: menuGlyph('paste'),
         disabled: !onPaste,
         onSelect: onPaste,
       },
@@ -253,6 +252,7 @@ const TOP_LEVEL: { id: MenuId; label: string; accessKey: string }[] = [
 
 /**
  * Win98-style window menubar for FileExplorer (above the toolbar).
+ * Dropdown panels use shared {@link MenuPopup} (optional icons / check gutter).
  * Not the taskbar Start button — that uses `menu.svg` separately.
  */
 export function ExplorerMenuBar(props: ExplorerMenuBarProps) {
@@ -285,14 +285,6 @@ export function ExplorerMenuBar(props: ExplorerMenuBarProps) {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [openMenu]);
-
-  const activateItem = (item: Extract<MenuItem, { kind: 'item' }>) => {
-    if (item.disabled || !item.onSelect) {
-      return;
-    }
-    item.onSelect();
-    setOpenMenu(null);
-  };
 
   const onMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>, menuId: MenuId) => {
     if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
@@ -341,42 +333,13 @@ export function ExplorerMenuBar(props: ExplorerMenuBarProps) {
               <MenuLabel text={top.label} accessKey={top.accessKey} />
             </button>
             {expanded ? (
-              <div id={menuId} className="explorer-menu" role="menu" aria-label={top.label}>
-                {items.map((item) => {
-                  if (item.kind === 'separator') {
-                    return <div key={item.id} className="explorer-menu-separator" role="separator" />;
-                  }
-
-                  const role = item.role ?? 'menuitem';
-
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role={role}
-                      className={cn(
-                        'explorer-menu-item',
-                        item.checked && 'is-checked',
-                        item.disabled && 'is-disabled',
-                      )}
-                      disabled={item.disabled}
-                      aria-checked={
-                        role === 'menuitemradio' || role === 'menuitemcheckbox'
-                          ? item.checked
-                          : undefined
-                      }
-                      onClick={() => activateItem(item)}
-                    >
-                      <span className="explorer-menu-check" aria-hidden>
-                        {item.checked ? '✓' : ''}
-                      </span>
-                      <span className="explorer-menu-label">
-                        <MenuLabel text={item.label} accessKey={item.accessKey} />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <MenuPopup
+                id={menuId}
+                className="explorer-menu"
+                aria-label={top.label}
+                items={items}
+                onItemActivate={() => setOpenMenu(null)}
+              />
             ) : null}
           </div>
         );

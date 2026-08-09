@@ -319,6 +319,10 @@ export const MenuBar: Story = {
     );
 
     await userEvent.click(canvas.getByRole('menuitem', { name: 'File' }));
+    const fileMenu = canvas.getByRole('menu', { name: 'File' });
+    await expect(fileMenu).toHaveClass('has-icon-gutter');
+    await expect(fileMenu).not.toHaveClass('has-check-gutter');
+    await expect(within(fileMenu).getByRole('menuitem', { name: 'Delete' }).querySelector('.menu-popup-glyph.delete')).toBeTruthy();
     await expect(canvas.getByRole('menuitem', { name: 'New Folder' })).toBeDisabled();
     await expect(canvas.getByRole('menuitem', { name: 'Open' })).toBeDisabled();
     await expect(canvas.getByRole('menuitem', { name: 'Close' })).toBeEnabled();
@@ -331,7 +335,16 @@ export const MenuBar: Story = {
     await expect(canvas.getByRole('menuitem', { name: 'Open' })).toBeEnabled();
     await userEvent.keyboard('{Escape}');
 
+    await userEvent.click(canvas.getByRole('menuitem', { name: 'Edit' }));
+    const editMenu = canvas.getByRole('menu', { name: 'Edit' });
+    await expect(editMenu).toHaveClass('has-icon-gutter');
+    await expect(within(editMenu).getByRole('menuitem', { name: 'Cut' }).querySelector('.menu-popup-glyph.cut')).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+
     await userEvent.click(canvas.getByRole('menuitem', { name: 'View' }));
+    const viewMenu = canvas.getByRole('menu', { name: 'View' });
+    await expect(viewMenu).toHaveClass('has-check-gutter');
+    await expect(viewMenu).not.toHaveClass('has-icon-gutter');
     await userEvent.click(canvas.getByRole('menuitemradio', { name: /Details/ }));
     await expect(canvas.getByRole('button', { name: 'Details' })).toHaveAttribute(
       'aria-pressed',
