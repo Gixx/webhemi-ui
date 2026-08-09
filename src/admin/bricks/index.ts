@@ -76,9 +76,11 @@ export {
 } from './FileExplorerWindow';
 export {
   PaneWindowShell,
+  type PaneWindowShellProps,
+} from './_lib/PaneWindowShell';
+export {
   TITLE_BAR_ICON_OPTIONS,
   resolveTitleBarIcon,
-  type PaneWindowShellProps,
   type TitleBarIconKind,
   type TitleBarIconOption,
-} from './_lib/PaneWindowShell';
+} from './_lib/titleBarIcon';

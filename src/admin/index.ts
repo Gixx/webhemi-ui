@@ -45,7 +45,6 @@ export {
 } from './components/SettingsWindow/SettingsWindow';
 export {
   HostFormDialog,
-  MAIN_SITE_SLUG,
   type HostFormDialogProps,
   type HostFormMode,
   type HostFormSavePayload,
@@ -53,5 +52,6 @@ export {
   type HostFormSurface,
   type HostFormValues,
 } from './components/HostsWindow/HostFormDialog';
+export { MAIN_SITE_SLUG, wouldLoseDomainAdmin } from './components/HostsWindow/hostFormAccess';
 export { LoginPage, type LoginPageProps } from './pages/LoginPage';
 export { AdminDesktop, type AdminDesktopProps, type DesktopSite } from './pages/AdminDesktop';

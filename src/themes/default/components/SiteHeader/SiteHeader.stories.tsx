@@ -11,9 +11,9 @@ const meta = {
   args: {
     siteName: 'WebHemi',
     navItems: [
-      { label: 'Home', href: '#', active: true },
-      { label: 'Blog', href: '#' },
-      { label: 'About', href: '#' },
+      { label: 'Home', href: '#home', active: true },
+      { label: 'Blog', href: '#blog' },
+      { label: 'About', href: '#about' },
     ],
   },
 } satisfies Meta<typeof SiteHeader>;

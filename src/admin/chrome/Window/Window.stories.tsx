@@ -4,7 +4,7 @@ import {
   resolveTitleBarIcon,
   TITLE_BAR_ICON_OPTIONS,
   type TitleBarIconOption,
-} from '../../bricks/_lib/PaneWindowShell';
+} from '../../bricks/_lib/titleBarIcon';
 import {
   Window,
   TitleBar,

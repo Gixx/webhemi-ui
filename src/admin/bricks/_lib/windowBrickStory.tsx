@@ -5,7 +5,7 @@ import {
   resolveTitleBarIcon,
   TITLE_BAR_ICON_OPTIONS,
   type TitleBarIconOption,
-} from './PaneWindowShell';
+} from './titleBarIcon';
 
 /** Title-bar control checkboxes (order matches Win98 convention). */
 export const TITLE_BAR_CONTROL_OPTIONS: TitleBarAction[] = [

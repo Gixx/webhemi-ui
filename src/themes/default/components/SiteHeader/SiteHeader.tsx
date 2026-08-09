@@ -27,7 +27,7 @@ export function SiteHeader({ siteName, navItems = [], actions, className }: Site
         <nav className="flex flex-1 items-center gap-4" aria-label="Primary">
           {navItems.map((item) => (
             <a
-              key={item.href}
+              key={`${item.label}:${item.href}`}
               href={item.href}
               className={cn(
                 'text-sm no-underline',

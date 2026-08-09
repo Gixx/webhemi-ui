@@ -761,7 +761,7 @@ export const MswCreateSite: Story = {
     await userEvent.click(canvas.getByRole('button', { name: /^ok$/i }));
 
     const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
-    await expect(within(table).getByText('Blog')).toBeVisible();
+    await expect(await within(table).findByText('Blog')).toBeVisible();
     await expect(within(table).getByText('blog')).toBeVisible();
   },
 };

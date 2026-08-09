@@ -17,7 +17,7 @@ import {
 } from '../../chrome';
 import { PaneWindowShell } from '../../bricks/_lib/PaneWindowShell';
 import { cn } from '../../../lib/cn';
-import { MAIN_SITE_SLUG } from '../HostsWindow/HostFormDialog';
+import { MAIN_SITE_SLUG } from '../HostsWindow/hostFormAccess';
 
 export type SiteFormHostStatus = 'pending' | 'verified';
 
