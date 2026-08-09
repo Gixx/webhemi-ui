@@ -4,6 +4,11 @@ export * from './api';
 export { adminAsset, adminIconAsset, ADMIN_ASSETS_BASE } from './lib/assetPaths';
 export { playAdminSound, type AdminSoundName } from './lib/playAdminSound';
 export {
+  parseAdminDeepLink,
+  type AdminDeepLink,
+  type AdminDeepLinkWindow,
+} from './lib/deepLink';
+export {
   flashOwnedModalAttention,
   findTopOwnedFloatingModal,
   findTopFloatingModal,

@@ -413,6 +413,8 @@ const meta = {
     logoutHref: '/logout',
     // Isolation for interaction tests (product default key is enabled in app).
     persistenceKey: false as const,
+    // Ignore Storybook iframe query; deep-link stories set this explicitly.
+    locationSearch: '',
   },
 } satisfies Meta<typeof AdminDesktop>;
 export default meta;
@@ -655,5 +657,55 @@ export const Persistence: Story = {
     await expect(data.entries['control-panel'].left).toBe(stylePx(host, 'left'));
 
     localStorage.removeItem(PERSISTENCE_STORY_KEY);
+  },
+};
+
+export const DeepLinkSitesWithId: Story = {
+  args: {
+    sitesApi: createMockAdminApi(SAMPLE_API_SITES, SAMPLE_API_HOSTS),
+    locationSearch: '?window=sites&id=2',
+  },
+  play: async ({ canvasElement }) => {
+    const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
+    await expect(sitesHost).toBeTruthy();
+    await expect(sitesHost).toHaveAttribute('data-shell-window', 'sites');
+
+    const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
+    const docsRow = within(table).getByText('Docs').closest('tr');
+    await expect(docsRow).toBeTruthy();
+    await expect(docsRow).toHaveClass('highlighted');
+  },
+};
+
+export const DeepLinkHostsWithId: Story = {
+  args: {
+    sitesApi: createMockAdminApi(SAMPLE_API_SITES, SAMPLE_API_HOSTS),
+    locationSearch: '?window=hosts&id=11',
+  },
+  play: async ({ canvasElement }) => {
+    const hostsHost = canvasElement.querySelector('#hosts') as HTMLElement;
+    await expect(hostsHost).toBeTruthy();
+    await expect(hostsHost).toHaveAttribute('data-shell-window', 'hosts');
+
+    const table = await within(hostsHost).findByRole('table', { name: 'Hosts' });
+    const wwwRow = within(table).getByText('www.example.test').closest('tr');
+    await expect(wwwRow).toBeTruthy();
+    await expect(wwwRow).toHaveClass('highlighted');
+  },
+};
+
+export const DeepLinkSiteExplorer: Story = {
+  args: {
+    locationSearch: '?window=site&id=1',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const siteHost = canvasElement.querySelector('#site-1') as HTMLElement;
+    await expect(siteHost).toBeTruthy();
+    await expect(siteHost).toHaveAttribute('data-shell-window', 'site-1');
+    await expect(
+      within(siteHost).getByText('Example Site', { selector: '.title-bar-text' }),
+    ).toBeVisible();
+    await expect(canvas.getByRole('menuitem', { name: 'File' })).toBeVisible();
   },
 };

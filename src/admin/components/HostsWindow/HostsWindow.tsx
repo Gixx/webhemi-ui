@@ -44,6 +44,11 @@ export type HostsWindowProps = {
   /** Sites for the New/Edit Site select. */
   sites?: HostFormSiteOption[];
   /**
+   * Prefer selecting this host once it appears in `hosts` (deep link `?id=`).
+   * Applied once per id; user can change selection afterward.
+   */
+  preferSelectedId?: number | null;
+  /**
    * Configured install access mode (`access.admin`).
    * `null` = unknown (e.g. settings not loaded) — treat admin-surface delete as risky.
    * When `domain`, deleting the admin-surface host shows an escalated confirm
@@ -136,6 +141,7 @@ function formatSaveErrors(
 export function HostsWindow({
   hosts = [],
   sites = [],
+  preferSelectedId = null,
   adminAccess = null,
   canEdit = false,
   loading = false,
@@ -178,6 +184,7 @@ export function HostsWindow({
   const alertSoundKeyRef = useRef<string | null>(null);
   const confirmSoundKeyRef = useRef<string | null>(null);
   const accessResetSoundKeyRef = useRef<string | null>(null);
+  const appliedPreferIdRef = useRef<number | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -246,6 +253,20 @@ export function HostsWindow({
     setShowFormErrors(true);
     onSave?.(payload);
   }, [pendingAccessReset, closeAccessResetConfirm, onSave]);
+
+  useEffect(() => {
+    if (preferSelectedId == null) {
+      appliedPreferIdRef.current = null;
+      return;
+    }
+    if (appliedPreferIdRef.current === preferSelectedId) {
+      return;
+    }
+    if (hosts.some((row) => row.id === preferSelectedId)) {
+      setSelectedId(preferSelectedId);
+      appliedPreferIdRef.current = preferSelectedId;
+    }
+  }, [preferSelectedId, hosts]);
 
   useEffect(() => {
     if (selectedId != null && !hosts.some((row) => row.id === selectedId)) {

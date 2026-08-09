@@ -43,6 +43,11 @@ export type SitesWindowProps = {
   /** Hosts available for assignment in New/Edit (props until Hosts API). */
   hosts?: SiteFormHostOption[];
   /**
+   * Prefer selecting this site once it appears in `sites` (deep link `?id=`).
+   * Applied once per id; user can change selection afterward.
+   */
+  preferSelectedId?: number | null;
+  /**
    * Configured install access mode — escalates unassign when removing the
    * admin host under domain mode.
    */
@@ -140,6 +145,7 @@ function formatSaveErrors(
 export function SitesWindow({
   sites = [],
   hosts = [],
+  preferSelectedId = null,
   adminAccess = null,
   canEdit = false,
   loading = false,
@@ -186,6 +192,7 @@ export function SitesWindow({
   const alertSoundKeyRef = useRef<string | null>(null);
   const confirmSoundKeyRef = useRef<string | null>(null);
   const accessResetSoundKeyRef = useRef<string | null>(null);
+  const appliedPreferIdRef = useRef<number | null>(null);
 
   const showErrorAlert = useCallback(
     (message: string, title = 'Error') => {
@@ -251,6 +258,20 @@ export function SitesWindow({
     closeAccessResetUnassign();
     onUnassignHost(hostId);
   }, [pendingAccessResetUnassign, closeAccessResetUnassign, onUnassignHost]);
+
+  useEffect(() => {
+    if (preferSelectedId == null) {
+      appliedPreferIdRef.current = null;
+      return;
+    }
+    if (appliedPreferIdRef.current === preferSelectedId) {
+      return;
+    }
+    if (sites.some((site) => site.id === preferSelectedId)) {
+      setSelectedId(preferSelectedId);
+      appliedPreferIdRef.current = preferSelectedId;
+    }
+  }, [preferSelectedId, sites]);
 
   useEffect(() => {
     if (selectedId != null && !sites.some((site) => site.id === selectedId)) {

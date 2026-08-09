@@ -27,6 +27,7 @@ import {
 } from '../api';
 import { cn } from '../../lib/cn';
 import { assignSafeAppPath, assignSafeNavigationUrl } from '../lib/safeAppPath';
+import { parseAdminDeepLink, type AdminDeepLink } from '../lib/deepLink';
 import {
   buildPersistedDesktopState,
   CONTROL_PANEL_WINDOW_ID,
@@ -87,6 +88,12 @@ export type AdminDesktopProps = {
    * pass `false` to disable (Storybook interaction tests).
    */
   persistenceKey?: string | false;
+  /**
+   * Deep-link query override (`?window=` / `?id=`).
+   * Default: read `window.location.search`. Pass `''` in Storybook to ignore
+   * the iframe URL; pass an explicit search string to test deep links.
+   */
+  locationSearch?: string;
   className?: string;
 };
 
@@ -173,6 +180,7 @@ export function AdminDesktop({
   apiFetch,
   sitesApi,
   persistenceKey = DESKTOP_WINDOWS_STORAGE_KEY,
+  locationSearch,
   className,
 }: AdminDesktopProps) {
   const storageKey = persistenceKey === false ? null : persistenceKey;
@@ -190,6 +198,20 @@ export function AdminDesktop({
     windows: hydratedRef.current.windows,
     activeId: hydratedRef.current.activeId,
   }));
+  const [deepLink] = useState<AdminDeepLink | null>(() => {
+    const search =
+      locationSearch !== undefined
+        ? locationSearch
+        : typeof window !== 'undefined'
+          ? window.location.search
+          : '';
+    return parseAdminDeepLink(search);
+  });
+  const deepLinkAppliedRef = useRef(false);
+  const sitesPreferSelectedId =
+    deepLink?.window === 'sites' ? deepLink.id : null;
+  const hostsPreferSelectedId =
+    deepLink?.window === 'hosts' ? deepLink.id : null;
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [desktopSites, setDesktopSites] = useState<DesktopSite[]>(sites);
   const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
@@ -838,6 +860,44 @@ export function AdminDesktop({
     });
   };
 
+  useEffect(() => {
+    if (!deepLink || deepLinkAppliedRef.current) {
+      return;
+    }
+    deepLinkAppliedRef.current = true;
+
+    switch (deepLink.window) {
+      case 'sites':
+        openSites();
+        break;
+      case 'hosts':
+        openHosts();
+        break;
+      case 'control-panel':
+        openControlPanel();
+        break;
+      case 'settings':
+        openSettings();
+        break;
+      case 'site': {
+        if (deepLink.id == null) {
+          break;
+        }
+        const site =
+          desktopSites.find((row) => row.id === deepLink.id) ??
+          sites.find((row) => row.id === deepLink.id);
+        if (site) {
+          openSite(site);
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    // Once per mount: open helpers are stable enough for this intentional fire-and-forget.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deep-link bootstrap
+  }, [deepLink]);
+
   const moveWindow = (id: string, left: number, top: number) => {
     setShell((prev) => ({
       ...prev,
@@ -1248,6 +1308,7 @@ export function AdminDesktop({
               maximized={win.maximized}
               sites={sitesRows}
               hosts={siteFormHosts}
+              preferSelectedId={sitesPreferSelectedId}
               adminAccess={settings?.adminAccess ?? null}
               canEdit={canEditSites}
               loading={sitesLoading}
@@ -1287,6 +1348,7 @@ export function AdminDesktop({
               maximized={win.maximized}
               hosts={hostsRows}
               sites={hostFormSites}
+              preferSelectedId={hostsPreferSelectedId}
               adminAccess={settings?.adminAccess ?? null}
               canEdit={canEditHosts}
               loading={hostsLoading}
