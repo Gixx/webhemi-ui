@@ -2,6 +2,11 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import type { AdminApiClient, AdminApiHost, AdminApiSite } from '../api';
+import {
+  createAdminApiHandlers,
+  createEmptySitesHandlers,
+  createFailingSitesListHandlers,
+} from '../api/msw';
 import { AdminDesktop } from './AdminDesktop';
 
 const SAMPLE_SITES = [
@@ -707,5 +712,92 @@ export const DeepLinkSiteExplorer: Story = {
       within(siteHost).getByText('Example Site', { selector: '.title-bar-text' }),
     ).toBeVisible();
     await expect(canvas.getByRole('menuitem', { name: 'File' })).toBeVisible();
+  },
+};
+
+/** MSW: real `createAdminApiClient` + `/admin/api` handlers (no `sitesApi` inject). */
+export const MswOpenSitesWindow: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+  },
+  parameters: {
+    msw: createAdminApiHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
+
+    const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
+    await expect(sitesHost).toBeTruthy();
+    const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
+    await expect(within(table).getByText('Example Site')).toBeVisible();
+    await expect(within(table).getByText('Docs')).toBeVisible();
+  },
+};
+
+export const MswCreateSite: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+    sites: SAMPLE_SITES,
+  },
+  parameters: {
+    msw: createAdminApiHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
+
+    const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
+    await within(sitesHost).findByRole('table', { name: 'Sites' });
+
+    await userEvent.click(within(sitesHost).getByRole('button', { name: /^new$/i }));
+    await expect(
+      canvas.getByText('New Site', { selector: '.title-bar-text' }),
+    ).toBeVisible();
+    await userEvent.type(canvas.getByLabelText(/name/i), 'Blog');
+    await userEvent.type(canvas.getByLabelText(/slug/i), 'blog');
+    await userEvent.click(canvas.getByRole('button', { name: /^ok$/i }));
+
+    const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
+    await expect(within(table).getByText('Blog')).toBeVisible();
+    await expect(within(table).getByText('blog')).toBeVisible();
+  },
+};
+
+export const MswSitesListEmpty: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+    sites: [],
+  },
+  parameters: {
+    msw: createEmptySitesHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
+
+    const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
+    await expect(await within(sitesHost).findByText(/no sites yet/i)).toBeVisible();
+  },
+};
+
+export const MswSitesListError: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+  },
+  parameters: {
+    msw: createFailingSitesListHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
+
+    await expect(
+      await canvas.findByText('Could not load sites. Try again.'),
+    ).toBeVisible();
   },
 };

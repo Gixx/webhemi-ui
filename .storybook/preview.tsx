@@ -1,5 +1,7 @@
 import { useLayoutEffect } from 'react';
 import type { Preview, Decorator } from '@storybook/react-vite';
+import { setupWorker } from 'msw/browser';
+import { mswLoader } from 'msw-storybook-addon/csf3';
 import { addons } from 'storybook/preview-api';
 import { DOCS_RENDERED, STORY_RENDERED } from 'storybook/internal/core-events';
 import '../src/styles/platform.css';
@@ -150,6 +152,13 @@ const withPreventStorybookLinkNavigation: Decorator = (Story, context) => {
 const preview: Preview = {
   // Auto-generate a Docs page for every CSF module (Guide: Automatically document your components).
   tags: ['autodocs'],
+  loaders: [
+    mswLoader(async () => {
+      const worker = setupWorker();
+      await worker.start({ onUnhandledRequest: 'bypass' });
+      return worker;
+    }),
+  ],
   globalTypes: {
     theme: {
       description:

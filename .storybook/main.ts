@@ -9,9 +9,12 @@ const config: StorybookConfig = {
     '@storybook/addon-a11y',
     '@storybook/addon-docs',
     '@storybook/addon-vitest',
+    'msw-storybook-addon',
   ],
   framework: '@storybook/react-vite',
   staticDirs: [
+    /** MSW service worker (`npx msw init ./public`) */
+    '../public',
     /** Manager logo / favicon */
     { from: '../src/admin/assets/logo', to: '/brand' },
     /** Same URL space as PHP AssetMapper (`assets/admin/` → `/assets/admin/`) */
