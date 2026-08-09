@@ -1,16 +1,21 @@
 // Retro OS chrome SCSS (owned). Historical MIT lineage: 98.css — https://github.com/jdan/98.css
 // Tokens: abstract/tokens.css; icons: /assets/admin/chrome/*.svg
+//
+// Only style code *blocks* under the Admin theme. Bare `code` must not reach
+// Storybook Docs ArgsTable / MDX inline code (preview iframe shares the cascade).
+
 pre {
   display: block;
   background: var(--button-highlight);
   box-shadow: var(--border-field);
   padding: 12px 8px;
   margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-code,
-code * {
-  font-family: monospace;
+pre code,
+pre code * {
+  font-family: inherit;
 }
 
 summary:focus {

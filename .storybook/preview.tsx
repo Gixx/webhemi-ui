@@ -7,6 +7,7 @@ import '../src/admin/styles/fonts.css';
 import '../src/admin/styles/tokens.css';
 import '../src/admin/styles/entry.scss';
 import '../src/themes/default/styles/tokens.css';
+import './preview-docs.css';
 
 /**
  * Theme scope follows the story tree.

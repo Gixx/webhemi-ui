@@ -1,0 +1,131 @@
+/* Shared menu popup / context menu chrome. */
+@use "../abstract/bevel" as *;
+
+.menu-popup {
+  min-width: 160px;
+  margin: 0;
+  padding: 2px;
+  background: var(--surface, #c0c0c0);
+  @include bevel-raised;
+  box-sizing: border-box;
+}
+
+.menu-popup-separator {
+  height: 0;
+  margin: 3px 2px;
+  border: none;
+  border-top: 1px solid var(--button-shadow, #808080);
+  border-bottom: 1px solid var(--button-highlight, #fff);
+}
+
+.menu-popup-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 2px 16px 2px 4px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: #000;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.menu-popup-item:not(:disabled):hover,
+.menu-popup-item:not(:disabled):focus {
+  background: var(--dialog-blue, #000080);
+  color: var(--button-highlight, #fff);
+  box-shadow: none;
+  outline: none;
+}
+
+.menu-popup-item:disabled,
+.menu-popup-item.is-disabled {
+  color: var(--button-shadow, #808080);
+  text-shadow: 1px 1px 0 var(--button-highlight, #fff);
+}
+
+.menu-popup-item:disabled:hover,
+.menu-popup-item:disabled:focus {
+  background: transparent;
+  color: var(--button-shadow, #808080);
+}
+
+.menu-popup-gutter {
+  display: inline-flex;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.menu-popup-check {
+  font-size: 12px;
+}
+
+.menu-popup-icon {
+  overflow: hidden;
+}
+
+.menu-popup-icon > img,
+.menu-popup-icon > .explorer-glyph,
+.menu-popup-icon > .menu-popup-glyph {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.menu-popup-glyph {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.menu-popup-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.menu-popup-submenu-marker {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.menu-popup-item:not(:disabled):hover .menu-popup-submenu-marker,
+.menu-popup-item:not(:disabled):focus .menu-popup-submenu-marker {
+  color: var(--button-highlight, #fff);
+}
+
+/* Toolbar glyphs reused as menu icons in Storybook / product. */
+.menu-popup-glyph.cut {
+  background-image: url("/assets/admin/icons/toolbar/explorer_cut.svg");
+}
+.menu-popup-glyph.copy {
+  background-image: url("/assets/admin/icons/toolbar/explorer_copy.svg");
+}
+.menu-popup-glyph.paste {
+  background-image: url("/assets/admin/icons/toolbar/explorer_paste.svg");
+}
+.menu-popup-glyph.delete {
+  background-image: url("/assets/admin/icons/toolbar/explorer_delete.svg");
+}
+.menu-popup-glyph.properties {
+  background-image: url("/assets/admin/icons/toolbar/explorer_properties.svg");
+}
+.menu-popup-glyph.undo {
+  background-image: url("/assets/admin/icons/toolbar/explorer_undo.svg");
+}

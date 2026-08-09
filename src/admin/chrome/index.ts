@@ -51,3 +51,16 @@ export {
   type SystemIconKind,
   type SystemIconLabelTone,
 } from './SystemIcon';
+
+export {
+  MenuPopup,
+  resolveMenuGutterMode,
+  isAdminMenuCheckable,
+  type MenuPopupProps,
+  type AdminMenuItem,
+  type AdminMenuSeparator,
+  type AdminMenuCommandItem,
+  type AdminMenuCheckableItem,
+  type MenuGutterMode,
+} from './MenuPopup';
+export { ContextMenu, type ContextMenuProps } from './ContextMenu';
