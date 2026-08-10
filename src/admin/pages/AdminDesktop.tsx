@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   buildEmptySiteExplorerTree,
   SiteFileExplorer,
@@ -860,7 +868,8 @@ export function AdminDesktop({
     });
   };
 
-  useEffect(() => {
+  // Before paint so Chromatic/Storybook play sees the opened window (useEffect is too late).
+  useLayoutEffect(() => {
     if (!deepLink || deepLinkAppliedRef.current) {
       return;
     }

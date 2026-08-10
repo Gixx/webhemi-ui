@@ -1,5 +1,5 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
 import type { AdminApiClient, AdminApiHost, AdminApiSite } from '../api';
 import {
@@ -671,14 +671,17 @@ export const DeepLinkSitesWithId: Story = {
     locationSearch: '?window=sites&id=2',
   },
   play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('#sites')).not.toBeNull();
+    });
     const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
-    await expect(sitesHost).toBeTruthy();
     await expect(sitesHost).toHaveAttribute('data-shell-window', 'sites');
 
     const table = await within(sitesHost).findByRole('table', { name: 'Sites' });
-    const docsRow = within(table).getByText('Docs').closest('tr');
-    await expect(docsRow).toBeTruthy();
-    await expect(docsRow).toHaveClass('highlighted');
+    await waitFor(() => {
+      const docsRow = within(table).getByText('Docs').closest('tr');
+      expect(docsRow).toHaveClass('highlighted');
+    });
   },
 };
 
@@ -688,14 +691,17 @@ export const DeepLinkHostsWithId: Story = {
     locationSearch: '?window=hosts&id=11',
   },
   play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('#hosts')).not.toBeNull();
+    });
     const hostsHost = canvasElement.querySelector('#hosts') as HTMLElement;
-    await expect(hostsHost).toBeTruthy();
     await expect(hostsHost).toHaveAttribute('data-shell-window', 'hosts');
 
     const table = await within(hostsHost).findByRole('table', { name: 'Hosts' });
-    const wwwRow = within(table).getByText('www.example.test').closest('tr');
-    await expect(wwwRow).toBeTruthy();
-    await expect(wwwRow).toHaveClass('highlighted');
+    await waitFor(() => {
+      const wwwRow = within(table).getByText('www.example.test').closest('tr');
+      expect(wwwRow).toHaveClass('highlighted');
+    });
   },
 };
 
@@ -705,8 +711,10 @@ export const DeepLinkSiteExplorer: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await waitFor(() => {
+      expect(canvasElement.querySelector('#site-1')).not.toBeNull();
+    });
     const siteHost = canvasElement.querySelector('#site-1') as HTMLElement;
-    await expect(siteHost).toBeTruthy();
     await expect(siteHost).toHaveAttribute('data-shell-window', 'site-1');
     await expect(
       within(siteHost).getByText('Example Site', { selector: '.title-bar-text' }),
