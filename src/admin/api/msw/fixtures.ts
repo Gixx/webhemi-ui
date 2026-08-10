@@ -1,4 +1,10 @@
-import type { AdminApiHost, AdminApiPermission, AdminApiSettings, AdminApiSite } from '../types';
+import type {
+  AdminApiHost,
+  AdminApiPermission,
+  AdminApiRole,
+  AdminApiSettings,
+  AdminApiSite,
+} from '../types';
 
 /** Shared Storybook / MSW fixtures for `/admin/api` (not exported from package root). */
 export const MSW_SAMPLE_SITES: AdminApiSite[] = [
@@ -82,5 +88,35 @@ export const MSW_SAMPLE_PERMISSIONS: AdminApiPermission[] = [
     name: 'content.publish',
     label: 'Publish content',
     description: '',
+  },
+];
+
+export const MSW_SAMPLE_ROLES: AdminApiRole[] = [
+  {
+    id: 1,
+    name: 'ROLE_ADMIN',
+    label: 'Admin',
+    description: 'Full platform access.',
+    protected: true,
+    permissionIds: [],
+    permissionCount: 0,
+  },
+  {
+    id: 2,
+    name: 'ROLE_SITE_ADMIN',
+    label: 'Site Admin',
+    description: 'Administer assigned sites.',
+    protected: true,
+    permissionIds: [],
+    permissionCount: 0,
+  },
+  {
+    id: 3,
+    name: 'ROLE_AUTHOR',
+    label: 'Author',
+    description: 'Edit and publish content.',
+    protected: false,
+    permissionIds: [1, 2],
+    permissionCount: 2,
   },
 ];

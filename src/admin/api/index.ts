@@ -3,6 +3,7 @@ export type {
   AdminApiHost,
   AdminApiPermission,
   AdminApiResult,
+  AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
   AdminApiSuccess,
@@ -16,8 +17,10 @@ export {
   type AdminApiClientOptions,
   type CreateHostBody,
   type CreatePermissionBody,
+  type CreateRoleBody,
   type CreateSiteBody,
   type UpdateHostBody,
   type UpdatePermissionBody,
+  type UpdateRoleBody,
   type UpdateSettingsBody,
 } from './client';

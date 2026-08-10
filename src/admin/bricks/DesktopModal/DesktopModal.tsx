@@ -85,7 +85,7 @@ function findHostBlockTarget(anchor: HTMLElement | null): HTMLElement | null {
     return null;
   }
   const host = anchor.closest(
-    '.sites-window, .hosts-window, .settings-window, .permissions-window, .site-file-explorer, .login-host, [data-shell-window], .desktop-window',
+    '.sites-window, .hosts-window, .settings-window, .permissions-window, .roles-window, .site-file-explorer, .login-host, [data-shell-window], .desktop-window',
   );
   return host instanceof HTMLElement ? host : null;
 }

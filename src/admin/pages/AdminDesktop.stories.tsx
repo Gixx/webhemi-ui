@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
-import type { AdminApiClient, AdminApiHost, AdminApiPermission, AdminApiSite } from '../api';
+import type { AdminApiClient, AdminApiHost, AdminApiPermission, AdminApiRole, AdminApiSite } from '../api';
 import {
   createAdminApiHandlers,
   createEmptySitesHandlers,
@@ -59,14 +59,46 @@ const SAMPLE_API_PERMISSIONS: AdminApiPermission[] = [
   },
 ];
 
+const SAMPLE_API_ROLES: AdminApiRole[] = [
+  {
+    id: 1,
+    name: 'ROLE_ADMIN',
+    label: 'Admin',
+    description: 'Full platform access.',
+    protected: true,
+    permissionIds: [],
+    permissionCount: 0,
+  },
+  {
+    id: 2,
+    name: 'ROLE_SITE_ADMIN',
+    label: 'Site Admin',
+    description: 'Administer assigned sites.',
+    protected: true,
+    permissionIds: [],
+    permissionCount: 0,
+  },
+  {
+    id: 3,
+    name: 'ROLE_AUTHOR',
+    label: 'Author',
+    description: 'Edit and publish content.',
+    protected: false,
+    permissionIds: [1, 2],
+    permissionCount: 2,
+  },
+];
+
 function createMockAdminApi(
   initialSites: AdminApiSite[],
   initialHosts: AdminApiHost[] = [],
   initialPermissions: AdminApiPermission[] = [],
+  initialRoles: AdminApiRole[] = [],
 ): AdminApiClient {
   let siteRows = [...initialSites];
   let hostRows = [...initialHosts];
   let permissionRows = [...initialPermissions];
+  let roleRows = [...initialRoles];
   return {
     listSites: async () => ({ ok: true, status: 200, data: [...siteRows] }),
     getSite: async (id) => {
@@ -447,6 +479,115 @@ function createMockAdminApi(
         };
       }
       permissionRows = permissionRows.filter((row) => row.id !== id);
+      return { ok: true, status: 204, data: undefined };
+    },
+    listRoles: async () => ({ ok: true, status: 200, data: [...roleRows] }),
+    getRole: async (id) => {
+      const role = roleRows.find((row) => row.id === id);
+      if (!role) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Role not found.' },
+        };
+      }
+      return { ok: true, status: 200, data: role };
+    },
+    createRole: async (body) => {
+      const name = body.name.trim().toUpperCase();
+      if (roleRows.some((row) => row.name === name)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'name_taken',
+            message: 'A role with this name already exists.',
+            fields: { name: 'Name is already taken.' },
+          },
+        };
+      }
+      const permissionIds = [...new Set(body.permissionIds ?? [])];
+      const created: AdminApiRole = {
+        id: Math.max(0, ...roleRows.map((row) => row.id)) + 1,
+        name,
+        label: body.label,
+        description: body.description ?? '',
+        protected: false,
+        permissionIds,
+        permissionCount: permissionIds.length,
+      };
+      roleRows = [...roleRows, created];
+      return { ok: true, status: 201, data: created };
+    },
+    updateRole: async (id, body) => {
+      const existing = roleRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Role not found.' },
+        };
+      }
+      if (existing.protected) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'role_protected',
+            message: 'Protected system roles cannot be edited.',
+          },
+        };
+      }
+      const name = body.name != null ? body.name.trim().toUpperCase() : existing.name;
+      if (roleRows.some((row) => row.name === name && row.id !== id)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'name_taken',
+            message: 'A role with this name already exists.',
+            fields: { name: 'Name is already taken.' },
+          },
+        };
+      }
+      const permissionIds =
+        body.permissionIds !== undefined
+          ? [...new Set(body.permissionIds)]
+          : existing.permissionIds;
+      const updated: AdminApiRole = {
+        ...existing,
+        name,
+        label: body.label ?? existing.label,
+        description:
+          body.description !== undefined
+            ? body.description
+            : existing.description,
+        permissionIds,
+        permissionCount: permissionIds.length,
+      };
+      roleRows = roleRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
+    },
+    deleteRole: async (id) => {
+      const existing = roleRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Role not found.' },
+        };
+      }
+      if (existing.protected) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'role_protected',
+            message: 'Protected system roles cannot be deleted.',
+          },
+        };
+      }
+      roleRows = roleRows.filter((row) => row.id !== id);
       return { ok: true, status: 204, data: undefined };
     },
   };
@@ -837,6 +978,33 @@ export const DeepLinkPermissionsWithId: Story = {
   },
 };
 
+export const DeepLinkRolesWithId: Story = {
+  args: {
+    sitesApi: createMockAdminApi(
+      SAMPLE_API_SITES,
+      SAMPLE_API_HOSTS,
+      SAMPLE_API_PERMISSIONS,
+      SAMPLE_API_ROLES,
+    ),
+    locationSearch: '?window=roles&id=3',
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('#roles')).not.toBeNull();
+    });
+    const rolesHost = canvasElement.querySelector('#roles') as HTMLElement;
+    await expect(rolesHost).toHaveAttribute('data-shell-window', 'roles');
+
+    const table = await within(rolesHost).findByRole('table', {
+      name: 'Roles',
+    });
+    await waitFor(() => {
+      const row = within(table).getByText('ROLE_AUTHOR').closest('tr');
+      expect(row).toHaveClass('highlighted');
+    });
+  },
+};
+
 /** MSW: real `createAdminApiClient` + `/admin/api` handlers (no `sitesApi` inject). */
 export const MswOpenSitesWindow: Story = {
   args: {
@@ -943,5 +1111,28 @@ export const MswOpenPermissionsWindow: Story = {
     });
     await expect(within(table).getByText('content.edit')).toBeVisible();
     await expect(within(table).getByText('Edit content')).toBeVisible();
+  },
+};
+
+export const MswOpenRolesWindow: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+  },
+  parameters: {
+    msw: createAdminApiHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Roles' }));
+
+    const rolesHost = canvasElement.querySelector('#roles') as HTMLElement;
+    await expect(rolesHost).toBeTruthy();
+    const table = await within(rolesHost).findByRole('table', {
+      name: 'Roles',
+    });
+    await expect(within(table).getByText('ROLE_ADMIN')).toBeVisible();
+    await expect(within(table).getByText('Admin')).toBeVisible();
+    await expect(within(table).getByText('ROLE_AUTHOR')).toBeVisible();
   },
 };

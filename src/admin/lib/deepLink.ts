@@ -9,7 +9,8 @@ export type AdminDeepLinkWindow =
   | 'site'
   | 'control-panel'
   | 'settings'
-  | 'permissions';
+  | 'permissions'
+  | 'roles';
 
 export type AdminDeepLink = {
   window: AdminDeepLinkWindow;
@@ -24,8 +25,8 @@ const WINDOW_VALUES = new Set<string>([
   'control-panel',
   'settings',
   'permissions',
+  'roles',
 ]);
-
 function parsePositiveInt(raw: string | null): number | null {
   if (raw == null || raw === '') {
     return null;

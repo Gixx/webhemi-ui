@@ -1,9 +1,16 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
-import type { AdminApiHost, AdminApiPermission, AdminApiSettings, AdminApiSite } from '../types';
+import type {
+  AdminApiHost,
+  AdminApiPermission,
+  AdminApiRole,
+  AdminApiSettings,
+  AdminApiSite,
+} from '../types';
 import {
   MSW_DEFAULT_SETTINGS,
   MSW_SAMPLE_HOSTS,
   MSW_SAMPLE_PERMISSIONS,
+  MSW_SAMPLE_ROLES,
   MSW_SAMPLE_SITES,
 } from './fixtures';
 
@@ -11,6 +18,7 @@ export type AdminApiMswStore = {
   sites: AdminApiSite[];
   hosts: AdminApiHost[];
   permissions: AdminApiPermission[];
+  roles: AdminApiRole[];
   settings: AdminApiSettings;
 };
 
@@ -18,12 +26,33 @@ export type CreateAdminApiHandlersOptions = {
   sites?: AdminApiSite[];
   hosts?: AdminApiHost[];
   permissions?: AdminApiPermission[];
+  roles?: AdminApiRole[];
   settings?: AdminApiSettings;
   /** When true, GET /sites returns 500. */
   failListSites?: boolean;
   /** When true, GET /permissions returns 500. */
   failListPermissions?: boolean;
+  /** When true, GET /roles returns 500. */
+  failListRoles?: boolean;
 };
+
+const ROLE_NAME_PATTERN = /^ROLE_[A-Z0-9_]+$/;
+const RESERVED_ROLE_NAMES = new Set(['ROLE_ADMIN', 'ROLE_SITE_ADMIN']);
+
+function normalizeRoleName(raw: string): string {
+  return raw.trim().toUpperCase();
+}
+
+function normalizePermissionIds(
+  raw: number[] | undefined,
+  permissions: AdminApiPermission[],
+): number[] {
+  if (!raw) {
+    return [];
+  }
+  const valid = new Set(permissions.map((row) => row.id));
+  return [...new Set(raw.filter((id) => valid.has(id)))].sort((a, b) => a - b);
+}
 
 /**
  * In-memory `/admin/api` handlers for Storybook (MSW).
@@ -36,11 +65,13 @@ export function createAdminApiHandlers(
     sites: structuredClone(options.sites ?? MSW_SAMPLE_SITES),
     hosts: structuredClone(options.hosts ?? MSW_SAMPLE_HOSTS),
     permissions: structuredClone(options.permissions ?? MSW_SAMPLE_PERMISSIONS),
+    roles: structuredClone(options.roles ?? MSW_SAMPLE_ROLES),
     settings: structuredClone(options.settings ?? MSW_DEFAULT_SETTINGS),
   };
 
   const failListSites = Boolean(options.failListSites);
   const failListPermissions = Boolean(options.failListPermissions);
+  const failListRoles = Boolean(options.failListRoles);
 
   return [
     http.get('/admin/api/sites', () => {
@@ -396,6 +427,240 @@ export function createAdminApiHandlers(
       store.permissions = store.permissions.filter((row) => row.id !== id);
       return new HttpResponse(null, { status: 204 });
     }),
+
+    http.get('/admin/api/roles', () => {
+      if (failListRoles) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'server_error',
+              message: 'Could not load roles. Try again.',
+            },
+          },
+          { status: 500 },
+        );
+      }
+      return HttpResponse.json({ data: store.roles });
+    }),
+
+    http.get('/admin/api/roles/:id', ({ params }) => {
+      const id = Number(params.id);
+      const role = store.roles.find((row) => row.id === id);
+      if (!role) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Role not found.' } },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json({ data: role });
+    }),
+
+    http.post('/admin/api/roles', async ({ request }) => {
+      const body = (await request.json()) as {
+        name?: string;
+        label?: string;
+        description?: string;
+        permissionIds?: number[];
+      };
+      const name = normalizeRoleName(body.name ?? '');
+      const label = body.label?.trim() ?? '';
+      const description = body.description?.trim() ?? '';
+      if (!name || !label) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name and label are required.',
+              fields: {
+                ...(name ? {} : { name: 'Name is required.' }),
+                ...(label ? {} : { label: 'Label is required.' }),
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (!ROLE_NAME_PATTERN.test(name)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name must match ROLE_[A-Z0-9_]+.',
+              fields: { name: 'Name must match ROLE_[A-Z0-9_]+.' },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (RESERVED_ROLE_NAMES.has(name)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'This system role name is reserved.',
+              fields: { name: 'This system role name is reserved.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      if (store.roles.some((row) => row.name === name)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'A role with this name already exists.',
+              fields: { name: 'Name is already taken.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const permissionIds = normalizePermissionIds(
+        body.permissionIds,
+        store.permissions,
+      );
+      const created: AdminApiRole = {
+        id: Math.max(0, ...store.roles.map((row) => row.id)) + 1,
+        name,
+        label,
+        description,
+        protected: false,
+        permissionIds,
+        permissionCount: permissionIds.length,
+      };
+      store.roles = [...store.roles, created].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      return HttpResponse.json({ data: created }, { status: 201 });
+    }),
+
+    http.patch('/admin/api/roles/:id', async ({ params, request }) => {
+      const id = Number(params.id);
+      const index = store.roles.findIndex((row) => row.id === id);
+      if (index < 0) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Role not found.' } },
+          { status: 404 },
+        );
+      }
+      const current = store.roles[index];
+      if (current.protected) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'role_protected',
+              message: 'Protected system roles cannot be edited.',
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const body = (await request.json()) as {
+        name?: string;
+        label?: string;
+        description?: string;
+        permissionIds?: number[];
+      };
+      const name =
+        body.name !== undefined ? normalizeRoleName(body.name) : current.name;
+      const label = body.label !== undefined ? body.label.trim() : current.label;
+      const description =
+        body.description !== undefined
+          ? body.description.trim()
+          : current.description;
+      if (!name || !label) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name and label are required.',
+              fields: {
+                ...(name ? {} : { name: 'Name is required.' }),
+                ...(label ? {} : { label: 'Label is required.' }),
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (!ROLE_NAME_PATTERN.test(name)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name must match ROLE_[A-Z0-9_]+.',
+              fields: { name: 'Name must match ROLE_[A-Z0-9_]+.' },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (RESERVED_ROLE_NAMES.has(name) && name !== current.name) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'This system role name is reserved.',
+              fields: { name: 'This system role name is reserved.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      if (store.roles.some((row) => row.name === name && row.id !== id)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'A role with this name already exists.',
+              fields: { name: 'Name is already taken.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const permissionIds =
+        body.permissionIds !== undefined
+          ? normalizePermissionIds(body.permissionIds, store.permissions)
+          : current.permissionIds;
+      const updated: AdminApiRole = {
+        ...current,
+        name,
+        label,
+        description,
+        permissionIds,
+        permissionCount: permissionIds.length,
+      };
+      store.roles = store.roles
+        .map((row) => (row.id === id ? updated : row))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return HttpResponse.json({ data: updated });
+    }),
+
+    http.delete('/admin/api/roles/:id', ({ params }) => {
+      const id = Number(params.id);
+      const existing = store.roles.find((row) => row.id === id);
+      if (!existing) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Role not found.' } },
+          { status: 404 },
+        );
+      }
+      if (existing.protected) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'role_protected',
+              message: 'Protected system roles cannot be deleted.',
+            },
+          },
+          { status: 409 },
+        );
+      }
+      store.roles = store.roles.filter((row) => row.id !== id);
+      return new HttpResponse(null, { status: 204 });
+    }),
   ];
 }
 
@@ -417,4 +682,14 @@ export function createEmptyPermissionsHandlers(): RequestHandler[] {
 /** List Permissions fails with 500. */
 export function createFailingPermissionsListHandlers(): RequestHandler[] {
   return createAdminApiHandlers({ failListPermissions: true });
+}
+
+/** Empty Roles list. */
+export function createEmptyRolesHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ roles: [] });
+}
+
+/** List Roles fails with 500. */
+export function createFailingRolesListHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ failListRoles: true });
 }

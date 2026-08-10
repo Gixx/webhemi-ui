@@ -226,6 +226,10 @@
   background-image: url("/assets/admin/icons/system/permissions.svg");
 }
 
+#toolbar .task-buttons > .task.roles {
+  background-image: url("/assets/admin/icons/system/roles.svg");
+}
+
 #toolbar .task-buttons > .task > .task-title {
   display: block;
   min-width: 0;

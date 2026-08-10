@@ -23,12 +23,17 @@ import {
   type PermissionsWindowPermission,
 } from '../components/PermissionsWindow/PermissionsWindow';
 import {
+  RolesWindow,
+  type RolesWindowRole,
+} from '../components/RolesWindow/RolesWindow';
+import {
   HostsWindow,
   type HostsWindowHost,
 } from '../components/HostsWindow/HostsWindow';
 import type { HostFormSavePayload } from '../components/HostsWindow/HostFormDialog';
 import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialog';
 import type { PermissionFormSavePayload } from '../components/PermissionsWindow/PermissionFormDialog';
+import type { RoleFormSavePayload } from '../components/RolesWindow/RoleFormDialog';
 import {
   createAdminApiClient,
   isUnauthorizedResult,
@@ -36,6 +41,7 @@ import {
   type AdminApiHost,
   type AdminApiPermission,
   type AdminApiResult,
+  type AdminApiRole,
   type AdminApiSettings,
   type AdminApiSite,
 } from '../api';
@@ -54,6 +60,7 @@ import {
   hydrateDesktopFromPersistence,
   loadPersistedDesktop,
   PERMISSIONS_WINDOW_ID,
+  ROLES_WINDOW_ID,
   savePersistedDesktop,
   siteWindowId,
   SETTINGS_WINDOW_ID,
@@ -161,6 +168,18 @@ function toWindowPermission(permission: AdminApiPermission): PermissionsWindowPe
   };
 }
 
+function toWindowRole(role: AdminApiRole): RolesWindowRole {
+  return {
+    id: role.id,
+    name: role.name,
+    label: role.label,
+    description: role.description,
+    protected: role.protected,
+    permissionIds: [...role.permissionIds],
+    permissionCount: role.permissionCount,
+  };
+}
+
 function toWindowHost(host: AdminApiHost): HostsWindowHost {
   return {
     id: host.id,
@@ -238,6 +257,8 @@ export function AdminDesktop({
     deepLink?.window === 'hosts' ? deepLink.id : null;
   const permissionsPreferSelectedId =
     deepLink?.window === 'permissions' ? deepLink.id : null;
+  const rolesPreferSelectedId =
+    deepLink?.window === 'roles' ? deepLink.id : null;
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [desktopSites, setDesktopSites] = useState<DesktopSite[]>(sites);
   const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
@@ -265,6 +286,21 @@ export function AdminDesktop({
   const [permissionsStatusMessage, setPermissionsStatusMessage] = useState<
     string | null
   >(null);
+  const [rolesRows, setRolesRows] = useState<RolesWindowRole[]>([]);
+  const [rolesPermissionOptions, setRolesPermissionOptions] = useState<
+    { id: number; name: string; label: string }[]
+  >([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesCreating, setRolesCreating] = useState(false);
+  const [rolesDeleting, setRolesDeleting] = useState(false);
+  const [rolesError, setRolesError] = useState<string | null>(null);
+  const [rolesFormError, setRolesFormError] = useState<string | null>(null);
+  const [rolesFieldErrors, setRolesFieldErrors] = useState<
+    Partial<Record<'name' | 'label' | 'description', string>>
+  >({});
+  const [rolesStatusMessage, setRolesStatusMessage] = useState<string | null>(
+    null,
+  );
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
@@ -293,6 +329,7 @@ export function AdminDesktop({
   const permissionsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const rolesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const api = useMemo(
@@ -309,6 +346,7 @@ export function AdminDesktop({
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
   const canEditHosts = canEditSites;
   const canEditPermissions = canEditSites;
+  const canEditRoles = canEditSites;
   const canEditSettings = canEditSites;
 
   const clearSitesStatusMessage = useCallback(() => {
@@ -333,6 +371,14 @@ export function AdminDesktop({
       permissionsStatusTimerRef.current = null;
     }
     setPermissionsStatusMessage(null);
+  }, []);
+
+  const clearRolesStatusMessage = useCallback(() => {
+    if (rolesStatusTimerRef.current != null) {
+      clearTimeout(rolesStatusTimerRef.current);
+      rolesStatusTimerRef.current = null;
+    }
+    setRolesStatusMessage(null);
   }, []);
 
   const flashSitesStatus = useCallback(
@@ -371,6 +417,18 @@ export function AdminDesktop({
     [clearPermissionsStatusMessage],
   );
 
+  const flashRolesStatus = useCallback(
+    (message: string) => {
+      clearRolesStatusMessage();
+      setRolesStatusMessage(message);
+      rolesStatusTimerRef.current = setTimeout(() => {
+        rolesStatusTimerRef.current = null;
+        setRolesStatusMessage(null);
+      }, 4000);
+    },
+    [clearRolesStatusMessage],
+  );
+
   const clearSettingsStatusMessage = useCallback(() => {
     if (settingsStatusTimerRef.current != null) {
       clearTimeout(settingsStatusTimerRef.current);
@@ -401,6 +459,9 @@ export function AdminDesktop({
       }
       if (permissionsStatusTimerRef.current != null) {
         clearTimeout(permissionsStatusTimerRef.current);
+      }
+      if (rolesStatusTimerRef.current != null) {
+        clearTimeout(rolesStatusTimerRef.current);
       }
       if (settingsStatusTimerRef.current != null) {
         clearTimeout(settingsStatusTimerRef.current);
@@ -452,6 +513,12 @@ export function AdminDesktop({
     handleAlertClose();
   }, [handleAlertClose]);
 
+  const dismissRolesAlert = useCallback(() => {
+    setRolesError(null);
+    setRolesFormError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
   const dismissSettingsAlert = useCallback(() => {
     setSettingsError(null);
     handleAlertClose();
@@ -462,6 +529,7 @@ export function AdminDesktop({
   const permissionsWindowOpen = shell.windows.some(
     (win) => win.id === PERMISSIONS_WINDOW_ID,
   );
+  const rolesWindowOpen = shell.windows.some((win) => win.id === ROLES_WINDOW_ID);
   const settingsWindowOpen = shell.windows.some((win) => win.id === SETTINGS_WINDOW_ID);
   const siteFormHosts = useMemo(
     () => hostsRows.map(toSiteFormHostOption),
@@ -557,6 +625,47 @@ export function AdminDesktop({
       cancelled = true;
     };
   }, [permissionsWindowOpen, api, handleApiFailure, clearPermissionsStatusMessage]);
+
+  useEffect(() => {
+    if (!rolesWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    setRolesLoading(true);
+    setRolesError(null);
+    clearRolesStatusMessage();
+
+    void (async () => {
+      const [rolesResult, permissionsResult] = await Promise.all([
+        api.listRoles(),
+        api.listPermissions(),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      setRolesLoading(false);
+      if (!rolesResult.ok) {
+        handleApiFailure(rolesResult, setRolesError);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setRolesRows(rolesResult.data.map(toWindowRole));
+      if (permissionsResult.ok) {
+        setRolesPermissionOptions(
+          permissionsResult.data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            label: row.label,
+          })),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rolesWindowOpen, api, handleApiFailure, clearRolesStatusMessage]);
 
   useEffect(() => {
     if (!hostsWindowOpen && !sitesWindowOpen) {
@@ -894,6 +1003,15 @@ export function AdminDesktop({
     );
   };
 
+  const openRoles = () => {
+    openOrRaiseWindow(
+      ROLES_WINDOW_ID,
+      'roles',
+      'Roles',
+      DEFAULT_WINDOW_SIZE.roles,
+    );
+  };
+
   const refreshSettings = useCallback(async () => {
     const result = await api.getSettings();
     if (!result.ok) {
@@ -998,6 +1116,9 @@ export function AdminDesktop({
         break;
       case 'permissions':
         openPermissions();
+        break;
+      case 'roles':
+        openRoles();
         break;
       case 'site': {
         if (deepLink.id == null) {
@@ -1216,6 +1337,86 @@ export function AdminDesktop({
       setPermissionsRows(list.data.map(toWindowPermission));
     } else {
       setPermissionsRows((prev) => prev.filter((row) => row.id !== permission.id));
+    }
+  };
+
+  const handleSaveRole = async (payload: RoleFormSavePayload) => {
+    clearRolesStatusMessage();
+    setRolesCreating(true);
+    setRolesFormError(null);
+    setRolesFieldErrors({});
+
+    const result =
+      payload.mode === 'new'
+        ? await api.createRole({
+            name: payload.name,
+            label: payload.label,
+            description: payload.description,
+            permissionIds: payload.permissionIds,
+          })
+        : payload.roleId != null
+          ? await api.updateRole(payload.roleId, {
+              name: payload.name,
+              label: payload.label,
+              description: payload.description,
+              permissionIds: payload.permissionIds,
+            })
+          : null;
+
+    setRolesCreating(false);
+
+    if (!result) {
+      setRolesFormError('Role could not be saved.');
+      return;
+    }
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setRolesFieldErrors({
+          name: result.error.fields.name,
+          label: result.error.fields.label,
+          description: result.error.fields.description,
+        });
+      }
+      handleApiFailure(result, setRolesFormError);
+      return;
+    }
+
+    flashRolesStatus(payload.mode === 'new' ? 'Role created.' : 'Role updated.');
+
+    const list = await api.listRoles();
+    if (list.ok) {
+      setRolesRows(list.data.map(toWindowRole));
+      return;
+    }
+
+    const saved = toWindowRole(result.data);
+    setRolesRows((prev) =>
+      [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+  };
+
+  const handleDeleteRole = async (role: RolesWindowRole) => {
+    clearRolesStatusMessage();
+    setRolesDeleting(true);
+    setRolesError(null);
+    const result = await api.deleteRole(role.id);
+    setRolesDeleting(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setRolesError);
+      return;
+    }
+
+    flashRolesStatus('Role deleted.');
+
+    const list = await api.listRoles();
+    if (list.ok) {
+      setRolesRows(list.data.map(toWindowRole));
+    } else {
+      setRolesRows((prev) => prev.filter((row) => row.id !== role.id));
     }
   };
 
@@ -1497,6 +1698,7 @@ export function AdminDesktop({
               onOpenHosts={openHosts}
               onOpenSettings={openSettings}
               onOpenPermissions={openPermissions}
+              onOpenRoles={openRoles}
             />,
           );
         }
@@ -1633,6 +1835,41 @@ export function AdminDesktop({
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onAlertClose={dismissPermissionsAlert}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
+        if (win.kind === 'roles') {
+          return shellFrame(
+            <RolesWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              roles={rolesRows}
+              permissions={rolesPermissionOptions}
+              preferSelectedId={rolesPreferSelectedId}
+              canEdit={canEditRoles}
+              loading={rolesLoading}
+              saving={rolesCreating}
+              deleting={rolesDeleting}
+              error={rolesError}
+              formError={rolesFormError}
+              fieldErrors={rolesFieldErrors}
+              statusMessage={rolesStatusMessage}
+              onClearStatusMessage={clearRolesStatusMessage}
+              onSave={handleSaveRole}
+              onDelete={handleDeleteRole}
+              onAddPermission={openPermissions}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onAlertClose={dismissRolesAlert}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}

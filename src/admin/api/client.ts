@@ -4,6 +4,7 @@ import type {
   AdminApiHostDeleteResult,
   AdminApiPermission,
   AdminApiResult,
+  AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
   AdminApiFailure,
@@ -58,6 +59,20 @@ export type UpdatePermissionBody = {
   name?: string;
   label?: string;
   description?: string;
+};
+
+export type CreateRoleBody = {
+  name: string;
+  label: string;
+  description?: string;
+  permissionIds?: number[];
+};
+
+export type UpdateRoleBody = {
+  name?: string;
+  label?: string;
+  description?: string;
+  permissionIds?: number[];
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -274,6 +289,22 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       }),
     deletePermission: (id: number) =>
       request<undefined>(`/permissions/${id}`, {
+        method: 'DELETE',
+      }),
+    listRoles: () => request<AdminApiRole[]>('/roles'),
+    getRole: (id: number) => request<AdminApiRole>(`/roles/${id}`),
+    createRole: (body: CreateRoleBody) =>
+      request<AdminApiRole>('/roles', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    updateRole: (id: number, body: UpdateRoleBody) =>
+      request<AdminApiRole>(`/roles/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    deleteRole: (id: number) =>
+      request<undefined>(`/roles/${id}`, {
         method: 'DELETE',
       }),
   };

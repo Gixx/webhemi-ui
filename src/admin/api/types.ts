@@ -69,6 +69,16 @@ export type AdminApiPermission = {
   description: string;
 };
 
+export type AdminApiRole = {
+  id: number;
+  name: string;
+  label: string;
+  description: string;
+  protected: boolean;
+  permissionIds: number[];
+  permissionCount: number;
+};
+
 /** DELETE /hosts/{id} — sessionEnded when domain access was forced back to path. */
 export type AdminApiHostDeleteResult = {
   deleted: true;

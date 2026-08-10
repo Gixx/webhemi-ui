@@ -23,6 +23,7 @@ export const DEFAULT_WINDOW_SIZE = {
   hosts: { width: 640, height: 480 },
   settings: { width: 420, height: 340 },
   permissions: { width: 560, height: 480 },
+  roles: { width: 640, height: 480 },
 } as const;
 
 export type ShellBounds = {

@@ -56,6 +56,18 @@ export {
   type PermissionFormValues,
 } from './components/PermissionsWindow/PermissionFormDialog';
 export {
+  RolesWindow,
+  type RolesWindowProps,
+  type RolesWindowRole,
+} from './components/RolesWindow/RolesWindow';
+export {
+  RoleFormDialog,
+  type RoleFormDialogProps,
+  type RoleFormMode,
+  type RoleFormSavePayload,
+  type RoleFormValues,
+} from './components/RolesWindow/RoleFormDialog';
+export {
   HostFormDialog,
   type HostFormDialogProps,
   type HostFormMode,
