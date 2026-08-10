@@ -2,7 +2,8 @@
 
 .sites-window.window,
 .hosts-window.window,
-.settings-window.window {
+.settings-window.window,
+.permissions-window.window {
   position: relative;
 }
 
@@ -12,7 +13,9 @@
 .dashboard > .desktop-window.is-sized .hosts-window.window,
 .dashboard > .desktop-window.is-maximized .hosts-window.window,
 .dashboard > .desktop-window.is-sized .settings-window.window,
-.dashboard > .desktop-window.is-maximized .settings-window.window {
+.dashboard > .desktop-window.is-maximized .settings-window.window,
+.dashboard > .desktop-window.is-sized .permissions-window.window,
+.dashboard > .desktop-window.is-maximized .permissions-window.window {
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -25,7 +28,9 @@
 .dashboard > .desktop-window.is-sized .hosts-window .heading-panel-layout,
 .dashboard > .desktop-window.is-maximized .hosts-window .heading-panel-layout,
 .dashboard > .desktop-window.is-sized .settings-window .heading-panel-layout,
-.dashboard > .desktop-window.is-maximized .settings-window .heading-panel-layout {
+.dashboard > .desktop-window.is-maximized .settings-window .heading-panel-layout,
+.dashboard > .desktop-window.is-sized .permissions-window .heading-panel-layout,
+.dashboard > .desktop-window.is-maximized .permissions-window .heading-panel-layout {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
@@ -83,7 +88,17 @@
   max-width: 100%;
 }
 
+.permission-form-dialog {
+  max-width: 100%;
+}
+
 .site-form-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.permission-form-dialog-form {
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -94,7 +109,8 @@
 }
 
 /* Align Name/Slug (and similar) inputs: equal-width captions before controls. */
-.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above),
+.permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
@@ -107,9 +123,19 @@
   min-width: 4.5em;
 }
 
+.permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 6.5em;
+  box-sizing: border-box;
+  width: 6.5em;
+  min-width: 6.5em;
+}
+
 .site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
 .site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > select,
-.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea {
+.site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea,
+.permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
+.permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > select,
+.permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;

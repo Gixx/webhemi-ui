@@ -1,27 +1,28 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
-import type {
-  AdminApiHost,
-  AdminApiSettings,
-  AdminApiSite,
-} from '../types';
+import type { AdminApiHost, AdminApiPermission, AdminApiSettings, AdminApiSite } from '../types';
 import {
   MSW_DEFAULT_SETTINGS,
   MSW_SAMPLE_HOSTS,
+  MSW_SAMPLE_PERMISSIONS,
   MSW_SAMPLE_SITES,
 } from './fixtures';
 
 export type AdminApiMswStore = {
   sites: AdminApiSite[];
   hosts: AdminApiHost[];
+  permissions: AdminApiPermission[];
   settings: AdminApiSettings;
 };
 
 export type CreateAdminApiHandlersOptions = {
   sites?: AdminApiSite[];
   hosts?: AdminApiHost[];
+  permissions?: AdminApiPermission[];
   settings?: AdminApiSettings;
   /** When true, GET /sites returns 500. */
   failListSites?: boolean;
+  /** When true, GET /permissions returns 500. */
+  failListPermissions?: boolean;
 };
 
 /**
@@ -34,10 +35,12 @@ export function createAdminApiHandlers(
   const store: AdminApiMswStore = {
     sites: structuredClone(options.sites ?? MSW_SAMPLE_SITES),
     hosts: structuredClone(options.hosts ?? MSW_SAMPLE_HOSTS),
+    permissions: structuredClone(options.permissions ?? MSW_SAMPLE_PERMISSIONS),
     settings: structuredClone(options.settings ?? MSW_DEFAULT_SETTINGS),
   };
 
   const failListSites = Boolean(options.failListSites);
+  const failListPermissions = Boolean(options.failListPermissions);
 
   return [
     http.get('/admin/api/sites', () => {
@@ -250,6 +253,149 @@ export function createAdminApiHandlers(
       };
       return HttpResponse.json({ data: store.settings });
     }),
+
+    http.get('/admin/api/permissions', () => {
+      if (failListPermissions) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'server_error',
+              message: 'Could not load permissions. Try again.',
+            },
+          },
+          { status: 500 },
+        );
+      }
+      return HttpResponse.json({ data: store.permissions });
+    }),
+
+    http.get('/admin/api/permissions/:id', ({ params }) => {
+      const id = Number(params.id);
+      const permission = store.permissions.find((row) => row.id === id);
+      if (!permission) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Permission not found.' } },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json({ data: permission });
+    }),
+
+    http.post('/admin/api/permissions', async ({ request }) => {
+      const body = (await request.json()) as {
+        name?: string;
+        label?: string;
+        description?: string;
+      };
+      const name = body.name?.trim().toLowerCase() ?? '';
+      const label = body.label?.trim() ?? '';
+      const description = body.description?.trim() ?? '';
+      if (!name || !label) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name and label are required.',
+              fields: {
+                ...(name ? {} : { name: 'Name is required.' }),
+                ...(label ? {} : { label: 'Label is required.' }),
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (store.permissions.some((row) => row.name === name)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'A permission with this name already exists.',
+              fields: { name: 'Name is already taken.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const created: AdminApiPermission = {
+        id: Math.max(0, ...store.permissions.map((row) => row.id)) + 1,
+        name,
+        label,
+        description,
+      };
+      store.permissions = [...store.permissions, created].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      return HttpResponse.json({ data: created }, { status: 201 });
+    }),
+
+    http.patch('/admin/api/permissions/:id', async ({ params, request }) => {
+      const id = Number(params.id);
+      const index = store.permissions.findIndex((row) => row.id === id);
+      if (index < 0) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Permission not found.' } },
+          { status: 404 },
+        );
+      }
+      const body = (await request.json()) as {
+        name?: string;
+        label?: string;
+        description?: string;
+      };
+      const current = store.permissions[index];
+      const name =
+        body.name !== undefined ? body.name.trim().toLowerCase() : current.name;
+      const label = body.label !== undefined ? body.label.trim() : current.label;
+      const description =
+        body.description !== undefined
+          ? body.description.trim()
+          : current.description;
+      if (!name || !label) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Name and label are required.',
+              fields: {
+                ...(name ? {} : { name: 'Name is required.' }),
+                ...(label ? {} : { label: 'Label is required.' }),
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (store.permissions.some((row) => row.name === name && row.id !== id)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'name_taken',
+              message: 'A permission with this name already exists.',
+              fields: { name: 'Name is already taken.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const updated: AdminApiPermission = { ...current, name, label, description };
+      store.permissions = store.permissions
+        .map((row) => (row.id === id ? updated : row))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return HttpResponse.json({ data: updated });
+    }),
+
+    http.delete('/admin/api/permissions/:id', ({ params }) => {
+      const id = Number(params.id);
+      if (!store.permissions.some((row) => row.id === id)) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Permission not found.' } },
+          { status: 404 },
+        );
+      }
+      store.permissions = store.permissions.filter((row) => row.id !== id);
+      return new HttpResponse(null, { status: 204 });
+    }),
   ];
 }
 
@@ -261,4 +407,14 @@ export function createEmptySitesHandlers(): RequestHandler[] {
 /** List Sites fails with 500. */
 export function createFailingSitesListHandlers(): RequestHandler[] {
   return createAdminApiHandlers({ failListSites: true });
+}
+
+/** Empty Permissions list. */
+export function createEmptyPermissionsHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ permissions: [] });
+}
+
+/** List Permissions fails with 500. */
+export function createFailingPermissionsListHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ failListPermissions: true });
 }

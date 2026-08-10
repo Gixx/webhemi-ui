@@ -1,7 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
-import type { AdminApiClient, AdminApiHost, AdminApiSite } from '../api';
+import type { AdminApiClient, AdminApiHost, AdminApiPermission, AdminApiSite } from '../api';
 import {
   createAdminApiHandlers,
   createEmptySitesHandlers,
@@ -44,12 +44,29 @@ const SAMPLE_API_HOSTS: AdminApiHost[] = [
   },
 ];
 
+const SAMPLE_API_PERMISSIONS: AdminApiPermission[] = [
+  {
+    id: 1,
+    name: 'content.edit',
+    label: 'Edit content',
+    description: 'Allows editing site content.',
+  },
+  {
+    id: 2,
+    name: 'content.publish',
+    label: 'Publish content',
+    description: '',
+  },
+];
+
 function createMockAdminApi(
   initialSites: AdminApiSite[],
   initialHosts: AdminApiHost[] = [],
+  initialPermissions: AdminApiPermission[] = [],
 ): AdminApiClient {
   let siteRows = [...initialSites];
   let hostRows = [...initialHosts];
+  let permissionRows = [...initialPermissions];
   return {
     listSites: async () => ({ ok: true, status: 200, data: [...siteRows] }),
     getSite: async (id) => {
@@ -356,6 +373,81 @@ function createMockAdminApi(
           },
         },
       };
+    },
+    listPermissions: async () => ({ ok: true, status: 200, data: [...permissionRows] }),
+    getPermission: async (id) => {
+      const permission = permissionRows.find((row) => row.id === id);
+      if (!permission) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Permission not found.' },
+        };
+      }
+      return { ok: true, status: 200, data: permission };
+    },
+    createPermission: async (body) => {
+      const name = body.name.trim().toLowerCase();
+      if (permissionRows.some((row) => row.name === name)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'name_taken',
+            message: 'A permission with this name already exists.',
+            fields: { name: 'Name is already taken.' },
+          },
+        };
+      }
+      const created: AdminApiPermission = {
+        id: Math.max(0, ...permissionRows.map((row) => row.id)) + 1,
+        name,
+        label: body.label,
+        description: body.description ?? '',
+      };
+      permissionRows = [...permissionRows, created];
+      return { ok: true, status: 201, data: created };
+    },
+    updatePermission: async (id, body) => {
+      const existing = permissionRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Permission not found.' },
+        };
+      }
+      const name = body.name != null ? body.name.trim().toLowerCase() : existing.name;
+      if (permissionRows.some((row) => row.name === name && row.id !== id)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'name_taken',
+            message: 'A permission with this name already exists.',
+            fields: { name: 'Name is already taken.' },
+          },
+        };
+      }
+      const updated: AdminApiPermission = {
+        ...existing,
+        name,
+        label: body.label ?? existing.label,
+        description: body.description ?? existing.description,
+      };
+      permissionRows = permissionRows.map((row) => (row.id === id ? updated : row));
+      return { ok: true, status: 200, data: updated };
+    },
+    deletePermission: async (id) => {
+      if (!permissionRows.some((row) => row.id === id)) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'Permission not found.' },
+        };
+      }
+      permissionRows = permissionRows.filter((row) => row.id !== id);
+      return { ok: true, status: 204, data: undefined };
     },
   };
 }
@@ -723,6 +815,28 @@ export const DeepLinkSiteExplorer: Story = {
   },
 };
 
+export const DeepLinkPermissionsWithId: Story = {
+  args: {
+    sitesApi: createMockAdminApi(SAMPLE_API_SITES, SAMPLE_API_HOSTS, SAMPLE_API_PERMISSIONS),
+    locationSearch: '?window=permissions&id=2',
+  },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(canvasElement.querySelector('#permissions')).not.toBeNull();
+    });
+    const permissionsHost = canvasElement.querySelector('#permissions') as HTMLElement;
+    await expect(permissionsHost).toHaveAttribute('data-shell-window', 'permissions');
+
+    const table = await within(permissionsHost).findByRole('table', {
+      name: 'Permissions',
+    });
+    await waitFor(() => {
+      const row = within(table).getByText('content.publish').closest('tr');
+      expect(row).toHaveClass('highlighted');
+    });
+  },
+};
+
 /** MSW: real `createAdminApiClient` + `/admin/api` handlers (no `sitesApi` inject). */
 export const MswOpenSitesWindow: Story = {
   args: {
@@ -807,5 +921,27 @@ export const MswSitesListError: Story = {
     await expect(
       await canvas.findByText('Could not load sites. Try again.'),
     ).toBeVisible();
+  },
+};
+
+export const MswOpenPermissionsWindow: Story = {
+  args: {
+    apiCsrfToken: 'storybook-csrf',
+  },
+  parameters: {
+    msw: createAdminApiHandlers(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await userEvent.dblClick(canvas.getByRole('link', { name: 'Permissions' }));
+
+    const permissionsHost = canvasElement.querySelector('#permissions') as HTMLElement;
+    await expect(permissionsHost).toBeTruthy();
+    const table = await within(permissionsHost).findByRole('table', {
+      name: 'Permissions',
+    });
+    await expect(within(table).getByText('content.edit')).toBeVisible();
+    await expect(within(table).getByText('Edit content')).toBeVisible();
   },
 };

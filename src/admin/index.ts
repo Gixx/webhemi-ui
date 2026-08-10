@@ -44,6 +44,18 @@ export {
   type AdminAccessModeValue,
 } from './components/SettingsWindow/SettingsWindow';
 export {
+  PermissionsWindow,
+  type PermissionsWindowProps,
+  type PermissionsWindowPermission,
+} from './components/PermissionsWindow/PermissionsWindow';
+export {
+  PermissionFormDialog,
+  type PermissionFormDialogProps,
+  type PermissionFormMode,
+  type PermissionFormSavePayload,
+  type PermissionFormValues,
+} from './components/PermissionsWindow/PermissionFormDialog';
+export {
   HostFormDialog,
   type HostFormDialogProps,
   type HostFormMode,

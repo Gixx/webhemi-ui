@@ -2,6 +2,7 @@ import type {
   AdminApiErrorBody,
   AdminApiHost,
   AdminApiHostDeleteResult,
+  AdminApiPermission,
   AdminApiResult,
   AdminApiSettings,
   AdminApiSite,
@@ -45,6 +46,18 @@ export type UpdateHostBody = {
 
 export type UpdateSettingsBody = {
   adminAccess: 'path' | 'domain';
+};
+
+export type CreatePermissionBody = {
+  name: string;
+  label: string;
+  description?: string;
+};
+
+export type UpdatePermissionBody = {
+  name?: string;
+  label?: string;
+  description?: string;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -246,6 +259,22 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiSettings>('/settings', {
         method: 'PATCH',
         body: JSON.stringify(body),
+      }),
+    listPermissions: () => request<AdminApiPermission[]>('/permissions'),
+    getPermission: (id: number) => request<AdminApiPermission>(`/permissions/${id}`),
+    createPermission: (body: CreatePermissionBody) =>
+      request<AdminApiPermission>('/permissions', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    updatePermission: (id: number, body: UpdatePermissionBody) =>
+      request<AdminApiPermission>(`/permissions/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    deletePermission: (id: number) =>
+      request<undefined>(`/permissions/${id}`, {
+        method: 'DELETE',
       }),
   };
 }

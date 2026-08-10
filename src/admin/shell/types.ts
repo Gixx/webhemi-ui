@@ -3,6 +3,7 @@ export const CONTROL_PANEL_WINDOW_ID = 'control-panel';
 export const SITES_WINDOW_ID = 'sites';
 export const HOSTS_WINDOW_ID = 'hosts';
 export const SETTINGS_WINDOW_ID = 'settings';
+export const PERMISSIONS_WINDOW_ID = 'permissions';
 
 export function siteWindowId(siteId: number): string {
   return `site-${siteId}`;
@@ -18,7 +19,8 @@ export type ShellWindowKind =
   | 'site'
   | 'sites'
   | 'hosts'
-  | 'settings';
+  | 'settings'
+  | 'permissions';
 
 /**
  * One open desktop shell window.

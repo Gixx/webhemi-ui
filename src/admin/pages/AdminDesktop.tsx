@@ -19,16 +19,22 @@ import {
   type SitesWindowSite,
 } from '../components/SitesWindow/SitesWindow';
 import {
+  PermissionsWindow,
+  type PermissionsWindowPermission,
+} from '../components/PermissionsWindow/PermissionsWindow';
+import {
   HostsWindow,
   type HostsWindowHost,
 } from '../components/HostsWindow/HostsWindow';
 import type { HostFormSavePayload } from '../components/HostsWindow/HostFormDialog';
 import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialog';
+import type { PermissionFormSavePayload } from '../components/PermissionsWindow/PermissionFormDialog';
 import {
   createAdminApiClient,
   isUnauthorizedResult,
   type AdminApiClient,
   type AdminApiHost,
+  type AdminApiPermission,
   type AdminApiResult,
   type AdminApiSettings,
   type AdminApiSite,
@@ -47,6 +53,7 @@ import {
   HOSTS_WINDOW_ID,
   hydrateDesktopFromPersistence,
   loadPersistedDesktop,
+  PERMISSIONS_WINDOW_ID,
   savePersistedDesktop,
   siteWindowId,
   SETTINGS_WINDOW_ID,
@@ -145,6 +152,15 @@ function toWindowSite(site: AdminApiSite): SitesWindowSite {
   };
 }
 
+function toWindowPermission(permission: AdminApiPermission): PermissionsWindowPermission {
+  return {
+    id: permission.id,
+    name: permission.name,
+    label: permission.label,
+    description: permission.description,
+  };
+}
+
 function toWindowHost(host: AdminApiHost): HostsWindowHost {
   return {
     id: host.id,
@@ -220,6 +236,8 @@ export function AdminDesktop({
     deepLink?.window === 'sites' ? deepLink.id : null;
   const hostsPreferSelectedId =
     deepLink?.window === 'hosts' ? deepLink.id : null;
+  const permissionsPreferSelectedId =
+    deepLink?.window === 'permissions' ? deepLink.id : null;
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [desktopSites, setDesktopSites] = useState<DesktopSite[]>(sites);
   const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
@@ -231,6 +249,22 @@ export function AdminDesktop({
   const [sitesFieldErrors, setSitesFieldErrors] = useState<
     Partial<Record<'name' | 'slug', string>>
   >({});
+  const [permissionsRows, setPermissionsRows] = useState<
+    PermissionsWindowPermission[]
+  >([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsCreating, setPermissionsCreating] = useState(false);
+  const [permissionsDeleting, setPermissionsDeleting] = useState(false);
+  const [permissionsError, setPermissionsError] = useState<string | null>(null);
+  const [permissionsFormError, setPermissionsFormError] = useState<string | null>(
+    null,
+  );
+  const [permissionsFieldErrors, setPermissionsFieldErrors] = useState<
+    Partial<Record<'name' | 'label' | 'description', string>>
+  >({});
+  const [permissionsStatusMessage, setPermissionsStatusMessage] = useState<
+    string | null
+  >(null);
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
@@ -256,6 +290,9 @@ export function AdminDesktop({
   const pendingLoginRedirectRef = useRef(false);
   const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hostsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const permissionsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const settingsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const api = useMemo(
@@ -271,6 +308,7 @@ export function AdminDesktop({
 
   const canEditSites = Boolean(sitesApi) || Boolean(apiCsrfToken);
   const canEditHosts = canEditSites;
+  const canEditPermissions = canEditSites;
   const canEditSettings = canEditSites;
 
   const clearSitesStatusMessage = useCallback(() => {
@@ -287,6 +325,14 @@ export function AdminDesktop({
       hostsStatusTimerRef.current = null;
     }
     setHostsStatusMessage(null);
+  }, []);
+
+  const clearPermissionsStatusMessage = useCallback(() => {
+    if (permissionsStatusTimerRef.current != null) {
+      clearTimeout(permissionsStatusTimerRef.current);
+      permissionsStatusTimerRef.current = null;
+    }
+    setPermissionsStatusMessage(null);
   }, []);
 
   const flashSitesStatus = useCallback(
@@ -311,6 +357,18 @@ export function AdminDesktop({
       }, 4000);
     },
     [clearHostsStatusMessage],
+  );
+
+  const flashPermissionsStatus = useCallback(
+    (message: string) => {
+      clearPermissionsStatusMessage();
+      setPermissionsStatusMessage(message);
+      permissionsStatusTimerRef.current = setTimeout(() => {
+        permissionsStatusTimerRef.current = null;
+        setPermissionsStatusMessage(null);
+      }, 4000);
+    },
+    [clearPermissionsStatusMessage],
   );
 
   const clearSettingsStatusMessage = useCallback(() => {
@@ -340,6 +398,9 @@ export function AdminDesktop({
       }
       if (hostsStatusTimerRef.current != null) {
         clearTimeout(hostsStatusTimerRef.current);
+      }
+      if (permissionsStatusTimerRef.current != null) {
+        clearTimeout(permissionsStatusTimerRef.current);
       }
       if (settingsStatusTimerRef.current != null) {
         clearTimeout(settingsStatusTimerRef.current);
@@ -385,6 +446,12 @@ export function AdminDesktop({
     handleAlertClose();
   }, [handleAlertClose]);
 
+  const dismissPermissionsAlert = useCallback(() => {
+    setPermissionsError(null);
+    setPermissionsFormError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
   const dismissSettingsAlert = useCallback(() => {
     setSettingsError(null);
     handleAlertClose();
@@ -392,6 +459,9 @@ export function AdminDesktop({
 
   const sitesWindowOpen = shell.windows.some((win) => win.id === SITES_WINDOW_ID);
   const hostsWindowOpen = shell.windows.some((win) => win.id === HOSTS_WINDOW_ID);
+  const permissionsWindowOpen = shell.windows.some(
+    (win) => win.id === PERMISSIONS_WINDOW_ID,
+  );
   const settingsWindowOpen = shell.windows.some((win) => win.id === SETTINGS_WINDOW_ID);
   const siteFormHosts = useMemo(
     () => hostsRows.map(toSiteFormHostOption),
@@ -458,6 +528,35 @@ export function AdminDesktop({
       cancelled = true;
     };
   }, [sitesWindowOpen, api, handleApiFailure, clearSitesStatusMessage]);
+
+  useEffect(() => {
+    if (!permissionsWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    setPermissionsLoading(true);
+    setPermissionsError(null);
+    clearPermissionsStatusMessage();
+
+    void (async () => {
+      const result = await api.listPermissions();
+      if (cancelled) {
+        return;
+      }
+      setPermissionsLoading(false);
+      if (!result.ok) {
+        handleApiFailure(result, setPermissionsError);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setPermissionsRows(result.data.map(toWindowPermission));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [permissionsWindowOpen, api, handleApiFailure, clearPermissionsStatusMessage]);
 
   useEffect(() => {
     if (!hostsWindowOpen && !sitesWindowOpen) {
@@ -786,6 +885,15 @@ export function AdminDesktop({
     );
   };
 
+  const openPermissions = () => {
+    openOrRaiseWindow(
+      PERMISSIONS_WINDOW_ID,
+      'permissions',
+      'Permissions',
+      DEFAULT_WINDOW_SIZE.permissions,
+    );
+  };
+
   const refreshSettings = useCallback(async () => {
     const result = await api.getSettings();
     if (!result.ok) {
@@ -887,6 +995,9 @@ export function AdminDesktop({
         break;
       case 'settings':
         openSettings();
+        break;
+      case 'permissions':
+        openPermissions();
         break;
       case 'site': {
         if (deepLink.id == null) {
@@ -1025,6 +1136,86 @@ export function AdminDesktop({
     } else {
       setSitesRows((prev) => prev.filter((row) => row.id !== site.id));
       setDesktopSites((prev) => prev.filter((row) => row.id !== site.id));
+    }
+  };
+
+  const handleSavePermission = async (payload: PermissionFormSavePayload) => {
+    clearPermissionsStatusMessage();
+    setPermissionsCreating(true);
+    setPermissionsFormError(null);
+    setPermissionsFieldErrors({});
+
+    const result =
+      payload.mode === 'new'
+        ? await api.createPermission({
+            name: payload.name,
+            label: payload.label,
+            description: payload.description,
+          })
+        : payload.permissionId != null
+          ? await api.updatePermission(payload.permissionId, {
+              name: payload.name,
+              label: payload.label,
+              description: payload.description,
+            })
+          : null;
+
+    setPermissionsCreating(false);
+
+    if (!result) {
+      setPermissionsFormError('Permission could not be saved.');
+      return;
+    }
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setPermissionsFieldErrors({
+          name: result.error.fields.name,
+          label: result.error.fields.label,
+          description: result.error.fields.description,
+        });
+      }
+      handleApiFailure(result, setPermissionsFormError);
+      return;
+    }
+
+    flashPermissionsStatus(
+      payload.mode === 'new' ? 'Permission created.' : 'Permission updated.',
+    );
+
+    const list = await api.listPermissions();
+    if (list.ok) {
+      setPermissionsRows(list.data.map(toWindowPermission));
+      return;
+    }
+
+    const saved = toWindowPermission(result.data);
+    setPermissionsRows((prev) =>
+      [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+  };
+
+  const handleDeletePermission = async (permission: PermissionsWindowPermission) => {
+    clearPermissionsStatusMessage();
+    setPermissionsDeleting(true);
+    setPermissionsError(null);
+    const result = await api.deletePermission(permission.id);
+    setPermissionsDeleting(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setPermissionsError);
+      return;
+    }
+
+    flashPermissionsStatus('Permission deleted.');
+
+    const list = await api.listPermissions();
+    if (list.ok) {
+      setPermissionsRows(list.data.map(toWindowPermission));
+    } else {
+      setPermissionsRows((prev) => prev.filter((row) => row.id !== permission.id));
     }
   };
 
@@ -1305,6 +1496,7 @@ export function AdminDesktop({
               onOpenSites={openSites}
               onOpenHosts={openHosts}
               onOpenSettings={openSettings}
+              onOpenPermissions={openPermissions}
             />,
           );
         }
@@ -1408,6 +1600,39 @@ export function AdminDesktop({
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onAlertClose={dismissSettingsAlert}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
+        if (win.kind === 'permissions') {
+          return shellFrame(
+            <PermissionsWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              permissions={permissionsRows}
+              preferSelectedId={permissionsPreferSelectedId}
+              canEdit={canEditPermissions}
+              loading={permissionsLoading}
+              saving={permissionsCreating}
+              deleting={permissionsDeleting}
+              error={permissionsError}
+              formError={permissionsFormError}
+              fieldErrors={permissionsFieldErrors}
+              statusMessage={permissionsStatusMessage}
+              onClearStatusMessage={clearPermissionsStatusMessage}
+              onSave={handleSavePermission}
+              onDelete={handleDeletePermission}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onAlertClose={dismissPermissionsAlert}
               onClose={() => closeWindow(win.id)}
               onCancel={() => closeWindow(win.id)}
               onMinimize={() => minimizeWindow(win.id)}

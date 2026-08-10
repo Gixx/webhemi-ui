@@ -22,6 +22,7 @@ export const DEFAULT_WINDOW_SIZE = {
   sites: { width: 560, height: 480 },
   hosts: { width: 640, height: 480 },
   settings: { width: 420, height: 340 },
+  permissions: { width: 560, height: 480 },
 } as const;
 
 export type ShellBounds = {

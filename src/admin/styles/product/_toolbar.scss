@@ -222,6 +222,10 @@
   background-image: url("/assets/admin/icons/system/settings.svg");
 }
 
+#toolbar .task-buttons > .task.permissions {
+  background-image: url("/assets/admin/icons/system/permissions.svg");
+}
+
 #toolbar .task-buttons > .task > .task-title {
   display: block;
   min-width: 0;

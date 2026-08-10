@@ -1,4 +1,4 @@
-import type { AdminApiHost, AdminApiSettings, AdminApiSite } from '../types';
+import type { AdminApiHost, AdminApiPermission, AdminApiSettings, AdminApiSite } from '../types';
 
 /** Shared Storybook / MSW fixtures for `/admin/api` (not exported from package root). */
 export const MSW_SAMPLE_SITES: AdminApiSite[] = [
@@ -69,3 +69,18 @@ export const MSW_DEFAULT_SETTINGS: AdminApiSettings = {
     register: '/register',
   },
 };
+
+export const MSW_SAMPLE_PERMISSIONS: AdminApiPermission[] = [
+  {
+    id: 1,
+    name: 'content.edit',
+    label: 'Edit content',
+    description: 'Allows editing site content.',
+  },
+  {
+    id: 2,
+    name: 'content.publish',
+    label: 'Publish content',
+    description: '',
+  },
+];

@@ -23,6 +23,7 @@ function taskClassName(win: ShellWindowState, active: boolean): string {
     win.kind === 'sites' && 'sites',
     win.kind === 'hosts' && 'hosts',
     win.kind === 'settings' && 'settings',
+    win.kind === 'permissions' && 'permissions',
     active && 'active',
   );
 }
