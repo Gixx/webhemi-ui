@@ -68,6 +68,24 @@ export {
   type RoleFormValues,
 } from './components/RolesWindow/RoleFormDialog';
 export {
+  UsersWindow,
+  type UsersWindowProps,
+  type UsersWindowUser,
+} from './components/UsersWindow/UsersWindow';
+export {
+  UserFormDialog,
+  type UserFormDialogProps,
+  type UserFormMode,
+  type UserFormSavePayload,
+  type UserFormValues,
+} from './components/UsersWindow/UserFormDialog';
+export {
+  SetPasswordDialog,
+  type SetPasswordDialogProps,
+  type SetPasswordMode,
+  type SetPasswordSavePayload,
+} from './components/UsersWindow/SetPasswordDialog';
+export {
   HostFormDialog,
   type HostFormDialogProps,
   type HostFormMode,

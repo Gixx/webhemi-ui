@@ -1,11 +1,12 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { buildDemoSiteExplorerTree } from '../bricks/FileExplorerWindow';
-import type { AdminApiClient, AdminApiHost, AdminApiPermission, AdminApiRole, AdminApiSite } from '../api';
+import type { AdminApiClient, AdminApiHost, AdminApiPermission, AdminApiResult, AdminApiRole, AdminApiSite, AdminApiUser } from '../api';
 import {
   createAdminApiHandlers,
   createEmptySitesHandlers,
   createFailingSitesListHandlers,
+  MSW_SAMPLE_USERS,
 } from '../api/msw';
 import { AdminDesktop } from './AdminDesktop';
 
@@ -94,11 +95,13 @@ function createMockAdminApi(
   initialHosts: AdminApiHost[] = [],
   initialPermissions: AdminApiPermission[] = [],
   initialRoles: AdminApiRole[] = [],
+  initialUsers: AdminApiUser[] = MSW_SAMPLE_USERS,
 ): AdminApiClient {
   let siteRows = [...initialSites];
   let hostRows = [...initialHosts];
   let permissionRows = [...initialPermissions];
   let roleRows = [...initialRoles];
+  let userRows = structuredClone(initialUsers);
   return {
     listSites: async () => ({ ok: true, status: 200, data: [...siteRows] }),
     getSite: async (id) => {
@@ -590,6 +593,204 @@ function createMockAdminApi(
       roleRows = roleRows.filter((row) => row.id !== id);
       return { ok: true, status: 204, data: undefined };
     },
+    listUsers: async () => ({ ok: true, status: 200, data: [...userRows] }),
+    getUser: async (id) => {
+      const user = userRows.find((row) => row.id === id);
+      if (!user) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'User not found.' },
+        };
+      }
+      return { ok: true, status: 200, data: user };
+    },
+    createUser: async (body) => {
+      const email = body.email.trim().toLowerCase();
+      if (userRows.some((row) => row.email === email)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'email_taken',
+            message: 'A user with this email already exists.',
+            fields: { email: 'Email is already taken.' },
+          },
+        };
+      }
+      const roleIds = [...new Set(body.roleIds ?? [])];
+      const roles = roleIds
+        .map((roleId) => roleRows.find((row) => row.id === roleId))
+        .filter((row): row is AdminApiRole => row != null)
+        .map((row) => ({ id: row.id, name: row.name, label: row.label }));
+      const siteAssignments = (body.siteAssignments ?? []).map((row, index) => {
+        const site = siteRows.find((s) => s.id === row.siteId);
+        const role = roleRows.find((r) => r.id === row.roleId);
+        return {
+          id: index + 1,
+          siteId: row.siteId,
+          siteName: site?.name ?? `Site ${row.siteId}`,
+          roleId: row.roleId,
+          roleName: role?.name ?? `ROLE_${row.roleId}`,
+          roleLabel: role?.label ?? `Role ${row.roleId}`,
+        };
+      });
+      const created: AdminApiUser = {
+        id: Math.max(0, ...userRows.map((row) => row.id)) + 1,
+        email,
+        roleIds: roles.map((row) => row.id),
+        roles,
+        siteAssignments,
+        roleCount: roles.length,
+        siteAssignmentCount: siteAssignments.length,
+      };
+      userRows = [...userRows, created].sort((a, b) =>
+        a.email.localeCompare(b.email),
+      );
+      return { ok: true, status: 201, data: created };
+    },
+    updateUser: async (id, body) => {
+      const existing = userRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'User not found.' },
+        };
+      }
+      const email =
+        body.email != null ? body.email.trim().toLowerCase() : existing.email;
+      if (userRows.some((row) => row.email === email && row.id !== id)) {
+        return {
+          ok: false,
+          status: 409,
+          error: {
+            code: 'email_taken',
+            message: 'A user with this email already exists.',
+            fields: { email: 'Email is already taken.' },
+          },
+        };
+      }
+      const roleIds =
+        body.roleIds !== undefined
+          ? [...new Set(body.roleIds)]
+          : existing.roleIds;
+      const roles = roleIds
+        .map((roleId) => roleRows.find((row) => row.id === roleId))
+        .filter((row): row is AdminApiRole => row != null)
+        .map((row) => ({ id: row.id, name: row.name, label: row.label }));
+      const siteAssignments =
+        body.siteAssignments !== undefined
+          ? body.siteAssignments.map((row, index) => {
+              const site = siteRows.find((s) => s.id === row.siteId);
+              const role = roleRows.find((r) => r.id === row.roleId);
+              return {
+                id: index + 1,
+                siteId: row.siteId,
+                siteName: site?.name ?? `Site ${row.siteId}`,
+                roleId: row.roleId,
+                roleName: role?.name ?? `ROLE_${row.roleId}`,
+                roleLabel: role?.label ?? `Role ${row.roleId}`,
+              };
+            })
+          : existing.siteAssignments;
+      const updated: AdminApiUser = {
+        ...existing,
+        email,
+        roleIds: roles.map((row) => row.id),
+        roles,
+        siteAssignments,
+        roleCount: roles.length,
+        siteAssignmentCount: siteAssignments.length,
+      };
+      userRows = userRows
+        .map((row) => (row.id === id ? updated : row))
+        .sort((a, b) => a.email.localeCompare(b.email));
+      return { ok: true, status: 200, data: updated };
+    },
+    deleteUser: async (id) => {
+      const existing = userRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'User not found.' },
+        };
+      }
+      userRows = userRows.filter((row) => row.id !== id);
+      return { ok: true, status: 204, data: undefined };
+    },
+    setUserPassword: async (
+      id,
+      body,
+    ): Promise<AdminApiResult<{ ok: true }>> => {
+      const existing = userRows.find((row) => row.id === id);
+      if (!existing) {
+        return {
+          ok: false,
+          status: 404,
+          error: { code: 'not_found', message: 'User not found.' },
+        };
+      }
+      const isSelf = id === 1;
+      if (isSelf) {
+        if (!body.currentPassword) {
+          return {
+            ok: false,
+            status: 422,
+            error: {
+              code: 'validation_failed',
+              message: 'Password could not be set.',
+              fields: { currentPassword: 'Current password is required.' },
+            },
+          };
+        }
+        if (body.currentPassword !== 'password') {
+          return {
+            ok: false,
+            status: 409,
+            error: {
+              code: 'password_mismatch',
+              message: 'Current password is incorrect.',
+              fields: { currentPassword: 'Current password is incorrect.' },
+            },
+          };
+        }
+      }
+      if (!body.password || body.password.length < 8) {
+        return {
+          ok: false,
+          status: 422,
+          error: {
+            code: 'validation_failed',
+            message: 'Password could not be set.',
+            fields: {
+              password: !body.password
+                ? 'Password is required.'
+                : 'Password must be at least 8 characters.',
+            },
+          },
+        };
+      }
+      return { ok: true, status: 200, data: { ok: true } };
+    },
+    getMe: async () => ({
+      ok: true,
+      status: 200,
+      data: {
+        user: 'admin@example.test',
+        id: 1,
+        email: 'admin@example.test',
+        roles: ['ROLE_ADMIN', 'ROLE_USER'],
+        capabilities: {
+          listUsers: true,
+          viewUser: true,
+          createUser: true,
+          editUser: true,
+          deleteUser: true,
+        },
+      },
+    }),
   };
 }
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {

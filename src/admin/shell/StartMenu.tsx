@@ -6,6 +6,8 @@ export type StartMenuProps = {
   open: boolean;
   onClose: () => void;
   onOpenControlPanel: () => void;
+  /** Opens My Account (self password / future profile). */
+  onOpenMyAccount?: () => void;
   /** When set, Logout navigates here; otherwise the item is disabled. */
   logoutHref?: string;
 };
@@ -25,6 +27,7 @@ export function StartMenu({
   open,
   onClose,
   onOpenControlPanel,
+  onOpenMyAccount,
   logoutHref,
 }: StartMenuProps) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -64,6 +67,15 @@ export function StartMenu({
   }, [open, onClose]);
 
   const items: StartItem[] = [
+    {
+      id: 'my-account',
+      label: 'My Account',
+      className: 'my-account',
+      onSelect: () => {
+        onOpenMyAccount?.();
+        onClose();
+      },
+    },
     { id: 'uploads', label: 'Uploads', className: 'uploads', disabled: true },
     {
       id: 'control-panel',

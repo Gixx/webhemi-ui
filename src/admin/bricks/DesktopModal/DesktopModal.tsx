@@ -41,6 +41,7 @@ const DesktopModalContext = createContext<DesktopModalContextValue | null>(null)
  * Same z as the owner: later DOM keeps the dialog above its owner, while any
  * window with a strictly higher z stacks above the dialog. Nested alerts rely on
  * portal mount order (alert after form) at the same z.
+ * Unowned modals (no shell ancestor) use topShellZ+1 instead.
  */
 
 function findDashboard(from?: HTMLElement | null): HTMLElement | null {
@@ -80,12 +81,24 @@ function readElementZIndex(el: HTMLElement): number {
   return Number.isNaN(computed) ? 0 : computed;
 }
 
+/** Highest z among shell windows on the dashboard (for Start-menu / unowned modals). */
+function topShellWindowZ(dashboard: HTMLElement): number {
+  const nodes = dashboard.querySelectorAll('[data-shell-window], .desktop-window');
+  let top = 0;
+  nodes.forEach((node) => {
+    if (node instanceof HTMLElement) {
+      top = Math.max(top, readElementZIndex(node));
+    }
+  });
+  return top;
+}
+
 function findHostBlockTarget(anchor: HTMLElement | null): HTMLElement | null {
   if (!anchor) {
     return null;
   }
   const host = anchor.closest(
-    '.sites-window, .hosts-window, .settings-window, .permissions-window, .roles-window, .site-file-explorer, .login-host, [data-shell-window], .desktop-window',
+    '.sites-window, .hosts-window, .settings-window, .permissions-window, .roles-window, .users-window, .site-file-explorer, .login-host, [data-shell-window], .desktop-window',
   );
   return host instanceof HTMLElement ? host : null;
 }
@@ -113,6 +126,8 @@ function findTopDefaultOwnedModal(
  * Owned modal: blocks the opener, portaled onto `.dashboard` for free drag.
  * z-index matches the owner shell window (not +1), so activating another window
  * (nextZ = top+1) can stack above the dialog; nested alerts use DOM order.
+ * Unowned modals (e.g. Start → My Account) use topShellZ+1 so they open above
+ * every shell window.
  */
 export function DesktopModal({
   children,
@@ -151,19 +166,62 @@ export function DesktopModal({
 
   useLayoutEffect(() => {
     const owner = findOwnerShellWindow(anchor);
-    if (!owner) {
+    const desk = findDashboard(anchor);
+
+    if (owner) {
+      const sync = () => {
+        setModalZIndex(readElementZIndex(owner));
+      };
+      sync();
+
+      const observer = new MutationObserver(sync);
+      observer.observe(owner, {
+        attributes: true,
+        attributeFilter: ['style', 'class'],
+      });
+      return () => observer.disconnect();
+    }
+
+    // No owner shell (Start menu / desktop-level dialog): stay above all windows.
+    if (!desk) {
       setModalZIndex(null);
       return;
     }
 
-    const sync = () => {
-      setModalZIndex(readElementZIndex(owner));
+    const syncUnowned = () => {
+      setModalZIndex(topShellWindowZ(desk) + 1);
     };
-    sync();
+    syncUnowned();
 
-    const observer = new MutationObserver(sync);
-    observer.observe(owner, { attributes: true, attributeFilter: ['style', 'class'] });
-    return () => observer.disconnect();
+    const observer = new MutationObserver(syncUnowned);
+    const watchShell = (node: Element) => {
+      if (
+        node instanceof HTMLElement &&
+        (node.hasAttribute('data-shell-window') ||
+          node.classList.contains('desktop-window'))
+      ) {
+        observer.observe(node, {
+          attributes: true,
+          attributeFilter: ['style', 'class'],
+        });
+      }
+    };
+    desk.querySelectorAll('[data-shell-window], .desktop-window').forEach(watchShell);
+    const childObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof Element) {
+            watchShell(node);
+          }
+        });
+      }
+      syncUnowned();
+    });
+    childObserver.observe(desk, { childList: true });
+    return () => {
+      observer.disconnect();
+      childObserver.disconnect();
+    };
   }, [anchor, layer]);
 
   const contextValue = useMemo<DesktopModalContextValue>(

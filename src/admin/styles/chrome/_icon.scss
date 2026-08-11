@@ -70,6 +70,18 @@
   background-image: url("/assets/admin/icons/system/users.svg");
 }
 
+.icon.user-list,
+.panel.info > .info-icon.user-list,
+.users-window .info-icon.user-list {
+  background-image: url("/assets/admin/icons/system/user_list.svg");
+}
+
+.icon.change-password,
+.panel.info > .info-icon.change-password,
+.users-window .info-icon.change-password {
+  background-image: url("/assets/admin/icons/system/change_password.svg");
+}
+
 .icon.roles,
 .panel.info > .info-icon.roles,
 .explorer-glyph.roles {

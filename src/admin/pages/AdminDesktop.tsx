@@ -27,6 +27,10 @@ import {
   type RolesWindowRole,
 } from '../components/RolesWindow/RolesWindow';
 import {
+  UsersWindow,
+  type UsersWindowUser,
+} from '../components/UsersWindow/UsersWindow';
+import {
   HostsWindow,
   type HostsWindowHost,
 } from '../components/HostsWindow/HostsWindow';
@@ -34,6 +38,13 @@ import type { HostFormSavePayload } from '../components/HostsWindow/HostFormDial
 import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialog';
 import type { PermissionFormSavePayload } from '../components/PermissionsWindow/PermissionFormDialog';
 import type { RoleFormSavePayload } from '../components/RolesWindow/RoleFormDialog';
+import type { UserFormSavePayload } from '../components/UsersWindow/UserFormDialog';
+import {
+  SetPasswordDialog,
+  type SetPasswordSavePayload,
+} from '../components/UsersWindow/SetPasswordDialog';
+import { DesktopModal } from '../bricks/DesktopModal';
+import { MessageDialog } from '../bricks/MessageDialog';
 import {
   createAdminApiClient,
   isUnauthorizedResult,
@@ -44,6 +55,8 @@ import {
   type AdminApiRole,
   type AdminApiSettings,
   type AdminApiSite,
+  type AdminApiUser,
+  type AdminApiUserCapabilities,
 } from '../api';
 import { cn } from '../../lib/cn';
 import { assignSafeAppPath, assignSafeNavigationUrl } from '../lib/safeAppPath';
@@ -61,6 +74,7 @@ import {
   loadPersistedDesktop,
   PERMISSIONS_WINDOW_ID,
   ROLES_WINDOW_ID,
+  USERS_WINDOW_ID,
   savePersistedDesktop,
   siteWindowId,
   SETTINGS_WINDOW_ID,
@@ -180,6 +194,18 @@ function toWindowRole(role: AdminApiRole): RolesWindowRole {
   };
 }
 
+function toWindowUser(user: AdminApiUser): UsersWindowUser {
+  return {
+    id: user.id,
+    email: user.email,
+    roleIds: [...user.roleIds],
+    roles: user.roles.map((role) => ({ ...role })),
+    siteAssignments: user.siteAssignments.map((row) => ({ ...row })),
+    roleCount: user.roleCount,
+    siteAssignmentCount: user.siteAssignmentCount,
+  };
+}
+
 function toWindowHost(host: AdminApiHost): HostsWindowHost {
   return {
     id: host.id,
@@ -259,6 +285,8 @@ export function AdminDesktop({
     deepLink?.window === 'permissions' ? deepLink.id : null;
   const rolesPreferSelectedId =
     deepLink?.window === 'roles' ? deepLink.id : null;
+  const usersPreferSelectedId =
+    deepLink?.window === 'users' ? deepLink.id : null;
   const [startMenuOpen, setStartMenuOpen] = useState(false);
   const [desktopSites, setDesktopSites] = useState<DesktopSite[]>(sites);
   const [sitesRows, setSitesRows] = useState<SitesWindowSite[]>([]);
@@ -301,6 +329,44 @@ export function AdminDesktop({
   const [rolesStatusMessage, setRolesStatusMessage] = useState<string | null>(
     null,
   );
+  const [usersRows, setUsersRows] = useState<UsersWindowUser[]>([]);
+  const [usersRoleOptions, setUsersRoleOptions] = useState<
+    { id: number; name: string; label: string }[]
+  >([]);
+  const [usersSiteOptions, setUsersSiteOptions] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersCreating, setUsersCreating] = useState(false);
+  const [usersDeleting, setUsersDeleting] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [usersFormError, setUsersFormError] = useState<string | null>(null);
+  const [usersFieldErrors, setUsersFieldErrors] = useState<
+    Partial<Record<'email' | 'password' | 'roleIds' | 'siteAssignments', string>>
+  >({});
+  const [usersStatusMessage, setUsersStatusMessage] = useState<string | null>(
+    null,
+  );
+  const [usersSettingPassword, setUsersSettingPassword] = useState(false);
+  const [usersPasswordFormError, setUsersPasswordFormError] = useState<
+    string | null
+  >(null);
+  const [usersPasswordFieldErrors, setUsersPasswordFieldErrors] = useState<
+    Partial<Record<'currentPassword' | 'password' | 'confirmPassword', string>>
+  >({});
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [userCapabilities, setUserCapabilities] =
+    useState<AdminApiUserCapabilities | null>(null);
+  const [myAccountOpen, setMyAccountOpen] = useState(false);
+  const [myAccountSaving, setMyAccountSaving] = useState(false);
+  const [myAccountFormError, setMyAccountFormError] = useState<string | null>(
+    null,
+  );
+  const [myAccountFieldErrors, setMyAccountFieldErrors] = useState<
+    Partial<Record<'currentPassword' | 'password' | 'confirmPassword', string>>
+  >({});
+  const [myAccountAlert, setMyAccountAlert] = useState<string | null>(null);
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
@@ -330,6 +396,7 @@ export function AdminDesktop({
     null,
   );
   const rolesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const usersStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const api = useMemo(
@@ -348,6 +415,13 @@ export function AdminDesktop({
   const canEditPermissions = canEditSites;
   const canEditRoles = canEditSites;
   const canEditSettings = canEditSites;
+  const usersCaps: AdminApiUserCapabilities = userCapabilities ?? {
+    listUsers: canEditSites,
+    viewUser: canEditSites,
+    createUser: canEditSites,
+    editUser: canEditSites,
+    deleteUser: canEditSites,
+  };
 
   const clearSitesStatusMessage = useCallback(() => {
     if (sitesStatusTimerRef.current != null) {
@@ -379,6 +453,14 @@ export function AdminDesktop({
       rolesStatusTimerRef.current = null;
     }
     setRolesStatusMessage(null);
+  }, []);
+
+  const clearUsersStatusMessage = useCallback(() => {
+    if (usersStatusTimerRef.current != null) {
+      clearTimeout(usersStatusTimerRef.current);
+      usersStatusTimerRef.current = null;
+    }
+    setUsersStatusMessage(null);
   }, []);
 
   const flashSitesStatus = useCallback(
@@ -429,6 +511,18 @@ export function AdminDesktop({
     [clearRolesStatusMessage],
   );
 
+  const flashUsersStatus = useCallback(
+    (message: string) => {
+      clearUsersStatusMessage();
+      setUsersStatusMessage(message);
+      usersStatusTimerRef.current = setTimeout(() => {
+        usersStatusTimerRef.current = null;
+        setUsersStatusMessage(null);
+      }, 4000);
+    },
+    [clearUsersStatusMessage],
+  );
+
   const clearSettingsStatusMessage = useCallback(() => {
     if (settingsStatusTimerRef.current != null) {
       clearTimeout(settingsStatusTimerRef.current);
@@ -462,6 +556,9 @@ export function AdminDesktop({
       }
       if (rolesStatusTimerRef.current != null) {
         clearTimeout(rolesStatusTimerRef.current);
+      }
+      if (usersStatusTimerRef.current != null) {
+        clearTimeout(usersStatusTimerRef.current);
       }
       if (settingsStatusTimerRef.current != null) {
         clearTimeout(settingsStatusTimerRef.current);
@@ -519,6 +616,13 @@ export function AdminDesktop({
     handleAlertClose();
   }, [handleAlertClose]);
 
+  const dismissUsersAlert = useCallback(() => {
+    setUsersError(null);
+    setUsersFormError(null);
+    setUsersPasswordFormError(null);
+    handleAlertClose();
+  }, [handleAlertClose]);
+
   const dismissSettingsAlert = useCallback(() => {
     setSettingsError(null);
     handleAlertClose();
@@ -530,6 +634,7 @@ export function AdminDesktop({
     (win) => win.id === PERMISSIONS_WINDOW_ID,
   );
   const rolesWindowOpen = shell.windows.some((win) => win.id === ROLES_WINDOW_ID);
+  const usersWindowOpen = shell.windows.some((win) => win.id === USERS_WINDOW_ID);
   const settingsWindowOpen = shell.windows.some((win) => win.id === SETTINGS_WINDOW_ID);
   const siteFormHosts = useMemo(
     () => hostsRows.map(toSiteFormHostOption),
@@ -548,6 +653,28 @@ export function AdminDesktop({
   useEffect(() => {
     setDesktopSites(sites);
   }, [sites]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await api.getMe();
+      if (cancelled || !result.ok) {
+        return;
+      }
+      setCurrentUserId(
+        typeof result.data.id === 'number' ? result.data.id : null,
+      );
+      setCurrentUserEmail(
+        typeof result.data.email === 'string' ? result.data.email : null,
+      );
+      if (result.data.capabilities) {
+        setUserCapabilities(result.data.capabilities);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
 
   useEffect(() => {
     if (!storageKey) {
@@ -666,6 +793,56 @@ export function AdminDesktop({
       cancelled = true;
     };
   }, [rolesWindowOpen, api, handleApiFailure, clearRolesStatusMessage]);
+
+  useEffect(() => {
+    if (!usersWindowOpen) {
+      return;
+    }
+
+    let cancelled = false;
+    setUsersLoading(true);
+    setUsersError(null);
+    clearUsersStatusMessage();
+
+    void (async () => {
+      const [usersResult, rolesResult, sitesResult] = await Promise.all([
+        api.listUsers(),
+        api.listRoles(),
+        api.listSites(),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      setUsersLoading(false);
+      if (!usersResult.ok) {
+        handleApiFailure(usersResult, setUsersError);
+        return;
+      }
+      pendingLoginRedirectRef.current = false;
+      setUsersRows(usersResult.data.map(toWindowUser));
+      if (rolesResult.ok) {
+        setUsersRoleOptions(
+          rolesResult.data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            label: row.label,
+          })),
+        );
+      }
+      if (sitesResult.ok) {
+        setUsersSiteOptions(
+          sitesResult.data.map((row) => ({
+            id: row.id,
+            name: row.name,
+          })),
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [usersWindowOpen, api, handleApiFailure, clearUsersStatusMessage]);
 
   useEffect(() => {
     if (!hostsWindowOpen && !sitesWindowOpen) {
@@ -1012,6 +1189,15 @@ export function AdminDesktop({
     );
   };
 
+  const openUsers = () => {
+    openOrRaiseWindow(
+      USERS_WINDOW_ID,
+      'users',
+      'Users',
+      DEFAULT_WINDOW_SIZE.users,
+    );
+  };
+
   const refreshSettings = useCallback(async () => {
     const result = await api.getSettings();
     if (!result.ok) {
@@ -1119,6 +1305,9 @@ export function AdminDesktop({
         break;
       case 'roles':
         openRoles();
+        break;
+      case 'users':
+        openUsers();
         break;
       case 'site': {
         if (deepLink.id == null) {
@@ -1420,6 +1609,156 @@ export function AdminDesktop({
     }
   };
 
+  const handleSaveUser = async (payload: UserFormSavePayload) => {
+    clearUsersStatusMessage();
+    setUsersCreating(true);
+    setUsersFormError(null);
+    setUsersFieldErrors({});
+
+    const result =
+      payload.mode === 'new'
+        ? await api.createUser({
+            email: payload.email,
+            password: payload.password ?? '',
+            roleIds: payload.roleIds,
+            siteAssignments: payload.siteAssignments,
+          })
+        : payload.userId != null
+          ? await api.updateUser(payload.userId, {
+              email: payload.email,
+              roleIds: payload.roleIds,
+              siteAssignments: payload.siteAssignments,
+            })
+          : null;
+
+    setUsersCreating(false);
+
+    if (!result) {
+      setUsersFormError('User could not be saved.');
+      return;
+    }
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setUsersFieldErrors({
+          email: result.error.fields.email,
+          password: result.error.fields.password,
+          roleIds: result.error.fields.roleIds,
+          siteAssignments: result.error.fields.siteAssignments,
+        });
+      }
+      handleApiFailure(result, setUsersFormError);
+      return;
+    }
+
+    flashUsersStatus(payload.mode === 'new' ? 'User created.' : 'User updated.');
+
+    const list = await api.listUsers();
+    if (list.ok) {
+      setUsersRows(list.data.map(toWindowUser));
+      return;
+    }
+
+    const saved = toWindowUser(result.data);
+    setUsersRows((prev) =>
+      [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
+        a.email.localeCompare(b.email),
+      ),
+    );
+  };
+
+  const handleDeleteUser = async (user: UsersWindowUser) => {
+    clearUsersStatusMessage();
+    setUsersDeleting(true);
+    setUsersError(null);
+    const result = await api.deleteUser(user.id);
+    setUsersDeleting(false);
+
+    if (!result.ok) {
+      handleApiFailure(result, setUsersError);
+      return;
+    }
+
+    flashUsersStatus('User deleted.');
+
+    const list = await api.listUsers();
+    if (list.ok) {
+      setUsersRows(list.data.map(toWindowUser));
+    } else {
+      setUsersRows((prev) => prev.filter((row) => row.id !== user.id));
+    }
+  };
+
+  const handleSetUserPassword = async (payload: SetPasswordSavePayload) => {
+    clearUsersStatusMessage();
+    setUsersSettingPassword(true);
+    setUsersPasswordFormError(null);
+    setUsersPasswordFieldErrors({});
+
+    const result = await api.setUserPassword(payload.userId, {
+      ...(payload.currentPassword !== undefined
+        ? { currentPassword: payload.currentPassword }
+        : {}),
+      password: payload.password,
+      confirmPassword: payload.password,
+    });
+    setUsersSettingPassword(false);
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setUsersPasswordFieldErrors({
+          currentPassword: result.error.fields.currentPassword,
+          password: result.error.fields.password,
+          confirmPassword: result.error.fields.confirmPassword,
+        });
+      }
+      handleApiFailure(result, setUsersPasswordFormError);
+      return;
+    }
+
+    flashUsersStatus('Password updated.');
+  };
+
+  const openMyAccount = useCallback(() => {
+    setMyAccountFormError(null);
+    setMyAccountFieldErrors({});
+    setMyAccountAlert(null);
+    setMyAccountOpen(true);
+  }, []);
+
+  const closeMyAccount = useCallback(() => {
+    setMyAccountOpen(false);
+    setMyAccountFormError(null);
+    setMyAccountFieldErrors({});
+  }, []);
+
+  const handleMyAccountPassword = async (payload: SetPasswordSavePayload) => {
+    setMyAccountSaving(true);
+    setMyAccountFormError(null);
+    setMyAccountFieldErrors({});
+
+    const result = await api.setUserPassword(payload.userId, {
+      currentPassword: payload.currentPassword ?? '',
+      password: payload.password,
+      confirmPassword: payload.password,
+    });
+    setMyAccountSaving(false);
+
+    if (!result.ok) {
+      if (result.error.fields) {
+        setMyAccountFieldErrors({
+          currentPassword: result.error.fields.currentPassword,
+          password: result.error.fields.password,
+          confirmPassword: result.error.fields.confirmPassword,
+        });
+      }
+      handleApiFailure(result, setMyAccountFormError);
+      return;
+    }
+
+    closeMyAccount();
+  };
+
   const handleSaveHost = async (payload: HostFormSavePayload) => {
     clearHostsStatusMessage();
     setHostsCreating(true);
@@ -1663,26 +2002,39 @@ export function AdminDesktop({
         const active = win.id === shell.activeId && !win.minimized;
         const maximizeAction = win.maximized ? 'Restore' : 'Maximize';
 
-        const shellFrame = (child: ReactNode) => (
-          <DesktopWindow
-            key={win.id}
-            windowId={win.id}
-            left={win.left}
-            top={win.top}
-            zIndex={win.z}
-            width={win.width}
-            height={win.height}
-            maximized={win.maximized}
-            className={cn(win.minimized && 'is-minimized')}
-            dragDisabled={win.minimized || win.maximized}
-            onActivate={() => activateWindow(win.id)}
-            onPositionChange={(left, top) => moveWindow(win.id, left, top)}
-            onBoundsChange={(bounds) => resizeWindow(win.id, bounds)}
-            onToggleMaximize={() => toggleMaximize(win.id)}
-          >
-            {child}
-          </DesktopWindow>
-        );
+        const shellFrame = (
+          child: ReactNode,
+          options?: { resizable?: boolean },
+        ) => {
+          const shellResizable = options?.resizable !== false;
+          return (
+            <DesktopWindow
+              key={win.id}
+              windowId={win.id}
+              left={win.left}
+              top={win.top}
+              zIndex={win.z}
+              width={win.width}
+              height={shellResizable ? win.height : undefined}
+              maximized={shellResizable ? win.maximized : false}
+              className={cn(win.minimized && 'is-minimized')}
+              dragDisabled={win.minimized || (shellResizable && win.maximized)}
+              resizable={shellResizable}
+              onActivate={() => activateWindow(win.id)}
+              onPositionChange={(left, top) => moveWindow(win.id, left, top)}
+              onBoundsChange={
+                shellResizable
+                  ? (bounds) => resizeWindow(win.id, bounds)
+                  : undefined
+              }
+              onToggleMaximize={
+                shellResizable ? () => toggleMaximize(win.id) : undefined
+              }
+            >
+              {child}
+            </DesktopWindow>
+          );
+        };
 
         if (win.kind === 'control-panel') {
           return shellFrame(
@@ -1699,6 +2051,7 @@ export function AdminDesktop({
               onOpenSettings={openSettings}
               onOpenPermissions={openPermissions}
               onOpenRoles={openRoles}
+              onOpenUsers={openUsers}
             />,
           );
         }
@@ -1881,6 +2234,45 @@ export function AdminDesktop({
           );
         }
 
+        if (win.kind === 'users') {
+          return shellFrame(
+            <UsersWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              users={usersRows}
+              roles={usersRoleOptions}
+              sites={usersSiteOptions}
+              preferSelectedId={usersPreferSelectedId}
+              currentUserId={currentUserId}
+              capabilities={usersCaps}
+              loading={usersLoading}
+              saving={usersCreating}
+              deleting={usersDeleting}
+              settingPassword={usersSettingPassword}
+              error={usersError}
+              formError={usersFormError}
+              fieldErrors={usersFieldErrors}
+              passwordFormError={usersPasswordFormError}
+              passwordFieldErrors={usersPasswordFieldErrors}
+              statusMessage={usersStatusMessage}
+              onClearStatusMessage={clearUsersStatusMessage}
+              onSave={handleSaveUser}
+              onDelete={handleDeleteUser}
+              onSetPassword={handleSetUserPassword}
+              onAddRole={openRoles}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onAlertClose={dismissUsersAlert}
+              onClose={() => closeWindow(win.id)}
+              onCancel={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+            />,
+            { resizable: false },
+          );
+        }
+
         const site = desktopSites.find((entry) => entry.id === win.siteId) ?? {
           id: win.siteId ?? 0,
           name: win.title,
@@ -1912,10 +2304,41 @@ export function AdminDesktop({
             open={startMenuOpen}
             onClose={closeStartMenu}
             onOpenControlPanel={openControlPanel}
+            onOpenMyAccount={openMyAccount}
             logoutHref={logoutHref}
           />
         }
       />
+
+      {myAccountOpen && currentUserId != null && currentUserEmail ? (
+        <DesktopModal dingSoundUrl={dingSoundUrl}>
+          <SetPasswordDialog
+            key={`my-account-${currentUserId}`}
+            userId={currentUserId}
+            userEmail={currentUserEmail}
+            mode="self"
+            fieldErrors={myAccountFieldErrors}
+            saving={myAccountSaving}
+            onSave={handleMyAccountPassword}
+            onError={(message) => setMyAccountAlert(message)}
+            onClose={closeMyAccount}
+          />
+        </DesktopModal>
+      ) : null}
+
+      {myAccountAlert || myAccountFormError ? (
+        <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
+          <MessageDialog
+            type="error"
+            title="Error"
+            message={myAccountAlert ?? myAccountFormError ?? ''}
+            onClose={() => {
+              setMyAccountAlert(null);
+              setMyAccountFormError(null);
+            }}
+          />
+        </DesktopModal>
+      ) : null}
     </div>
   );
 }

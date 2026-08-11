@@ -25,6 +25,7 @@ function taskClassName(win: ShellWindowState, active: boolean): string {
     win.kind === 'settings' && 'settings',
     win.kind === 'permissions' && 'permissions',
     win.kind === 'roles' && 'roles',
+    win.kind === 'users' && 'users',
     active && 'active',
   );
 }

@@ -5,6 +5,7 @@ export {
   ROLES_WINDOW_ID,
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
+  USERS_WINDOW_ID,
   siteWindowId,
   parseSiteWindowId,
   type ShellWindowKind,

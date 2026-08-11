@@ -5,6 +5,7 @@ export const HOSTS_WINDOW_ID = 'hosts';
 export const SETTINGS_WINDOW_ID = 'settings';
 export const PERMISSIONS_WINDOW_ID = 'permissions';
 export const ROLES_WINDOW_ID = 'roles';
+export const USERS_WINDOW_ID = 'users';
 
 export function siteWindowId(siteId: number): string {
   return `site-${siteId}`;
@@ -22,7 +23,8 @@ export type ShellWindowKind =
   | 'hosts'
   | 'settings'
   | 'permissions'
-  | 'roles';
+  | 'roles'
+  | 'users';
 
 /**
  * One open desktop shell window.

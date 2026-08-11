@@ -323,7 +323,8 @@ export function DesktopWindow({
     left,
     top,
     zIndex,
-    ...(sized ? { width, height } : null),
+    ...(width !== undefined ? { width } : null),
+    ...(height !== undefined ? { height } : null),
   };
 
   const showHandles = resizable && !maximized && !dragDisabled;

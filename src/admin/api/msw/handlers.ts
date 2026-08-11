@@ -5,6 +5,8 @@ import type {
   AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
+  AdminApiUser,
+  AdminApiUserSiteAssignment,
 } from '../types';
 import {
   MSW_DEFAULT_SETTINGS,
@@ -12,6 +14,7 @@ import {
   MSW_SAMPLE_PERMISSIONS,
   MSW_SAMPLE_ROLES,
   MSW_SAMPLE_SITES,
+  MSW_SAMPLE_USERS,
 } from './fixtures';
 
 export type AdminApiMswStore = {
@@ -19,7 +22,10 @@ export type AdminApiMswStore = {
   hosts: AdminApiHost[];
   permissions: AdminApiPermission[];
   roles: AdminApiRole[];
+  users: AdminApiUser[];
   settings: AdminApiSettings;
+  /** Simulated signed-in user id for self_delete checks (default first admin). */
+  actorUserId: number;
 };
 
 export type CreateAdminApiHandlersOptions = {
@@ -27,20 +33,29 @@ export type CreateAdminApiHandlersOptions = {
   hosts?: AdminApiHost[];
   permissions?: AdminApiPermission[];
   roles?: AdminApiRole[];
+  users?: AdminApiUser[];
   settings?: AdminApiSettings;
+  actorUserId?: number;
   /** When true, GET /sites returns 500. */
   failListSites?: boolean;
   /** When true, GET /permissions returns 500. */
   failListPermissions?: boolean;
   /** When true, GET /roles returns 500. */
   failListRoles?: boolean;
+  /** When true, GET /users returns 500. */
+  failListUsers?: boolean;
 };
 
 const ROLE_NAME_PATTERN = /^ROLE_[A-Z0-9_]+$/;
 const RESERVED_ROLE_NAMES = new Set(['ROLE_ADMIN', 'ROLE_SITE_ADMIN']);
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function normalizeRoleName(raw: string): string {
   return raw.trim().toUpperCase();
+}
+
+function normalizeEmail(raw: string): string {
+  return raw.trim().toLowerCase();
 }
 
 function normalizePermissionIds(
@@ -52,6 +67,100 @@ function normalizePermissionIds(
   }
   const valid = new Set(permissions.map((row) => row.id));
   return [...new Set(raw.filter((id) => valid.has(id)))].sort((a, b) => a - b);
+}
+
+function countAdmins(users: AdminApiUser[], excludeId?: number): number {
+  return users.filter(
+    (user) =>
+      user.id !== excludeId &&
+      user.roles.some((role) => role.name === 'ROLE_ADMIN'),
+  ).length;
+}
+
+function buildUserRoles(
+  roleIds: number[],
+  roles: AdminApiRole[],
+): { ok: true; roles: AdminApiUser['roles']; roleIds: number[] } | { ok: false; message: string } {
+  const resolved: AdminApiUser['roles'] = [];
+  const ids: number[] = [];
+  for (const id of roleIds) {
+    const role = roles.find((row) => row.id === id);
+    if (!role) {
+      return { ok: false, message: 'One or more roles were not found.' };
+    }
+    if (role.name === 'ROLE_SITE_ADMIN') {
+      return {
+        ok: false,
+        message: 'Site Admin cannot be assigned as a global role; use siteAssignments.',
+      };
+    }
+    ids.push(role.id);
+    resolved.push({ id: role.id, name: role.name, label: role.label });
+  }
+  resolved.sort((a, b) => a.name.localeCompare(b.name));
+  return { ok: true, roles: resolved, roleIds: [...new Set(ids)].sort((a, b) => a - b) };
+}
+
+function buildSiteAssignments(
+  raw: { siteId: number; roleId: number }[] | undefined,
+  sites: AdminApiSite[],
+  roles: AdminApiRole[],
+  nextAssignmentId: number,
+):
+  | { ok: true; assignments: AdminApiUserSiteAssignment[]; nextId: number }
+  | { ok: false; code: string; message: string; fields?: Record<string, string> } {
+  if (!raw) {
+    return { ok: true, assignments: [], nextId: nextAssignmentId };
+  }
+  const siteIds = raw.map((row) => row.siteId);
+  if (siteIds.length !== new Set(siteIds).size) {
+    return {
+      ok: false,
+      code: 'validation_failed',
+      message: 'User could not be saved.',
+      fields: {
+        siteAssignments: 'Each site may appear only once in siteAssignments.',
+      },
+    };
+  }
+  const assignments: AdminApiUserSiteAssignment[] = [];
+  let id = nextAssignmentId;
+  for (const row of raw) {
+    const site = sites.find((entry) => entry.id === row.siteId);
+    if (!site) {
+      return {
+        ok: false,
+        code: 'site_not_found',
+        message: 'One or more sites were not found.',
+      };
+    }
+    const role = roles.find((entry) => entry.id === row.roleId);
+    if (!role) {
+      return {
+        ok: false,
+        code: 'invalid_role',
+        message: 'One or more roles were not found.',
+      };
+    }
+    if (role.name === 'ROLE_ADMIN') {
+      return {
+        ok: false,
+        code: 'invalid_role',
+        message: 'Administrator cannot be used as a site assignment role.',
+      };
+    }
+    assignments.push({
+      id,
+      siteId: site.id,
+      siteName: site.name,
+      roleId: role.id,
+      roleName: role.name,
+      roleLabel: role.label,
+    });
+    id += 1;
+  }
+  assignments.sort((a, b) => a.siteName.localeCompare(b.siteName));
+  return { ok: true, assignments, nextId: id };
 }
 
 /**
@@ -66,14 +175,53 @@ export function createAdminApiHandlers(
     hosts: structuredClone(options.hosts ?? MSW_SAMPLE_HOSTS),
     permissions: structuredClone(options.permissions ?? MSW_SAMPLE_PERMISSIONS),
     roles: structuredClone(options.roles ?? MSW_SAMPLE_ROLES),
+    users: structuredClone(options.users ?? MSW_SAMPLE_USERS),
     settings: structuredClone(options.settings ?? MSW_DEFAULT_SETTINGS),
+    actorUserId: options.actorUserId ?? 1,
   };
+
+  let nextSiteAssignmentId =
+    Math.max(
+      0,
+      ...store.users.flatMap((user) =>
+        user.siteAssignments.map((row) => row.id),
+      ),
+    ) + 1;
 
   const failListSites = Boolean(options.failListSites);
   const failListPermissions = Boolean(options.failListPermissions);
   const failListRoles = Boolean(options.failListRoles);
+  const failListUsers = Boolean(options.failListUsers);
 
   return [
+    http.get('/admin/api/me', () => {
+      const actor =
+        store.users.find((row) => row.id === store.actorUserId) ??
+        store.users[0] ??
+        null;
+      const isAdmin = Boolean(
+        actor?.roles.some((role) => role.name === 'ROLE_ADMIN'),
+      );
+      return HttpResponse.json({
+        user: actor?.email ?? null,
+        id: actor?.id ?? null,
+        email: actor?.email ?? null,
+        roles: actor
+          ? [
+              ...actor.roles.map((role) => role.name),
+              'ROLE_USER',
+            ]
+          : ['ROLE_USER'],
+        capabilities: {
+          listUsers: isAdmin,
+          viewUser: isAdmin,
+          createUser: isAdmin,
+          editUser: isAdmin,
+          deleteUser: isAdmin,
+        },
+      });
+    }),
+
     http.get('/admin/api/sites', () => {
       if (failListSites) {
         return HttpResponse.json(
@@ -661,6 +809,380 @@ export function createAdminApiHandlers(
       store.roles = store.roles.filter((row) => row.id !== id);
       return new HttpResponse(null, { status: 204 });
     }),
+
+    http.get('/admin/api/users', () => {
+      if (failListUsers) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'server_error',
+              message: 'Could not load users. Try again.',
+            },
+          },
+          { status: 500 },
+        );
+      }
+      return HttpResponse.json({ data: store.users });
+    }),
+
+    http.get('/admin/api/users/:id', ({ params }) => {
+      const id = Number(params.id);
+      const user = store.users.find((row) => row.id === id);
+      if (!user) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'User not found.' } },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json({ data: user });
+    }),
+
+    http.post('/admin/api/users', async ({ request }) => {
+      const body = (await request.json()) as {
+        email?: string;
+        password?: string;
+        roleIds?: number[];
+        siteAssignments?: { siteId: number; roleId: number }[];
+      };
+      const email = normalizeEmail(body.email ?? '');
+      const password = body.password ?? '';
+      const fields: Record<string, string> = {};
+      if (!email) {
+        fields.email = 'Email is required.';
+      } else if (!EMAIL_PATTERN.test(email)) {
+        fields.email = 'Email must be a valid email address.';
+      }
+      if (!password) {
+        fields.password = 'Password is required.';
+      } else if (password.length < 8) {
+        fields.password = 'Password must be at least 8 characters.';
+      }
+      if (Object.keys(fields).length > 0) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'User could not be created.',
+              fields,
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (store.users.some((row) => row.email === email)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'email_taken',
+              message: 'A user with this email already exists.',
+              fields: { email: 'Email is already taken.' },
+            },
+          },
+          { status: 409 },
+        );
+      }
+      const rolesResult = buildUserRoles(body.roleIds ?? [], store.roles);
+      if (!rolesResult.ok) {
+        return HttpResponse.json(
+          { error: { code: 'invalid_role', message: rolesResult.message } },
+          { status: 409 },
+        );
+      }
+      const assignmentsResult = buildSiteAssignments(
+        body.siteAssignments,
+        store.sites,
+        store.roles,
+        nextSiteAssignmentId,
+      );
+      if (!assignmentsResult.ok) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: assignmentsResult.code,
+              message: assignmentsResult.message,
+              fields: assignmentsResult.fields,
+            },
+          },
+          { status: assignmentsResult.code === 'validation_failed' ? 422 : 409 },
+        );
+      }
+      nextSiteAssignmentId = assignmentsResult.nextId;
+      const created: AdminApiUser = {
+        id: Math.max(0, ...store.users.map((row) => row.id)) + 1,
+        email,
+        roleIds: rolesResult.roleIds,
+        roles: rolesResult.roles,
+        siteAssignments: assignmentsResult.assignments,
+        roleCount: rolesResult.roleIds.length,
+        siteAssignmentCount: assignmentsResult.assignments.length,
+      };
+      store.users = [...store.users, created].sort((a, b) =>
+        a.email.localeCompare(b.email),
+      );
+      return HttpResponse.json({ data: created }, { status: 201 });
+    }),
+
+    http.patch('/admin/api/users/:id', async ({ params, request }) => {
+      const id = Number(params.id);
+      const index = store.users.findIndex((row) => row.id === id);
+      if (index < 0) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'User not found.' } },
+          { status: 404 },
+        );
+      }
+      const current = store.users[index];
+      const body = (await request.json()) as {
+        email?: string;
+        password?: string;
+        roleIds?: number[];
+        siteAssignments?: { siteId: number; roleId: number }[];
+      };
+      if (body.password !== undefined) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'User could not be updated.',
+              fields: {
+                password: 'Password cannot be changed in this window.',
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (
+        body.email === undefined &&
+        body.roleIds === undefined &&
+        body.siteAssignments === undefined
+      ) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'User could not be updated.',
+              fields: {
+                _body:
+                  'At least one of email, roleIds, or siteAssignments is required.',
+              },
+            },
+          },
+          { status: 422 },
+        );
+      }
+
+      let email = current.email;
+      if (body.email !== undefined) {
+        email = normalizeEmail(body.email);
+        if (!email) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'validation_failed',
+                message: 'User could not be updated.',
+                fields: { email: 'Email is required.' },
+              },
+            },
+            { status: 422 },
+          );
+        }
+        if (!EMAIL_PATTERN.test(email)) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'validation_failed',
+                message: 'User could not be updated.',
+                fields: { email: 'Email must be a valid email address.' },
+              },
+            },
+            { status: 422 },
+          );
+        }
+        if (store.users.some((row) => row.email === email && row.id !== id)) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'email_taken',
+                message: 'A user with this email already exists.',
+                fields: { email: 'Email is already taken.' },
+              },
+            },
+            { status: 409 },
+          );
+        }
+      }
+
+      let roleIds = current.roleIds;
+      let roles = current.roles;
+      if (body.roleIds !== undefined) {
+        const rolesResult = buildUserRoles(body.roleIds, store.roles);
+        if (!rolesResult.ok) {
+          return HttpResponse.json(
+            { error: { code: 'invalid_role', message: rolesResult.message } },
+            { status: 409 },
+          );
+        }
+        const hadAdmin = current.roles.some((role) => role.name === 'ROLE_ADMIN');
+        const willHaveAdmin = rolesResult.roles.some(
+          (role) => role.name === 'ROLE_ADMIN',
+        );
+        if (hadAdmin && !willHaveAdmin && countAdmins(store.users, id) === 0) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'last_admin',
+                message:
+                  'Cannot remove Administrator from the last Administrator account.',
+              },
+            },
+            { status: 409 },
+          );
+        }
+        roleIds = rolesResult.roleIds;
+        roles = rolesResult.roles;
+      }
+
+      let siteAssignments = current.siteAssignments;
+      if (body.siteAssignments !== undefined) {
+        const assignmentsResult = buildSiteAssignments(
+          body.siteAssignments,
+          store.sites,
+          store.roles,
+          nextSiteAssignmentId,
+        );
+        if (!assignmentsResult.ok) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: assignmentsResult.code,
+                message: assignmentsResult.message,
+                fields: assignmentsResult.fields,
+              },
+            },
+            {
+              status:
+                assignmentsResult.code === 'validation_failed' ? 422 : 409,
+            },
+          );
+        }
+        nextSiteAssignmentId = assignmentsResult.nextId;
+        siteAssignments = assignmentsResult.assignments;
+      }
+
+      const updated: AdminApiUser = {
+        ...current,
+        email,
+        roleIds,
+        roles,
+        siteAssignments,
+        roleCount: roleIds.length,
+        siteAssignmentCount: siteAssignments.length,
+      };
+      store.users = store.users
+        .map((row) => (row.id === id ? updated : row))
+        .sort((a, b) => a.email.localeCompare(b.email));
+      return HttpResponse.json({ data: updated });
+    }),
+
+    http.delete('/admin/api/users/:id', ({ params }) => {
+      const id = Number(params.id);
+      const existing = store.users.find((row) => row.id === id);
+      if (!existing) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'User not found.' } },
+          { status: 404 },
+        );
+      }
+      if (id === store.actorUserId) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'self_delete',
+              message: 'You cannot delete your own account.',
+            },
+          },
+          { status: 409 },
+        );
+      }
+      if (
+        existing.roles.some((role) => role.name === 'ROLE_ADMIN') &&
+        countAdmins(store.users, id) === 0
+      ) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'last_admin',
+              message: 'Cannot delete the last Administrator account.',
+            },
+          },
+          { status: 409 },
+        );
+      }
+      store.users = store.users.filter((row) => row.id !== id);
+      return new HttpResponse(null, { status: 204 });
+    }),
+
+    http.post('/admin/api/users/:id/password', async ({ params, request }) => {
+      const id = Number(params.id);
+      const existing = store.users.find((row) => row.id === id);
+      if (!existing) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'User not found.' } },
+          { status: 404 },
+        );
+      }
+      const isSelf = id === store.actorUserId;
+      const body = (await request.json()) as {
+        currentPassword?: string;
+        password?: string;
+        confirmPassword?: string;
+      };
+      const currentPassword = String(body.currentPassword ?? '');
+      const password = String(body.password ?? '');
+      const fields: Record<string, string> = {};
+      if (isSelf) {
+        if (!currentPassword) {
+          fields.currentPassword = 'Current password is required.';
+        } else if (currentPassword !== 'password') {
+          // MSW fixture: accept literal "password" as the current password.
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'password_mismatch',
+                message: 'Current password is incorrect.',
+                fields: { currentPassword: 'Current password is incorrect.' },
+              },
+            },
+            { status: 409 },
+          );
+        }
+      }
+      if (!password) {
+        fields.password = 'Password is required.';
+      } else if (password.length < 8) {
+        fields.password = 'Password must be at least 8 characters.';
+      }
+      if (
+        body.confirmPassword != null &&
+        String(body.confirmPassword) !== password
+      ) {
+        fields.confirmPassword = 'Passwords do not match.';
+      }
+      if (Object.keys(fields).length > 0) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'Password could not be set.',
+              fields,
+            },
+          },
+          { status: 422 },
+        );
+      }
+      return HttpResponse.json({ data: { ok: true } });
+    }),
   ];
 }
 
@@ -692,4 +1214,14 @@ export function createEmptyRolesHandlers(): RequestHandler[] {
 /** List Roles fails with 500. */
 export function createFailingRolesListHandlers(): RequestHandler[] {
   return createAdminApiHandlers({ failListRoles: true });
+}
+
+/** Empty Users list. */
+export function createEmptyUsersHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ users: [] });
+}
+
+/** List Users fails with 500. */
+export function createFailingUsersListHandlers(): RequestHandler[] {
+  return createAdminApiHandlers({ failListUsers: true });
 }

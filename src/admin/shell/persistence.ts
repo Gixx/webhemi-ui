@@ -5,6 +5,7 @@ import {
   ROLES_WINDOW_ID,
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
+  USERS_WINDOW_ID,
   parseSiteWindowId,
   type ShellWindowKind,
   type ShellWindowState,
@@ -82,7 +83,8 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     raw.kind === 'hosts' ||
     raw.kind === 'settings' ||
     raw.kind === 'permissions' ||
-    raw.kind === 'roles'
+    raw.kind === 'roles' ||
+    raw.kind === 'users'
       ? raw.kind
       : null;
   if (!kind) {
@@ -114,6 +116,9 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     return null;
   }
   if (kind === 'roles' && id !== ROLES_WINDOW_ID) {
+    return null;
+  }
+  if (kind === 'users' && id !== USERS_WINDOW_ID) {
     return null;
   }
   if (kind === 'control-panel' && id !== CONTROL_PANEL_WINDOW_ID) {
@@ -278,6 +283,10 @@ export function hydrateDesktopFromPersistence(
       windows.push(windowFromEntry(entry));
       continue;
     }
+    if (entry.kind === 'users' && entry.id === USERS_WINDOW_ID) {
+      windows.push(windowFromEntry(entry));
+      continue;
+    }
     if (entry.kind === 'site' && entry.siteId != null && siteIds.has(entry.siteId)) {
       windows.push({
         ...windowFromEntry(entry),
@@ -359,6 +368,9 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
   }
   if (kind === 'roles') {
     return DEFAULT_WINDOW_SIZE.roles;
+  }
+  if (kind === 'users') {
+    return DEFAULT_WINDOW_SIZE.users;
   }
   return DEFAULT_WINDOW_SIZE.site;
 }

@@ -79,6 +79,47 @@ export type AdminApiRole = {
   permissionCount: number;
 };
 
+export type AdminApiUserRoleRef = {
+  id: number;
+  name: string;
+  label: string;
+};
+
+export type AdminApiUserSiteAssignment = {
+  id: number;
+  siteId: number;
+  siteName: string;
+  roleId: number;
+  roleName: string;
+  roleLabel: string;
+};
+
+export type AdminApiUser = {
+  id: number;
+  email: string;
+  roleIds: number[];
+  roles: AdminApiUserRoleRef[];
+  siteAssignments: AdminApiUserSiteAssignment[];
+  roleCount: number;
+  siteAssignmentCount: number;
+};
+
+export type AdminApiUserCapabilities = {
+  listUsers: boolean;
+  viewUser: boolean;
+  createUser: boolean;
+  editUser: boolean;
+  deleteUser: boolean;
+};
+
+export type AdminApiMe = {
+  user: string | null;
+  id?: number | null;
+  email?: string | null;
+  roles: string[];
+  capabilities?: AdminApiUserCapabilities;
+};
+
 /** DELETE /hosts/{id} — sessionEnded when domain access was forced back to path. */
 export type AdminApiHostDeleteResult = {
   deleted: true;

@@ -4,7 +4,8 @@
 .hosts-window.window,
 .settings-window.window,
 .permissions-window.window,
-.roles-window.window {
+.roles-window.window,
+.users-window.window {
   position: relative;
 }
 
@@ -41,6 +42,38 @@
   height: 100%;
 }
 
+/* Users: fixed width; height follows content (shell omits height → not is-sized). */
+.users-window.window {
+  min-width: 480px;
+}
+
+/* Empty info-icon spans must reserve a box or the glyph paints over the copy. */
+.users-window .field-row.info-icon-row,
+.users-window .field-row:has(> .info-icon) {
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.users-window .field-row.info-icon-row > * + *,
+.users-window .field-row:has(> .info-icon) > * + * {
+  margin-left: 0;
+}
+
+.users-window .info-icon {
+  display: block;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 32px 32px;
+}
+
 /* Host / parent-modal dim while a DesktopModal is open. */
 .modal-blocker {
   position: absolute;
@@ -58,6 +91,7 @@
  * Owned modals portal as `.dashboard > .floating-modal.desktop-owned-modal`
  * with inline z-index = owner shell z (same integer). A raised sibling window
  * (nextZ = top+1) stacks above; equal z + later DOM keeps the dialog above its owner.
+ * Unowned modals (Start → My Account) use topShellZ+1 via DesktopModal.
  */
 .floating-modal {
   position: absolute;
@@ -101,6 +135,10 @@
   max-width: 100%;
 }
 
+.user-form-dialog {
+  max-width: 100%;
+}
+
 .site-form-dialog-form {
   display: flex;
   flex-direction: column;
@@ -119,6 +157,12 @@
   gap: 0;
 }
 
+.user-form-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .site-form-dialog-actions {
   margin-top: 10px;
 }
@@ -126,7 +170,8 @@
 /* Align Name/Slug (and similar) inputs: equal-width captions before controls. */
 .site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above),
 .permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above),
-.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above),
+.user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
@@ -140,7 +185,8 @@
 }
 
 .permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label,
-.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label,
+.user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
   flex: 0 0 6.5em;
   box-sizing: border-box;
   width: 6.5em;
@@ -155,7 +201,10 @@
 .permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea,
 .role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
 .role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > select,
-.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea {
+.role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea,
+.user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
+.user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > select,
+.user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > textarea {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;
@@ -171,6 +220,39 @@
 .role-form-permission-list > .scrollable-viewport {
   padding: 6px 8px;
   box-sizing: border-box;
+}
+
+.user-form-role-list,
+.user-form-site-list {
+  height: 160px;
+  min-height: 96px;
+  box-sizing: border-box;
+}
+
+.user-form-role-list > .scrollable-viewport,
+.user-form-site-list > .scrollable-viewport {
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+.set-password-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.set-password-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 11em;
+  box-sizing: border-box;
+  width: 11em;
+  min-width: 11em;
+}
+
+.set-password-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
 }
 
 .site-form-host-list {

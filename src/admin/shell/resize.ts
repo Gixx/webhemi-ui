@@ -24,6 +24,8 @@ export const DEFAULT_WINDOW_SIZE = {
   settings: { width: 420, height: 340 },
   permissions: { width: 560, height: 480 },
   roles: { width: 640, height: 480 },
+  /** Height is unused for Users (content-sized shell); width is applied. */
+  users: { width: 480, height: 420 },
 } as const;
 
 export type ShellBounds = {

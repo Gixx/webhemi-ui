@@ -150,6 +150,10 @@
   background-image: url("/assets/admin/icons/system/upload.svg");
 }
 
+#toolbar .start-menu-list .start-item.my-account {
+  background-image: url("/assets/admin/icons/system/my_account.svg");
+}
+
 #toolbar .start-menu-list .start-item.control-panel {
   background-image: url("/assets/admin/icons/system/control_panel.svg");
 }
@@ -228,6 +232,10 @@
 
 #toolbar .task-buttons > .task.roles {
   background-image: url("/assets/admin/icons/system/roles.svg");
+}
+
+#toolbar .task-buttons > .task.users {
+  background-image: url("/assets/admin/icons/system/users.svg");
 }
 
 #toolbar .task-buttons > .task > .task-title {

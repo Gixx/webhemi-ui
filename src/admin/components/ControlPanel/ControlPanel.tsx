@@ -31,6 +31,8 @@ export type ControlPanelProps = {
   onOpenPermissions?: () => void;
   /** Open the Roles shell window. */
   onOpenRoles?: () => void;
+  /** Open the Users shell window. */
+  onOpenUsers?: () => void;
   /** Wired in Phase 5 shell; no-op until then. */
   onMinimize?: () => void;
   /** Wired in Phase 5 shell; no-op until then. Requires `resizable`. */
@@ -54,7 +56,7 @@ export type ControlPanelProps = {
 
 /**
  * Control Panel product surface: IconPanelWindow + static admin icons.
- * Sites / Hosts / Settings / Permissions / Roles open via callbacks; other icons are
+ * Sites / Hosts / Settings / Permissions / Roles / Users open via callbacks; other icons are
  * selection-only until later slices.
  */
 export function ControlPanel({
@@ -64,6 +66,7 @@ export function ControlPanel({
   onOpenSettings,
   onOpenPermissions,
   onOpenRoles,
+  onOpenUsers,
   onMinimize,
   onMaximize,
   onActivate,
@@ -130,7 +133,9 @@ export function ControlPanel({
                   ? onOpenPermissions
                   : icon.kind === 'roles'
                     ? onOpenRoles
-                    : undefined;
+                    : icon.kind === 'users'
+                      ? onOpenUsers
+                      : undefined;
         return (
           <SystemIcon
             key={icon.kind}

@@ -4,6 +4,7 @@ import type {
   AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
+  AdminApiUser,
 } from '../types';
 
 /** Shared Storybook / MSW fixtures for `/admin/api` (not exported from package root). */
@@ -118,5 +119,35 @@ export const MSW_SAMPLE_ROLES: AdminApiRole[] = [
     protected: false,
     permissionIds: [1, 2],
     permissionCount: 2,
+  },
+];
+
+export const MSW_SAMPLE_USERS: AdminApiUser[] = [
+  {
+    id: 1,
+    email: 'admin@example.test',
+    roleIds: [1],
+    roles: [{ id: 1, name: 'ROLE_ADMIN', label: 'Admin' }],
+    siteAssignments: [],
+    roleCount: 1,
+    siteAssignmentCount: 0,
+  },
+  {
+    id: 2,
+    email: 'author@example.test',
+    roleIds: [3],
+    roles: [{ id: 3, name: 'ROLE_AUTHOR', label: 'Author' }],
+    siteAssignments: [
+      {
+        id: 1,
+        siteId: 1,
+        siteName: 'Example Site',
+        roleId: 2,
+        roleName: 'ROLE_SITE_ADMIN',
+        roleLabel: 'Site Admin',
+      },
+    ],
+    roleCount: 1,
+    siteAssignmentCount: 1,
   },
 ];

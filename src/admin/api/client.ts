@@ -7,6 +7,8 @@ import type {
   AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
+  AdminApiUser,
+  AdminApiMe,
   AdminApiFailure,
 } from './types';
 
@@ -73,6 +75,30 @@ export type UpdateRoleBody = {
   label?: string;
   description?: string;
   permissionIds?: number[];
+};
+
+export type CreateUserSiteAssignmentBody = {
+  siteId: number;
+  roleId: number;
+};
+
+export type CreateUserBody = {
+  email: string;
+  password: string;
+  roleIds?: number[];
+  siteAssignments?: CreateUserSiteAssignmentBody[];
+};
+
+export type UpdateUserBody = {
+  email?: string;
+  roleIds?: number[];
+  siteAssignments?: CreateUserSiteAssignmentBody[];
+};
+
+export type SetUserPasswordBody = {
+  currentPassword?: string;
+  password: string;
+  confirmPassword?: string;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -307,6 +333,28 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<undefined>(`/roles/${id}`, {
         method: 'DELETE',
       }),
+    listUsers: () => request<AdminApiUser[]>('/users'),
+    getUser: (id: number) => request<AdminApiUser>(`/users/${id}`),
+    createUser: (body: CreateUserBody) =>
+      request<AdminApiUser>('/users', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    updateUser: (id: number, body: UpdateUserBody) =>
+      request<AdminApiUser>(`/users/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    deleteUser: (id: number) =>
+      request<undefined>(`/users/${id}`, {
+        method: 'DELETE',
+      }),
+    setUserPassword: (id: number, body: SetUserPasswordBody) =>
+      request<{ ok: true }>(`/users/${id}/password`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    getMe: () => request<AdminApiMe>('/me'),
   };
 }
 
