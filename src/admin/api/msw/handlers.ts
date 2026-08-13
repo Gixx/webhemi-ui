@@ -308,6 +308,34 @@ export function createAdminApiHandlers(
         slug?: string;
         enabled?: boolean;
       };
+      if (existing.protected) {
+        if (body.slug != null && body.slug !== existing.slug) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'site_protected',
+                message: 'Protected system site slug cannot be changed.',
+                fields: { slug: 'Protected system site slug cannot be changed.' },
+              },
+            },
+            { status: 409 },
+          );
+        }
+        if (body.enabled === false) {
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'site_protected',
+                message: 'Protected system site cannot be disabled.',
+                fields: {
+                  enabled: 'Protected system site cannot be disabled.',
+                },
+              },
+            },
+            { status: 409 },
+          );
+        }
+      }
       if (
         body.slug != null &&
         store.sites.some((row) => row.slug === body.slug && row.id !== id)
@@ -340,6 +368,17 @@ export function createAdminApiHandlers(
         return HttpResponse.json(
           { error: { code: 'not_found', message: 'Site not found.' } },
           { status: 404 },
+        );
+      }
+      if (existing.protected) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'site_protected',
+              message: 'Protected system site cannot be deleted.',
+            },
+          },
+          { status: 409 },
         );
       }
       if (store.hosts.some((row) => row.siteId === id)) {
