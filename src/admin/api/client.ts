@@ -48,7 +48,8 @@ export type UpdateHostBody = {
 };
 
 export type UpdateSettingsBody = {
-  adminAccess: 'path' | 'domain';
+  adminAccess?: 'path' | 'domain';
+  symfonyDebugToolbar?: boolean;
 };
 
 export type CreatePermissionBody = {

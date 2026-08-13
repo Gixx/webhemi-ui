@@ -380,6 +380,8 @@ function createMockAdminApi(
             login: '/login',
             register: '/register',
           },
+          symfonyDebugToolbar: true,
+          symfonyDebugToolbarEditable: true,
         },
       };
     },
@@ -391,12 +393,13 @@ function createMockAdminApi(
           row.enabled &&
           row.siteSlug === 'main',
       );
+      const adminAccess = body.adminAccess ?? 'path';
       return {
         ok: true as const,
         status: 200,
         data: {
-          adminAccess: body.adminAccess,
-          effectiveAdminAccess: body.adminAccess,
+          adminAccess,
+          effectiveAdminAccess: adminAccess,
           domainAvailable: admin != null,
           adminHost: admin ? { id: admin.id, host: admin.host } : null,
           paths: {
@@ -406,6 +409,8 @@ function createMockAdminApi(
             login: '/login',
             register: '/register',
           },
+          symfonyDebugToolbar: body.symfonyDebugToolbar ?? true,
+          symfonyDebugToolbarEditable: true,
         },
       };
     },

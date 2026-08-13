@@ -413,13 +413,32 @@ export function createAdminApiHandlers(
     http.patch('/admin/api/settings', async ({ request }) => {
       const body = (await request.json()) as {
         adminAccess?: 'path' | 'domain';
+        symfonyDebugToolbar?: boolean;
       };
-      if (body.adminAccess !== 'path' && body.adminAccess !== 'domain') {
+      const hasAccess =
+        body.adminAccess === 'path' || body.adminAccess === 'domain';
+      const hasToolbar = typeof body.symfonyDebugToolbar === 'boolean';
+      if (!hasAccess && !hasToolbar) {
         return HttpResponse.json(
           {
             error: {
               code: 'validation_failed',
-              message: 'Invalid admin access mode.',
+              message: 'Invalid settings payload.',
+            },
+          },
+          { status: 422 },
+        );
+      }
+      if (
+        hasToolbar &&
+        store.settings.symfonyDebugToolbarEditable === false
+      ) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'toolbar_not_editable',
+              message:
+                'Symfony debug toolbar can only be changed in the dev or stage environment.',
             },
           },
           { status: 422 },
@@ -427,8 +446,15 @@ export function createAdminApiHandlers(
       }
       store.settings = {
         ...store.settings,
-        adminAccess: body.adminAccess,
-        effectiveAdminAccess: body.adminAccess,
+        ...(hasAccess
+          ? {
+              adminAccess: body.adminAccess!,
+              effectiveAdminAccess: body.adminAccess!,
+            }
+          : {}),
+        ...(hasToolbar
+          ? { symfonyDebugToolbar: body.symfonyDebugToolbar! }
+          : {}),
       };
       return HttpResponse.json({ data: store.settings });
     }),

@@ -21,7 +21,7 @@ export const DEFAULT_WINDOW_SIZE = {
   site: { width: 640, height: 440 },
   sites: { width: 560, height: 480 },
   hosts: { width: 640, height: 480 },
-  settings: { width: 420, height: 340 },
+  settings: { width: 420, height: 400 },
   permissions: { width: 560, height: 480 },
   roles: { width: 640, height: 480 },
   /** Height is unused for Users (content-sized shell); width is applied. */

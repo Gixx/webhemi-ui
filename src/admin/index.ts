@@ -41,6 +41,7 @@ export {
 export {
   SettingsWindow,
   type SettingsWindowProps,
+  type SettingsSavePatch,
   type AdminAccessModeValue,
 } from './components/SettingsWindow/SettingsWindow';
 export {

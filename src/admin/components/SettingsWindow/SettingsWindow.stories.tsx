@@ -11,6 +11,8 @@ const meta = {
     onMinimize: fn(),
     onMaximize: fn(),
     onActivate: fn(),
+    symfonyDebugToolbar: true,
+    symfonyDebugToolbarEditable: true,
   },
 } satisfies Meta<typeof SettingsWindow>;
 
@@ -35,5 +37,14 @@ export const DomainUnavailable: Story = {
   args: {
     adminAccess: 'path',
     domainAvailable: false,
+  },
+};
+
+export const ToolbarDisabledProd: Story = {
+  args: {
+    adminAccess: 'path',
+    domainAvailable: true,
+    symfonyDebugToolbar: true,
+    symfonyDebugToolbarEditable: false,
   },
 };

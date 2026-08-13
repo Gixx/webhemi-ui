@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Button,
+  Checkbox,
   FieldRow,
   GroupBox,
   Radio,
@@ -17,6 +18,11 @@ import { cn } from '../../../lib/cn';
 
 export type AdminAccessModeValue = 'path' | 'domain';
 
+export type SettingsSavePatch = {
+  adminAccess?: AdminAccessModeValue;
+  symfonyDebugToolbar?: boolean;
+};
+
 const ACCESS_SWITCH_WARNING =
   'Changing admin access mode will discard unfinished work in this session.\nYou will need to sign in again on the new admin login page.';
 
@@ -24,14 +30,17 @@ export type SettingsWindowProps = {
   adminAccess?: AdminAccessModeValue;
   /** When false, Domain radio is disabled. */
   domainAvailable?: boolean;
+  symfonyDebugToolbar?: boolean;
+  /** When false (e.g. prod), checkbox is unchecked and disabled. */
+  symfonyDebugToolbarEditable?: boolean;
   canEdit?: boolean;
   loading?: boolean;
   saving?: boolean;
   error?: string | null;
   statusMessage?: string | null;
   onClearStatusMessage?: () => void;
-  /** Called after the operator confirms the access-mode warning. */
-  onSave?: (adminAccess: AdminAccessModeValue) => void;
+  /** Access mode (after warning) and/or toolbar toggle. */
+  onSave?: (patch: SettingsSavePatch) => void;
   errorSoundUrl?: string;
   dingSoundUrl?: string;
   onAlertClose?: () => void;
@@ -49,11 +58,13 @@ export type SettingsWindowProps = {
 };
 
 /**
- * Install settings: Admin access mode (path | domain).
+ * Install settings: Admin access mode (path | domain) + Symfony debug toolbar.
  */
 export function SettingsWindow({
   adminAccess = 'path',
   domainAvailable = false,
+  symfonyDebugToolbar = true,
+  symfonyDebugToolbarEditable = true,
   canEdit = true,
   loading = false,
   saving = false,
@@ -77,6 +88,7 @@ export function SettingsWindow({
   width = 420,
 }: SettingsWindowProps) {
   const [draft, setDraft] = useState<AdminAccessModeValue>(adminAccess);
+  const [toolbarDraft, setToolbarDraft] = useState(symfonyDebugToolbar);
   const [pendingAccess, setPendingAccess] = useState<AdminAccessModeValue | null>(
     null,
   );
@@ -87,10 +99,17 @@ export function SettingsWindow({
   const busy = loading || saving;
   const showAlert = Boolean(alert);
   const showSwitchWarning = pendingAccess != null && !showAlert;
+  const toolbarChecked = symfonyDebugToolbarEditable ? toolbarDraft : false;
+  const toolbarDisabled =
+    !symfonyDebugToolbarEditable || !canEdit || busy;
 
   useEffect(() => {
     setDraft(adminAccess);
   }, [adminAccess]);
+
+  useEffect(() => {
+    setToolbarDraft(symfonyDebugToolbar);
+  }, [symfonyDebugToolbar]);
 
   useEffect(() => {
     if (draft === 'domain' && !domainAvailable) {
@@ -103,8 +122,9 @@ export function SettingsWindow({
       return;
     }
     setPendingAccess(null);
+    setToolbarDraft(symfonyDebugToolbar);
     setAlert(error);
-  }, [error]);
+  }, [error, symfonyDebugToolbar]);
 
   useLayoutEffect(() => {
     if (!alert) {
@@ -154,7 +174,16 @@ export function SettingsWindow({
     }
     const next = pendingAccess;
     setPendingAccess(null);
-    onSave(next);
+    onSave({ adminAccess: next });
+  };
+
+  const requestToolbarChange = (next: boolean) => {
+    if (toolbarDisabled || next === toolbarDraft) {
+      return;
+    }
+    onClearStatusMessage?.();
+    setToolbarDraft(next);
+    onSave?.({ symfonyDebugToolbar: next });
   };
 
   const domainDisabled = !domainAvailable || !canEdit || busy;
@@ -215,6 +244,18 @@ export function SettingsWindow({
             checked={draft === 'path'}
             disabled={!canEdit || busy}
             onChange={() => requestAccessChange('path')}
+          />
+        </FieldRow>
+      </GroupBox>
+
+      <GroupBox legend="Symfony" style={{ marginTop: 12 }}>
+        <FieldRow>
+          <Checkbox
+            id="settings-symfony-debug-toolbar"
+            label="Debug toolbar"
+            checked={toolbarChecked}
+            disabled={toolbarDisabled}
+            onChange={(event) => requestToolbarChange(event.target.checked)}
           />
         </FieldRow>
       </GroupBox>

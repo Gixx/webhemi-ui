@@ -75,6 +75,8 @@ export const MSW_DEFAULT_SETTINGS: AdminApiSettings = {
     login: '/admin/login',
     register: '/register',
   },
+  symfonyDebugToolbar: true,
+  symfonyDebugToolbarEditable: true,
 };
 
 export const MSW_SAMPLE_PERMISSIONS: AdminApiPermission[] = [

@@ -87,7 +87,7 @@ import {
 } from '../shell';
 import {
   SettingsWindow,
-  type AdminAccessModeValue,
+  type SettingsSavePatch,
 } from '../components/SettingsWindow/SettingsWindow';
 export type DesktopSite = {
   id: number;
@@ -1208,11 +1208,11 @@ export function AdminDesktop({
   }, [api]);
 
   const handleSaveSettings = useCallback(
-    async (adminAccess: AdminAccessModeValue) => {
+    async (patch: SettingsSavePatch) => {
       setSettingsSaving(true);
       setSettingsError(null);
       clearSettingsStatusMessage();
-      const result = await api.updateSettings({ adminAccess });
+      const result = await api.updateSettings(patch);
       setSettingsSaving(false);
       if (!result.ok) {
         handleApiFailure(result, setSettingsError);
@@ -1222,6 +1222,10 @@ export function AdminDesktop({
       setSettings(result.data);
       if (result.data.sessionEnded && result.data.loginUrl) {
         assignSafeNavigationUrl(result.data.loginUrl, loginHref);
+        return;
+      }
+      if (typeof patch.symfonyDebugToolbar === 'boolean') {
+        window.location.reload();
         return;
       }
       flashSettingsStatus('Settings saved.');
@@ -2145,6 +2149,10 @@ export function AdminDesktop({
               maximized={win.maximized}
               adminAccess={settings?.adminAccess ?? 'path'}
               domainAvailable={settings?.domainAvailable ?? false}
+              symfonyDebugToolbar={settings?.symfonyDebugToolbar ?? true}
+              symfonyDebugToolbarEditable={
+                settings?.symfonyDebugToolbarEditable ?? false
+              }
               canEdit={canEditSettings}
               loading={settingsLoading}
               saving={settingsSaving}

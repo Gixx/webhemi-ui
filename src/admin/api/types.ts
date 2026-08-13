@@ -57,6 +57,8 @@ export type AdminApiSettings = {
     login: string;
     register: string;
   };
+  symfonyDebugToolbar: boolean;
+  symfonyDebugToolbarEditable: boolean;
   /** Present after PATCH when access mode changed (absolute admin login URL). */
   loginUrl?: string;
   sessionEnded?: boolean;
