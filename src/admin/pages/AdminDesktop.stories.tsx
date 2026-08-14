@@ -16,8 +16,8 @@ const SAMPLE_SITES = [
 ];
 
 const SAMPLE_API_SITES: AdminApiSite[] = [
-  { id: 1, name: 'Example Site', slug: 'example', enabled: true, protected: false, hostCount: 2 },
-  { id: 2, name: 'Docs', slug: 'docs', enabled: true, protected: false, hostCount: 1 },
+  { id: 1, name: 'Example Site', slug: 'example', themeId: 'default', enabled: true, protected: false, hostCount: 2 },
+  { id: 2, name: 'Docs', slug: 'docs', themeId: 'default', enabled: true, protected: false, hostCount: 1 },
 ];
 
 const SAMPLE_API_HOSTS: AdminApiHost[] = [
@@ -120,6 +120,7 @@ function createMockAdminApi(
         id: Math.max(0, ...siteRows.map((row) => row.id)) + 1,
         name: body.name,
         slug: body.slug,
+        themeId: 'default',
         enabled: body.enabled ?? true,
         protected: false,
         hostCount: 0,

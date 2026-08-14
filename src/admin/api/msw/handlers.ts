@@ -286,6 +286,7 @@ export function createAdminApiHandlers(
         id: Math.max(0, ...store.sites.map((row) => row.id)) + 1,
         name: body.name.trim(),
         slug: body.slug.trim(),
+        themeId: 'default',
         enabled: body.enabled ?? true,
         protected: false,
         hostCount: 0,

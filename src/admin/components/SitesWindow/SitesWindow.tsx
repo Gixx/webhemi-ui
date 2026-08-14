@@ -27,6 +27,8 @@ export type SitesWindowSite = {
   slug: string;
   name: string;
   enabled: boolean;
+  /** Frontend theme package id (read-only in Sites window until Themes CP). */
+  themeId?: string;
   /** Installer/seed Main site — not deletable/disableable; slug locked. */
   protected?: boolean;
   hostCount: number;

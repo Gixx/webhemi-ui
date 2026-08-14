@@ -24,6 +24,8 @@ export type AdminApiSite = {
   id: number;
   slug: string;
   name: string;
+  /** Frontend theme package id (`data-wh-theme`). */
+  themeId: string;
   enabled: boolean;
   protected: boolean;
   hostCount: number;
