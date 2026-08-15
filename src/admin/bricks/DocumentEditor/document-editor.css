@@ -1,0 +1,99 @@
+.wh-doc-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+}
+
+.wh-doc-toolbar {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wh-doc-editor__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 200px;
+  overflow: auto;
+  padding: 8px;
+  background: #fff;
+  color: #000;
+}
+
+.wh-doc-editor__content {
+  min-height: 180px;
+  outline: none;
+  font-family: var(--font-chrome, 'MS Sans Serif', Tahoma, sans-serif);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.wh-doc-editor__placeholder {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  color: #808080;
+  pointer-events: none;
+  font-family: var(--font-chrome, 'MS Sans Serif', Tahoma, sans-serif);
+  font-size: 14px;
+}
+
+.wh-doc-bold {
+  font-weight: bold;
+}
+
+.wh-doc-italic {
+  font-style: italic;
+}
+
+.wh-doc-h2 {
+  font-size: 1.35em;
+  margin: 0.4em 0;
+}
+
+.wh-doc-h3 {
+  font-size: 1.15em;
+  margin: 0.35em 0;
+}
+
+.wh-doc-p {
+  margin: 0.25em 0;
+}
+
+.wh-doc-link {
+  color: #0000ee;
+  text-decoration: underline;
+}
+
+.wh-doc-accordion-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 8px;
+  border: 2px solid #808080;
+  background: #c0c0c0;
+  font-family: var(--font-chrome, 'MS Sans Serif', Tahoma, sans-serif);
+  font-size: 12px;
+}
+
+.wh-doc-accordion-chip__label {
+  font-weight: bold;
+}
+
+.wh-doc-accordion-chip__meta {
+  flex: 1;
+  color: #222;
+}
+
+.wh-doc-accordion-form-row {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #808080;
+}
+
+.wh-doc-block--accordion {
+  margin: 4px 0;
+}

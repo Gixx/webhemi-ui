@@ -201,14 +201,45 @@ export function createAdminApiHandlers(
   /** In-memory explorer forests per site (Slice 2 Storybook). */
   const explorerForests = new Map<number, ExplorerItem[]>();
   let nextNodeId = 1000;
+  /** Persisted document bodies keyed by `siteId:nodeId`. */
+  const nodeBodies = new Map<string, string | null>();
+
+  /** Demo fixtures use string ids; API client expects `node-{id}` / `media-{id}`. */
+  const withApiEntityIds = (items: ExplorerItem[]): ExplorerItem[] => {
+    let nodeSeq = 1;
+    let mediaSeq = 1;
+    const walk = (nodes: ExplorerItem[]): ExplorerItem[] =>
+      nodes.map((item) => {
+        let id = item.id;
+        if (
+          (item.role === 'document' || item.role === 'folder') &&
+          !/^node-\d+$/.test(item.id)
+        ) {
+          id = `node-${nodeSeq++}`;
+        } else if (
+          item.role === 'media-asset' &&
+          !/^media-\d+$/.test(item.id)
+        ) {
+          id = `media-${mediaSeq++}`;
+        }
+        return {
+          ...item,
+          id,
+          children: item.children ? walk(item.children) : item.children,
+        };
+      });
+    return walk(items);
+  };
 
   const forestForSite = (siteId: number): ExplorerItem[] => {
     let forest = explorerForests.get(siteId);
     if (!forest) {
       const site = store.sites.find((row) => row.id === siteId);
-      forest = site
-        ? buildDemoSiteExplorerTree(site)
-        : buildEmptySiteExplorerTree({ id: siteId, name: 'Site' });
+      forest = withApiEntityIds(
+        site
+          ? buildDemoSiteExplorerTree(site)
+          : buildEmptySiteExplorerTree({ id: siteId, name: 'Site' }),
+      );
       explorerForests.set(siteId, forest);
     }
     return forest;
@@ -1358,6 +1389,9 @@ export function createAdminApiHandlers(
         parent.children = [...(parent.children ?? []), item];
       }
       explorerForests.set(siteId, forest);
+      if (body.kind !== 'folder') {
+        nodeBodies.set(`${siteId}:${id}`, null);
+      }
       return HttpResponse.json(
         {
           data: {
@@ -1386,6 +1420,58 @@ export function createAdminApiHandlers(
       );
     }),
 
+    http.get('/admin/api/sites/:siteId/nodes/:id', ({ params }) => {
+      const siteId = Number(params.siteId);
+      const nodeId = Number(params.id);
+      const forest = forestForSite(siteId);
+      const targetId = `node-${nodeId}`;
+      const findById = (nodes: ExplorerItem[], id: string): ExplorerItem | null => {
+        for (const node of nodes) {
+          if (node.id === id) {
+            return node;
+          }
+          if (node.children) {
+            const hit = findById(node.children, id);
+            if (hit) {
+              return hit;
+            }
+          }
+        }
+        return null;
+      };
+      const found = findById(forest, targetId);
+      if (!found) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Node not found.' } },
+          { status: 404 },
+        );
+      }
+      const bodyKey = `${siteId}:${nodeId}`;
+      return HttpResponse.json({
+        data: {
+          id: nodeId,
+          siteId,
+          parentId: null,
+          tree: 'site',
+          kind: found.role === 'folder' ? 'folder' : 'document',
+          folderType: found.role === 'folder' ? 'normal' : null,
+          slug: 'item',
+          title: found.label,
+          body: nodeBodies.has(bodyKey) ? nodeBodies.get(bodyKey)! : null,
+          redirectTarget: null,
+          mediaAssetId: null,
+          publication: 'draft',
+          publishAt: null,
+          hidden: false,
+          sortOrder: 0,
+          deletedAt: null,
+          originalParentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
     http.patch('/admin/api/sites/:siteId/nodes/:id', async ({ params, request }) => {
       const siteId = Number(params.siteId);
       const nodeId = Number(params.id);
@@ -1394,6 +1480,7 @@ export function createAdminApiHandlers(
         title?: string;
         slug?: string;
         parentId?: number | null;
+        body?: string | null;
       };
       const targetId = `node-${nodeId}`;
       const findById = (nodes: ExplorerItem[], id: string): ExplorerItem | null => {
@@ -1420,6 +1507,10 @@ export function createAdminApiHandlers(
       if (body.title) {
         found.label = body.title;
       }
+      const bodyKey = `${siteId}:${nodeId}`;
+      if (Object.prototype.hasOwnProperty.call(body, 'body')) {
+        nodeBodies.set(bodyKey, body.body ?? null);
+      }
       explorerForests.set(siteId, forest);
       return HttpResponse.json({
         data: {
@@ -1431,7 +1522,7 @@ export function createAdminApiHandlers(
           folderType: found.role === 'folder' ? 'normal' : null,
           slug: body.slug ?? 'item',
           title: found.label,
-          body: null,
+          body: nodeBodies.has(bodyKey) ? nodeBodies.get(bodyKey)! : null,
           redirectTarget: null,
           mediaAssetId: null,
           publication: 'draft',

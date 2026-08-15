@@ -7,6 +7,7 @@ import {
   SITES_WINDOW_ID,
   USERS_WINDOW_ID,
   parseSiteSettingsWindowId,
+  parseDocumentEditorWindowId,
   parseSiteWindowId,
   type ShellWindowKind,
   type ShellWindowState,
@@ -20,6 +21,7 @@ export type PersistedWindowEntry = {
   kind: ShellWindowKind;
   title: string;
   siteId?: number;
+  contentNodeId?: number;
   left: number;
   top: number;
   z: number;
@@ -80,6 +82,7 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   const kind =
     raw.kind === 'site' ||
     raw.kind === 'site-settings' ||
+    raw.kind === 'document-editor' ||
     raw.kind === 'control-panel' ||
     raw.kind === 'sites' ||
     raw.kind === 'hosts' ||
@@ -101,14 +104,27 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   ) {
     return null;
   }
-  const siteId =
-    kind === 'site'
-      ? parseSiteWindowId(id)
-      : kind === 'site-settings'
-        ? parseSiteSettingsWindowId(id)
-        : undefined;
-  if ((kind === 'site' || kind === 'site-settings') && siteId === null) {
-    return null;
+  let siteId: number | undefined;
+  let contentNodeId: number | undefined;
+  if (kind === 'site') {
+    const parsed = parseSiteWindowId(id);
+    if (parsed === null) {
+      return null;
+    }
+    siteId = parsed;
+  } else if (kind === 'site-settings') {
+    const parsed = parseSiteSettingsWindowId(id);
+    if (parsed === null) {
+      return null;
+    }
+    siteId = parsed;
+  } else if (kind === 'document-editor') {
+    const parsed = parseDocumentEditorWindowId(id);
+    if (parsed === null) {
+      return null;
+    }
+    siteId = parsed.siteId;
+    contentNodeId = parsed.nodeId;
   }
   if (kind === 'sites' && id !== SITES_WINDOW_ID) {
     return null;
@@ -136,6 +152,7 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
     kind,
     title: typeof raw.title === 'string' ? raw.title : id,
     siteId: siteId ?? undefined,
+    contentNodeId: contentNodeId ?? undefined,
     left: raw.left,
     top: raw.top,
     z: raw.z,
@@ -212,6 +229,7 @@ export function entryFromWindow(
     kind: win.kind,
     title: win.title,
     siteId: win.siteId,
+    contentNodeId: win.contentNodeId,
     left: win.left,
     top: win.top,
     z: win.z,
@@ -230,6 +248,7 @@ export function windowFromEntry(entry: PersistedWindowEntry): ShellWindowState {
     kind: entry.kind,
     title: entry.title,
     siteId: entry.siteId,
+    contentNodeId: entry.contentNodeId,
     left: entry.left,
     top: entry.top,
     z: entry.z,
@@ -366,6 +385,9 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
   }
   if (kind === 'site-settings') {
     return DEFAULT_WINDOW_SIZE['site-settings'];
+  }
+  if (kind === 'document-editor') {
+    return DEFAULT_WINDOW_SIZE['document-editor'];
   }
   if (kind === 'sites') {
     return DEFAULT_WINDOW_SIZE.sites;

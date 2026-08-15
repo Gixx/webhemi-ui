@@ -10,8 +10,10 @@ import {
 import {
   buildEmptySiteExplorerTree,
   SiteFileExplorer,
+  parseExplorerEntityId,
   type ExplorerItem,
 } from '../bricks/FileExplorerWindow';
+import { DocumentEditorWindow } from '../bricks/DocumentEditor';
 import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
 import {
@@ -56,6 +58,7 @@ import {
   type AdminApiSettings,
   type AdminApiSite,
   type AdminApiSiteSettings,
+  type AdminApiContentNode,
   type AdminApiUser,
   type AdminApiUserCapabilities,
 } from '../api';
@@ -79,6 +82,7 @@ import {
   savePersistedDesktop,
   siteWindowId,
   siteSettingsWindowId,
+  documentEditorWindowId,
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   StartMenu,
@@ -408,6 +412,19 @@ export function AdminDesktop({
   const [siteSettingsStatusMessage, setSiteSettingsStatusMessage] = useState<
     string | null
   >(null);
+  const [documentsByKey, setDocumentsByKey] = useState<
+    Record<string, AdminApiContentNode>
+  >({});
+  const [documentLoadingKey, setDocumentLoadingKey] = useState<string | null>(
+    null,
+  );
+  const [documentSavingKey, setDocumentSavingKey] = useState<string | null>(
+    null,
+  );
+  const [documentError, setDocumentError] = useState<string | null>(null);
+  const [documentStatusMessage, setDocumentStatusMessage] = useState<
+    string | null
+  >(null);
   /** After Error modal OK — bounce to login when the API reported session loss. */
   const pendingLoginRedirectRef = useRef(false);
   const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -436,6 +453,7 @@ export function AdminDesktop({
   const canEditRoles = canEditSites;
   const canEditSettings = canEditSites;
   const canEditSiteSettings = canEditSites;
+  const canEditDocuments = canEditSites;
   const usersCaps: AdminApiUserCapabilities = userCapabilities ?? {
     listUsers: canEditSites,
     viewUser: canEditSites,
@@ -1404,6 +1422,110 @@ export function AdminDesktop({
     }
   };
 
+  const documentCacheKey = (siteId: number, nodeId: number) =>
+    `${siteId}:${nodeId}`;
+
+  const openDocumentEditor = (
+    site: DesktopSite,
+    nodeId: number,
+    title: string,
+  ) => {
+    const id = documentEditorWindowId(site.id, nodeId);
+    setShell((prev) => {
+      const existing = prev.windows.find((win) => win.id === id);
+      if (existing) {
+        const z =
+          !existing.minimized && existing.z === nextZRef.current
+            ? existing.z
+            : raiseZ();
+        return {
+          activeId: id,
+          windows: prev.windows.map((win) =>
+            win.id === id ? { ...win, z, minimized: false } : win,
+          ),
+        };
+      }
+      const saved = geometryFromPersistence(
+        persistedRef.current,
+        id,
+        'document-editor',
+      );
+      const place = saved
+        ? { left: saved.left, top: saved.top, z: raiseZ() }
+        : allocatePlacement();
+      const size = saved
+        ? { width: saved.width, height: saved.height }
+        : DEFAULT_WINDOW_SIZE['document-editor'];
+      return {
+        activeId: id,
+        windows: [
+          ...prev.windows,
+          {
+            id,
+            kind: 'document-editor',
+            title,
+            siteId: site.id,
+            contentNodeId: nodeId,
+            left: place.left,
+            top: place.top,
+            z: place.z,
+            width: size.width,
+            height: size.height,
+            minimized: false,
+            maximized: false,
+          },
+        ],
+      };
+    });
+    void (async () => {
+      const key = documentCacheKey(site.id, nodeId);
+      setDocumentLoadingKey(key);
+      setDocumentError(null);
+      const result = await api.getContentNode(site.id, nodeId);
+      setDocumentLoadingKey(null);
+      if (!result.ok) {
+        handleApiFailure(result, setDocumentError);
+        return;
+      }
+      setDocumentsByKey((prev) => ({ ...prev, [key]: result.data }));
+      setShell((prev) => ({
+        ...prev,
+        windows: prev.windows.map((win) =>
+          win.id === id ? { ...win, title: result.data.title } : win,
+        ),
+      }));
+    })();
+  };
+
+  const handleSaveDocument = async (
+    siteId: number,
+    nodeId: number,
+    payload: { title: string; body: string },
+  ) => {
+    const key = documentCacheKey(siteId, nodeId);
+    setDocumentSavingKey(key);
+    setDocumentError(null);
+    const result = await api.updateContentNode(siteId, nodeId, {
+      title: payload.title,
+      body: payload.body,
+    });
+    setDocumentSavingKey(null);
+    if (!result.ok) {
+      handleApiFailure(result, setDocumentError);
+      return;
+    }
+    setDocumentsByKey((prev) => ({ ...prev, [key]: result.data }));
+    setDocumentStatusMessage('Document saved.');
+    setShell((prev) => ({
+      ...prev,
+      windows: prev.windows.map((win) =>
+        win.id === documentEditorWindowId(siteId, nodeId)
+          ? { ...win, title: result.data.title }
+          : win,
+      ),
+    }));
+  };
+
   // Before paint so Chromatic/Storybook play sees the opened window (useEffect is too late).
   useLayoutEffect(() => {
     if (!deepLink || deepLinkAppliedRef.current) {
@@ -2347,6 +2469,40 @@ export function AdminDesktop({
           );
         }
 
+        if (win.kind === 'document-editor') {
+          const siteId = win.siteId ?? 0;
+          const nodeId = win.contentNodeId ?? 0;
+          const key = documentCacheKey(siteId, nodeId);
+          const data = documentsByKey[key];
+          return shellFrame(
+            <DocumentEditorWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              title={win.title}
+              documentTitle={data?.title ?? win.title}
+              bodyJson={data?.body ?? null}
+              loading={documentLoadingKey === key}
+              saving={documentSavingKey === key}
+              canEdit={canEditDocuments}
+              error={documentError}
+              statusMessage={documentStatusMessage}
+              onClearStatusMessage={() => setDocumentStatusMessage(null)}
+              onSave={(payload) => {
+                void handleSaveDocument(siteId, nodeId, payload);
+              }}
+              errorSoundUrl={errorSoundUrl}
+              onAlertClose={() => setDocumentError(null)}
+              onClose={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
         if (win.kind === 'permissions') {
           return shellFrame(
             <PermissionsWindow
@@ -2470,6 +2626,13 @@ export function AdminDesktop({
             siteName={site.name}
             tree={explorerTreeForSite(site)}
             onOpenSiteSettings={() => openSiteSettings(site)}
+            onOpenDocument={(item) => {
+              const ref = parseExplorerEntityId(item.id);
+              if (ref?.type !== 'node') {
+                return;
+              }
+              openDocumentEditor(site, ref.id, item.label);
+            }}
             onClose={() => closeWindow(win.id)}
             onMinimize={() => minimizeWindow(win.id)}
             onMaximize={() => toggleMaximize(win.id)}

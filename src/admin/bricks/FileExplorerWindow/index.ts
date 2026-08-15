@@ -42,6 +42,7 @@ export {
   type ExplorerUndo,
 } from './explorerTreeOps';
 export type { ExplorerSelectModifiers } from './ExplorerContent';
+export { parseExplorerEntityId, type ExplorerEntityRef } from './explorerApi';
 export {
   EXPLORER_FIXTURE_TREE,
   EXPLORER_FIXTURE_ITEMS,

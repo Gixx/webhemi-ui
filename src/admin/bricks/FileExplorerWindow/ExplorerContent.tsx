@@ -10,7 +10,6 @@ import {
 } from './explorerDnd';
 import {
   formatExplorerSize,
-  isExplorerDocument,
   isExplorerLocation,
   type ExplorerItem,
   type ExplorerView,
@@ -72,9 +71,6 @@ export function ExplorerContent({
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const openItem = (item: ExplorerItem) => {
-    if (isExplorerDocument(item)) {
-      return;
-    }
     onOpen?.(item);
   };
 

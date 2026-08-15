@@ -35,6 +35,7 @@ import {
   explorerContentItems,
   findExplorerItem,
   findExplorerParent,
+  isExplorerDocument,
   isExplorerLocation,
   type ExplorerItem,
   type ExplorerView,
@@ -88,6 +89,8 @@ export type SiteFileExplorerProps = Omit<
   initialLocationId?: string;
   /** Called when the Settings root is activated (opens site-settings shell). */
   onOpenSiteSettings?: () => void;
+  /** Called when a document leaf is opened (Lexical editor). */
+  onOpenDocument?: (item: ExplorerItem) => void;
   /** Shell minimize (Phase 5 taskbar). */
   onMinimize?: () => void;
   /** Shell maximize / restore. */
@@ -108,6 +111,7 @@ export function SiteFileExplorer({
   siteName,
   initialLocationId,
   onOpenSiteSettings,
+  onOpenDocument,
   onClose,
   onMinimize,
   onMaximize,
@@ -238,6 +242,18 @@ export function SiteFileExplorer({
       return { ...base, tree: underMedia ? ('media' as const) : ('site' as const) };
     }
     return base;
+  };
+
+  const handleOpen = (item: ExplorerItem) => {
+    if (item.role === 'settings') {
+      onOpenSiteSettings?.();
+      return;
+    }
+    if (isExplorerDocument(item)) {
+      onOpenDocument?.(item);
+      return;
+    }
+    goToLocation(item);
   };
 
   const goToLocation = (item: ExplorerItem) => {
@@ -676,7 +692,7 @@ export function SiteFileExplorer({
         cutItemIds={clipboard?.mode === 'cut' ? clipboard.items.map((item) => item.id) : []}
         onTreeSelect={goToLocation}
         onSelect={handleSelect}
-        onOpen={goToLocation}
+        onOpen={handleOpen}
         onItemsDrop={handleItemsDrop}
         onLevelUp={() => {
           if (!parent) {

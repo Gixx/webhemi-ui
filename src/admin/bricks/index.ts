@@ -75,6 +75,20 @@ export {
   type SiteExplorerIdentity,
 } from './FileExplorerWindow';
 export {
+  DocumentEditorWindow,
+  DocumentEditorCanvas,
+  DocumentEditorToolbar,
+  AccordionNode,
+  $createAccordionNode,
+  $isAccordionNode,
+  normalizeDocumentBodyJson,
+  EMPTY_EDITOR_STATE_JSON,
+  type DocumentEditorWindowProps,
+  type DocumentEditorCanvasProps,
+  type AccordionItem,
+  type SerializedAccordionNode,
+} from './DocumentEditor';
+export {
   PaneWindowShell,
   type PaneWindowShellProps,
 } from './_lib/PaneWindowShell';

@@ -15,6 +15,10 @@ export function siteSettingsWindowId(siteId: number): string {
   return `site-${siteId}-settings`;
 }
 
+export function documentEditorWindowId(siteId: number, nodeId: number): string {
+  return `site-${siteId}-doc-${nodeId}`;
+}
+
 export function parseSiteWindowId(id: string): number | null {
   const match = /^site-(\d+)$/.exec(id);
   return match ? Number(match[1]) : null;
@@ -25,10 +29,21 @@ export function parseSiteSettingsWindowId(id: string): number | null {
   return match ? Number(match[1]) : null;
 }
 
+export function parseDocumentEditorWindowId(
+  id: string,
+): { siteId: number; nodeId: number } | null {
+  const match = /^site-(\d+)-doc-(\d+)$/.exec(id);
+  if (!match) {
+    return null;
+  }
+  return { siteId: Number(match[1]), nodeId: Number(match[2]) };
+}
+
 export type ShellWindowKind =
   | 'control-panel'
   | 'site'
   | 'site-settings'
+  | 'document-editor'
   | 'sites'
   | 'hosts'
   | 'settings'
@@ -43,8 +58,10 @@ export type ShellWindowState = {
   id: string;
   kind: ShellWindowKind;
   title: string;
-  /** Present when `kind === 'site'`. */
+  /** Present when `kind === 'site'` or `site-settings` or `document-editor`. */
   siteId?: number;
+  /** Present when `kind === 'document-editor'`. */
+  contentNodeId?: number;
   left: number;
   top: number;
   z: number;

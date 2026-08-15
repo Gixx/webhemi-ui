@@ -424,6 +424,8 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
       request<AdminApiExplorerItem[]>(`/sites/${siteId}/explorer`),
     getContentTrash: (siteId: number) =>
       request<AdminApiTrashPayload>(`/sites/${siteId}/trash`),
+    getContentNode: (siteId: number, nodeId: number) =>
+      request<AdminApiContentNode>(`/sites/${siteId}/nodes/${nodeId}`),
     createContentNode: (siteId: number, body: CreateContentNodeBody) =>
       request<AdminApiContentNode>(`/sites/${siteId}/nodes`, {
         method: 'POST',

@@ -63,7 +63,7 @@ export function isExplorerFolder(item: ExplorerItem): boolean {
   );
 }
 
-/** HTML / page documents — open is deferred to a future editor window. */
+/** HTML / page documents — open in the Lexical document editor. */
 export function isExplorerDocument(item: ExplorerItem): boolean {
   return (
     item.role === 'document' ||

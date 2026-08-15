@@ -21,6 +21,7 @@ function taskClassName(win: ShellWindowState, active: boolean): string {
     win.kind === 'control-panel' && 'control-panel',
     win.kind === 'site' && 'site',
     win.kind === 'site-settings' && 'settings',
+    win.kind === 'document-editor' && 'folder',
     win.kind === 'sites' && 'sites',
     win.kind === 'hosts' && 'hosts',
     win.kind === 'settings' && 'settings',
