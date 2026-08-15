@@ -855,6 +855,67 @@ function createMockAdminApi(
       status: 200,
       data: { id: 0, purged: true as const },
     }),
+    getSiteSettings: async (siteId) => {
+      const site = siteRows.find((row) => row.id === siteId);
+      return {
+        ok: true,
+        status: 200,
+        data: {
+          siteId,
+          slug: site?.slug ?? 'site',
+          name: site?.name ?? 'Site',
+          description: null,
+          themeId: site?.themeId ?? 'default',
+          protected: site?.protected ?? false,
+          faviconMediaId: null,
+          favicon: null,
+          hosts: hostRows
+            .filter((row) => row.siteId === siteId)
+            .map((row) => ({
+              id: row.id,
+              host: row.host,
+              surface: row.surface,
+              verification: row.verification,
+              enabled: row.enabled,
+              protected: row.protected,
+            })),
+          assignments: [],
+          capabilities: { manageHosts: true, manageUsers: true },
+        },
+      };
+    },
+    updateSiteSettings: async (siteId, body) => {
+      const site = siteRows.find((row) => row.id === siteId);
+      if (site && body.name) {
+        site.name = body.name;
+      }
+      return {
+        ok: true,
+        status: 200,
+        data: {
+          siteId,
+          slug: site?.slug ?? 'site',
+          name: site?.name ?? body.name ?? 'Site',
+          description: body.description ?? null,
+          themeId: site?.themeId ?? 'default',
+          protected: site?.protected ?? false,
+          faviconMediaId: body.faviconMediaId ?? null,
+          favicon: null,
+          hosts: hostRows
+            .filter((row) => row.siteId === siteId)
+            .map((row) => ({
+              id: row.id,
+              host: row.host,
+              surface: row.surface,
+              verification: row.verification,
+              enabled: row.enabled,
+              protected: row.protected,
+            })),
+          assignments: [],
+          capabilities: { manageHosts: true, manageUsers: true },
+        },
+      };
+    },
   };
 }
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {

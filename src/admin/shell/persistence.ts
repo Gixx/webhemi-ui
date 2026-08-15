@@ -6,6 +6,7 @@ import {
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   USERS_WINDOW_ID,
+  parseSiteSettingsWindowId,
   parseSiteWindowId,
   type ShellWindowKind,
   type ShellWindowState,
@@ -78,6 +79,7 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   const raw = value as Record<string, unknown>;
   const kind =
     raw.kind === 'site' ||
+    raw.kind === 'site-settings' ||
     raw.kind === 'control-panel' ||
     raw.kind === 'sites' ||
     raw.kind === 'hosts' ||
@@ -99,8 +101,13 @@ function parseEntry(id: string, value: unknown): PersistedWindowEntry | null {
   ) {
     return null;
   }
-  const siteId = kind === 'site' ? parseSiteWindowId(id) : undefined;
-  if (kind === 'site' && siteId === null) {
+  const siteId =
+    kind === 'site'
+      ? parseSiteWindowId(id)
+      : kind === 'site-settings'
+        ? parseSiteSettingsWindowId(id)
+        : undefined;
+  if ((kind === 'site' || kind === 'site-settings') && siteId === null) {
     return null;
   }
   if (kind === 'sites' && id !== SITES_WINDOW_ID) {
@@ -353,6 +360,12 @@ export function defaultSizeForKind(kind: ShellWindowKind): {
 } {
   if (kind === 'control-panel') {
     return DEFAULT_WINDOW_SIZE['control-panel'];
+  }
+  if (kind === 'site') {
+    return DEFAULT_WINDOW_SIZE.site;
+  }
+  if (kind === 'site-settings') {
+    return DEFAULT_WINDOW_SIZE['site-settings'];
   }
   if (kind === 'sites') {
     return DEFAULT_WINDOW_SIZE.sites;

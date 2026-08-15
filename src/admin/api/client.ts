@@ -12,6 +12,7 @@ import type {
   AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
+  AdminApiSiteSettings,
   AdminApiTrashPayload,
   AdminApiUser,
   AdminApiFailure,
@@ -135,6 +136,12 @@ export type UpdateContentNodeBody = {
   publishAt?: string | null;
   hidden?: boolean;
   sortOrder?: number;
+};
+
+export type UpdateSiteSettingsBody = {
+  name?: string;
+  description?: string | null;
+  faviconMediaId?: number | null;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -458,6 +465,13 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
     purgeMedia: (siteId: number, mediaId: number) =>
       request<AdminApiPurgeResult>(`/sites/${siteId}/media/${mediaId}/purge`, {
         method: 'DELETE',
+      }),
+    getSiteSettings: (siteId: number) =>
+      request<AdminApiSiteSettings>(`/sites/${siteId}/settings`),
+    updateSiteSettings: (siteId: number, body: UpdateSiteSettingsBody) =>
+      request<AdminApiSiteSettings>(`/sites/${siteId}/settings`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
       }),
   };
 }

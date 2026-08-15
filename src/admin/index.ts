@@ -45,6 +45,14 @@ export {
   type AdminAccessModeValue,
 } from './components/SettingsWindow/SettingsWindow';
 export {
+  SiteSettingsWindow,
+  type SiteSettingsWindowProps,
+  type SiteSettingsSavePatch,
+  type SiteSettingsHostRow,
+  type SiteSettingsAssignmentRow,
+  type SiteSettingsCapabilities,
+} from './components/SiteSettingsWindow/SiteSettingsWindow';
+export {
   PermissionsWindow,
   type PermissionsWindowProps,
   type PermissionsWindowPermission,

@@ -164,16 +164,15 @@ export const EXPLORER_FIXTURE_TREE: ExplorerItem[] = [
       },
     ],
   },
-  {
-    id: 'settings',
-    label: 'Settings',
-    kind: 'settings',
-    role: 'settings',
-    typeLabel: 'Settings',
-    expandable: false,
-    disabled: true,
-  },
-];
+    {
+      id: 'settings',
+      label: 'Settings',
+      kind: 'settings',
+      role: 'settings',
+      typeLabel: 'Settings',
+      expandable: false,
+    },
+  ];
 
 /** @deprecated Prefer selecting from `EXPLORER_FIXTURE_TREE`; kept for shallow imports. */
 export const EXPLORER_FIXTURE_ITEMS: ExplorerItem[] =
@@ -223,7 +222,6 @@ export function buildEmptySiteExplorerTree(site: SiteExplorerIdentity): Explorer
       role: 'settings',
       typeLabel: 'Settings',
       expandable: false,
-      disabled: true,
     },
   ];
 }

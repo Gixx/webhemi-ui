@@ -1547,6 +1547,82 @@ export function createAdminApiHandlers(
         data: { id: Number(params.id), purged: true },
       });
     }),
+
+    http.get('/admin/api/sites/:siteId/settings', ({ params }) => {
+      const siteId = Number(params.siteId);
+      const site = store.sites.find((row) => row.id === siteId);
+      if (!site) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Site not found.' } },
+          { status: 404 },
+        );
+      }
+      const hosts = store.hosts.filter((row) => row.siteId === siteId);
+      return HttpResponse.json({
+        data: {
+          siteId,
+          slug: site.slug,
+          name: site.name,
+          description: null,
+          themeId: site.themeId,
+          protected: site.protected,
+          faviconMediaId: null,
+          favicon: null,
+          hosts: hosts.map((row) => ({
+            id: row.id,
+            host: row.host,
+            surface: row.surface,
+            verification: row.verification,
+            enabled: row.enabled,
+            protected: row.protected,
+          })),
+          assignments: [],
+          capabilities: { manageHosts: true, manageUsers: true },
+        },
+      });
+    }),
+
+    http.patch('/admin/api/sites/:siteId/settings', async ({ params, request }) => {
+      const siteId = Number(params.siteId);
+      const site = store.sites.find((row) => row.id === siteId);
+      if (!site) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Site not found.' } },
+          { status: 404 },
+        );
+      }
+      const body = (await request.json()) as {
+        name?: string;
+        description?: string | null;
+        faviconMediaId?: number | null;
+      };
+      if (body.name != null) {
+        site.name = String(body.name).trim() || site.name;
+      }
+      const hosts = store.hosts.filter((row) => row.siteId === siteId);
+      return HttpResponse.json({
+        data: {
+          siteId,
+          slug: site.slug,
+          name: site.name,
+          description: body.description ?? null,
+          themeId: site.themeId,
+          protected: site.protected,
+          faviconMediaId: body.faviconMediaId ?? null,
+          favicon: null,
+          hosts: hosts.map((row) => ({
+            id: row.id,
+            host: row.host,
+            surface: row.surface,
+            verification: row.verification,
+            enabled: row.enabled,
+            protected: row.protected,
+          })),
+          assignments: [],
+          capabilities: { manageHosts: true, manageUsers: true },
+        },
+      });
+    }),
   ];
 }
 

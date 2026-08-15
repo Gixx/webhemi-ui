@@ -180,6 +180,41 @@ export type AdminApiPurgeResult = {
   purged: true;
 };
 
+export type AdminApiSiteSettingsHost = {
+  id: number;
+  host: string;
+  surface: string;
+  verification: string;
+  enabled: boolean;
+  protected: boolean;
+};
+
+export type AdminApiSiteSettingsAssignment = {
+  id: number;
+  userId: number;
+  email: string;
+  roleId: number;
+  roleName: string;
+  roleLabel: string;
+};
+
+export type AdminApiSiteSettings = {
+  siteId: number;
+  slug: string;
+  name: string;
+  description: string | null;
+  themeId: string;
+  protected: boolean;
+  faviconMediaId: number | null;
+  favicon: AdminApiMediaAsset | null;
+  hosts: AdminApiSiteSettingsHost[];
+  assignments: AdminApiSiteSettingsAssignment[];
+  capabilities: {
+    manageHosts: boolean;
+    manageUsers: boolean;
+  };
+};
+
 /**
  * Explorer forest item from `GET …/explorer` — matches UI `ExplorerItem`
  * (string ids, nested children, Win98 roles/kinds).

@@ -11,14 +11,24 @@ export function siteWindowId(siteId: number): string {
   return `site-${siteId}`;
 }
 
+export function siteSettingsWindowId(siteId: number): string {
+  return `site-${siteId}-settings`;
+}
+
 export function parseSiteWindowId(id: string): number | null {
   const match = /^site-(\d+)$/.exec(id);
+  return match ? Number(match[1]) : null;
+}
+
+export function parseSiteSettingsWindowId(id: string): number | null {
+  const match = /^site-(\d+)-settings$/.exec(id);
   return match ? Number(match[1]) : null;
 }
 
 export type ShellWindowKind =
   | 'control-panel'
   | 'site'
+  | 'site-settings'
   | 'sites'
   | 'hosts'
   | 'settings'

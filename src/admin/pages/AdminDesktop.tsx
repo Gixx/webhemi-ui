@@ -55,6 +55,7 @@ import {
   type AdminApiRole,
   type AdminApiSettings,
   type AdminApiSite,
+  type AdminApiSiteSettings,
   type AdminApiUser,
   type AdminApiUserCapabilities,
 } from '../api';
@@ -77,6 +78,7 @@ import {
   USERS_WINDOW_ID,
   savePersistedDesktop,
   siteWindowId,
+  siteSettingsWindowId,
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   StartMenu,
@@ -89,6 +91,10 @@ import {
   SettingsWindow,
   type SettingsSavePatch,
 } from '../components/SettingsWindow/SettingsWindow';
+import {
+  SiteSettingsWindow,
+  type SiteSettingsSavePatch,
+} from '../components/SiteSettingsWindow/SiteSettingsWindow';
 export type DesktopSite = {
   id: number;
   name: string;
@@ -389,6 +395,19 @@ export function AdminDesktop({
   const [settingsStatusMessage, setSettingsStatusMessage] = useState<string | null>(
     null,
   );
+  const [siteSettingsById, setSiteSettingsById] = useState<
+    Record<number, AdminApiSiteSettings>
+  >({});
+  const [siteSettingsLoadingId, setSiteSettingsLoadingId] = useState<number | null>(
+    null,
+  );
+  const [siteSettingsSavingId, setSiteSettingsSavingId] = useState<number | null>(
+    null,
+  );
+  const [siteSettingsError, setSiteSettingsError] = useState<string | null>(null);
+  const [siteSettingsStatusMessage, setSiteSettingsStatusMessage] = useState<
+    string | null
+  >(null);
   /** After Error modal OK — bounce to login when the API reported session loss. */
   const pendingLoginRedirectRef = useRef(false);
   const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -416,6 +435,7 @@ export function AdminDesktop({
   const canEditPermissions = canEditSites;
   const canEditRoles = canEditSites;
   const canEditSettings = canEditSites;
+  const canEditSiteSettings = canEditSites;
   const usersCaps: AdminApiUserCapabilities = userCapabilities ?? {
     listUsers: canEditSites,
     viewUser: canEditSites,
@@ -1283,6 +1303,105 @@ export function AdminDesktop({
         ],
       };
     });
+  };
+
+  const openSiteSettings = (site: DesktopSite) => {
+    const id = siteSettingsWindowId(site.id);
+    setShell((prev) => {
+      const existing = prev.windows.find((win) => win.id === id);
+      if (existing) {
+        const z =
+          !existing.minimized && existing.z === nextZRef.current
+            ? existing.z
+            : raiseZ();
+        return {
+          activeId: id,
+          windows: prev.windows.map((win) =>
+            win.id === id ? { ...win, z, minimized: false } : win,
+          ),
+        };
+      }
+      const saved = geometryFromPersistence(
+        persistedRef.current,
+        id,
+        'site-settings',
+      );
+      const place = saved
+        ? { left: saved.left, top: saved.top, z: raiseZ() }
+        : allocatePlacement();
+      const size = saved
+        ? { width: saved.width, height: saved.height }
+        : DEFAULT_WINDOW_SIZE['site-settings'];
+      return {
+        activeId: id,
+        windows: [
+          ...prev.windows,
+          {
+            id,
+            kind: 'site-settings',
+            title: `${site.name} — Settings`,
+            siteId: site.id,
+            left: place.left,
+            top: place.top,
+            z: place.z,
+            width: size.width,
+            height: size.height,
+            minimized: false,
+            maximized: false,
+          },
+        ],
+      };
+    });
+    void (async () => {
+      setSiteSettingsLoadingId(site.id);
+      setSiteSettingsError(null);
+      const result = await api.getSiteSettings(site.id);
+      setSiteSettingsLoadingId(null);
+      if (!result.ok) {
+        handleApiFailure(result, setSiteSettingsError);
+        return;
+      }
+      setSiteSettingsById((prev) => ({ ...prev, [site.id]: result.data }));
+    })();
+  };
+
+  const handleSaveSiteSettings = async (
+    siteId: number,
+    patch: SiteSettingsSavePatch,
+  ) => {
+    setSiteSettingsSavingId(siteId);
+    setSiteSettingsError(null);
+    const result = await api.updateSiteSettings(siteId, patch);
+    setSiteSettingsSavingId(null);
+    if (!result.ok) {
+      handleApiFailure(result, setSiteSettingsError);
+      return;
+    }
+    setSiteSettingsById((prev) => ({ ...prev, [siteId]: result.data }));
+    setSiteSettingsStatusMessage('Settings saved.');
+    // Keep desktop site label in sync when name changes.
+    if (patch.name) {
+      setDesktopSites((prev) =>
+        prev.map((row) =>
+          row.id === siteId ? { ...row, name: result.data.name } : row,
+        ),
+      );
+      setShell((prev) => ({
+        ...prev,
+        windows: prev.windows.map((win) => {
+          if (win.siteId !== siteId) {
+            return win;
+          }
+          if (win.kind === 'site') {
+            return { ...win, title: result.data.name };
+          }
+          if (win.kind === 'site-settings') {
+            return { ...win, title: `${result.data.name} — Settings` };
+          }
+          return win;
+        }),
+      }));
+    }
   };
 
   // Before paint so Chromatic/Storybook play sees the opened window (useEffect is too late).
@@ -2175,6 +2294,59 @@ export function AdminDesktop({
           );
         }
 
+        if (win.kind === 'site-settings') {
+          const siteId = win.siteId ?? 0;
+          const data = siteSettingsById[siteId];
+          const site =
+            desktopSites.find((entry) => entry.id === siteId) ?? {
+              id: siteId,
+              name: win.title.replace(/ — Settings$/, '') || 'Site',
+            };
+          return shellFrame(
+            <SiteSettingsWindow
+              className={cn(win.maximized && 'is-maximized')}
+              inactive={!active}
+              maximized={win.maximized}
+              siteName={data?.name ?? site.name}
+              name={data?.name ?? site.name}
+              description={data?.description ?? ''}
+              themeId={data?.themeId ?? 'default'}
+              protected={data?.protected ?? false}
+              faviconMediaId={data?.faviconMediaId ?? null}
+              favicon={data?.favicon ?? null}
+              hosts={data?.hosts ?? []}
+              assignments={data?.assignments ?? []}
+              capabilities={
+                data?.capabilities ?? { manageHosts: false, manageUsers: false }
+              }
+              canEdit={canEditSiteSettings}
+              loading={siteSettingsLoadingId === siteId}
+              saving={siteSettingsSavingId === siteId}
+              error={siteSettingsError}
+              statusMessage={siteSettingsStatusMessage}
+              onClearStatusMessage={() => setSiteSettingsStatusMessage(null)}
+              onSave={(patch) => {
+                void handleSaveSiteSettings(siteId, patch);
+              }}
+              onManageHosts={() => {
+                openHosts();
+              }}
+              onManageUsers={() => {
+                openUsers();
+              }}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              onAlertClose={() => setSiteSettingsError(null)}
+              onClose={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onMaximize={() => toggleMaximize(win.id)}
+              onActivate={() => activateWindow(win.id)}
+              width={win.width}
+              style={{ height: '100%', minHeight: 0, width: '100%' }}
+            />,
+          );
+        }
+
         if (win.kind === 'permissions') {
           return shellFrame(
             <PermissionsWindow
@@ -2297,6 +2469,7 @@ export function AdminDesktop({
             siteId={typeof site.id === 'number' ? site.id : Number(site.id)}
             siteName={site.name}
             tree={explorerTreeForSite(site)}
+            onOpenSiteSettings={() => openSiteSettings(site)}
             onClose={() => closeWindow(win.id)}
             onMinimize={() => minimizeWindow(win.id)}
             onMaximize={() => toggleMaximize(win.id)}

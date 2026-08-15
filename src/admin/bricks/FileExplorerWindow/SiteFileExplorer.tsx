@@ -86,6 +86,8 @@ export type SiteFileExplorerProps = Omit<
   siteName?: string;
   /** Initial content location; defaults to the first tree root. */
   initialLocationId?: string;
+  /** Called when the Settings root is activated (opens site-settings shell). */
+  onOpenSiteSettings?: () => void;
   /** Shell minimize (Phase 5 taskbar). */
   onMinimize?: () => void;
   /** Shell maximize / restore. */
@@ -105,6 +107,7 @@ export function SiteFileExplorer({
   siteId,
   siteName,
   initialLocationId,
+  onOpenSiteSettings,
   onClose,
   onMinimize,
   onMaximize,
@@ -238,6 +241,10 @@ export function SiteFileExplorer({
   };
 
   const goToLocation = (item: ExplorerItem) => {
+    if (item.role === 'settings') {
+      onOpenSiteSettings?.();
+      return;
+    }
     if (item.disabled || !isExplorerLocation(item)) {
       return;
     }
