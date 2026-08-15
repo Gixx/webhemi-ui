@@ -131,3 +131,69 @@ export type AdminApiHostDeleteResult = {
   loginUrl?: string;
   sessionEnded?: boolean;
 };
+
+/** Content node DTO from `/admin/api/sites/{id}/nodes`. */
+export type AdminApiContentNode = {
+  id: number;
+  siteId: number;
+  parentId: number | null;
+  tree: 'site' | 'media';
+  kind: 'folder' | 'document' | 'media_ref' | 'redirect';
+  folderType: 'normal' | 'locale' | null;
+  slug: string;
+  title: string;
+  body: string | null;
+  redirectTarget: string | null;
+  mediaAssetId: number | null;
+  publication: 'draft' | 'published' | 'scheduled';
+  publishAt: string | null;
+  hidden: boolean;
+  sortOrder: number;
+  deletedAt: string | null;
+  originalParentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminApiMediaAsset = {
+  id: number;
+  siteId: number;
+  folderNodeId: number | null;
+  contentHash: string;
+  storageKey: string;
+  mimeType: string;
+  byteSize: number;
+  originalFilename: string;
+  deletedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deduped?: boolean;
+};
+
+export type AdminApiTrashPayload = {
+  nodes: AdminApiContentNode[];
+  media: AdminApiMediaAsset[];
+};
+
+export type AdminApiPurgeResult = {
+  id: number;
+  purged: true;
+};
+
+/**
+ * Explorer forest item from `GET …/explorer` — matches UI `ExplorerItem`
+ * (string ids, nested children, Win98 roles/kinds).
+ */
+export type AdminApiExplorerItem = {
+  id: string;
+  label: string;
+  kind: string;
+  role?: string;
+  typeLabel?: string;
+  sizeBytes?: number;
+  modifiedAt?: string;
+  hidden?: boolean;
+  expandable?: boolean;
+  disabled?: boolean;
+  children?: AdminApiExplorerItem[];
+};

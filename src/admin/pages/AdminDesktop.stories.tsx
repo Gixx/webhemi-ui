@@ -797,6 +797,64 @@ function createMockAdminApi(
         },
       },
     }),
+    getExplorerForest: async (siteId) => {
+      const site = siteRows.find((row) => row.id === siteId);
+      return {
+        ok: true,
+        status: 200,
+        data: buildDemoSiteExplorerTree(site ?? { id: siteId, name: 'Site' }),
+      };
+    },
+    getContentTrash: async () => ({
+      ok: true,
+      status: 200,
+      data: { nodes: [], media: [] },
+    }),
+    createContentNode: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for content mutations.' },
+    }),
+    updateContentNode: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for content mutations.' },
+    }),
+    deleteContentNode: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for content mutations.' },
+    }),
+    restoreContentNode: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for content mutations.' },
+    }),
+    purgeContentNode: async () => ({
+      ok: true,
+      status: 200,
+      data: { id: 0, purged: true as const },
+    }),
+    uploadMedia: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for media upload.' },
+    }),
+    deleteMedia: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for media mutations.' },
+    }),
+    restoreMedia: async () => ({
+      ok: false,
+      status: 501,
+      error: { code: 'not_implemented', message: 'Use MSW story for media mutations.' },
+    }),
+    purgeMedia: async () => ({
+      ok: true,
+      status: 200,
+      data: { id: 0, purged: true as const },
+    }),
   };
 }
 function stylePx(element: HTMLElement, prop: 'left' | 'top' | 'width' | 'height'): number {

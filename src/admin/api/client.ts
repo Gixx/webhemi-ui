@@ -1,14 +1,19 @@
 import type {
+  AdminApiContentNode,
   AdminApiErrorBody,
+  AdminApiExplorerItem,
   AdminApiHost,
   AdminApiHostDeleteResult,
+  AdminApiMediaAsset,
+  AdminApiMe,
   AdminApiPermission,
+  AdminApiPurgeResult,
   AdminApiResult,
   AdminApiRole,
   AdminApiSettings,
   AdminApiSite,
+  AdminApiTrashPayload,
   AdminApiUser,
-  AdminApiMe,
   AdminApiFailure,
 } from './types';
 
@@ -100,6 +105,36 @@ export type SetUserPasswordBody = {
   currentPassword?: string;
   password: string;
   confirmPassword?: string;
+};
+
+export type CreateContentNodeBody = {
+  kind: 'folder' | 'document' | 'media_ref' | 'redirect';
+  slug: string;
+  title: string;
+  tree?: 'site' | 'media';
+  parentId?: number | null;
+  folderType?: 'normal' | 'locale' | null;
+  body?: string | null;
+  redirectTarget?: string | null;
+  mediaAssetId?: number | null;
+  publication?: 'draft' | 'published' | 'scheduled';
+  publishAt?: string | null;
+  hidden?: boolean;
+  sortOrder?: number;
+};
+
+export type UpdateContentNodeBody = {
+  parentId?: number | null;
+  slug?: string;
+  title?: string;
+  folderType?: 'normal' | 'locale' | null;
+  body?: string | null;
+  redirectTarget?: string | null;
+  mediaAssetId?: number | null;
+  publication?: 'draft' | 'published' | 'scheduled';
+  publishAt?: string | null;
+  hidden?: boolean;
+  sortOrder?: number;
 };
 
 const DEFAULT_BASE = '/admin/api';
@@ -250,6 +285,27 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
     return parseResult<T>(response);
   }
 
+  async function requestMultipart<T>(
+    path: string,
+    form: FormData,
+  ): Promise<AdminApiResult<T>> {
+    const headers = new Headers();
+    headers.set('Accept', 'application/json');
+    if (csrfToken) {
+      headers.set('X-CSRF-TOKEN', csrfToken);
+    }
+
+    const response = await fetchImpl(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers,
+      body: form,
+      credentials: 'same-origin',
+      redirect: 'manual',
+    });
+
+    return parseResult<T>(response);
+  }
+
   return {
     listSites: () => request<AdminApiSite[]>('/sites'),
     getSite: (id: number) => request<AdminApiSite>(`/sites/${id}`),
@@ -356,6 +412,53 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
         body: JSON.stringify(body),
       }),
     getMe: () => request<AdminApiMe>('/me'),
+
+    getExplorerForest: (siteId: number) =>
+      request<AdminApiExplorerItem[]>(`/sites/${siteId}/explorer`),
+    getContentTrash: (siteId: number) =>
+      request<AdminApiTrashPayload>(`/sites/${siteId}/trash`),
+    createContentNode: (siteId: number, body: CreateContentNodeBody) =>
+      request<AdminApiContentNode>(`/sites/${siteId}/nodes`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    updateContentNode: (siteId: number, nodeId: number, body: UpdateContentNodeBody) =>
+      request<AdminApiContentNode>(`/sites/${siteId}/nodes/${nodeId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    deleteContentNode: (siteId: number, nodeId: number) =>
+      request<AdminApiContentNode>(`/sites/${siteId}/nodes/${nodeId}`, {
+        method: 'DELETE',
+      }),
+    restoreContentNode: (siteId: number, nodeId: number) =>
+      request<AdminApiContentNode>(`/sites/${siteId}/nodes/${nodeId}/restore`, {
+        method: 'POST',
+      }),
+    purgeContentNode: (siteId: number, nodeId: number) =>
+      request<AdminApiPurgeResult>(`/sites/${siteId}/nodes/${nodeId}/purge`, {
+        method: 'DELETE',
+      }),
+    uploadMedia: (siteId: number, file: File, folderNodeId?: number | null) => {
+      const form = new FormData();
+      form.append('file', file);
+      if (folderNodeId != null) {
+        form.append('folderNodeId', String(folderNodeId));
+      }
+      return requestMultipart<AdminApiMediaAsset>(`/sites/${siteId}/media`, form);
+    },
+    deleteMedia: (siteId: number, mediaId: number) =>
+      request<AdminApiMediaAsset>(`/sites/${siteId}/media/${mediaId}`, {
+        method: 'DELETE',
+      }),
+    restoreMedia: (siteId: number, mediaId: number) =>
+      request<AdminApiMediaAsset>(`/sites/${siteId}/media/${mediaId}/restore`, {
+        method: 'POST',
+      }),
+    purgeMedia: (siteId: number, mediaId: number) =>
+      request<AdminApiPurgeResult>(`/sites/${siteId}/media/${mediaId}/purge`, {
+        method: 'DELETE',
+      }),
   };
 }
 

@@ -2293,6 +2293,9 @@ export function AdminDesktop({
             inactive={!active}
             title={win.title}
             titleIcon="site"
+            api={canEditSites ? api : undefined}
+            siteId={typeof site.id === 'number' ? site.id : Number(site.id)}
+            siteName={site.name}
             tree={explorerTreeForSite(site)}
             onClose={() => closeWindow(win.id)}
             onMinimize={() => minimizeWindow(win.id)}

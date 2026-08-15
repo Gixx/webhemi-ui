@@ -9,6 +9,11 @@ import type {
   AdminApiUserSiteAssignment,
 } from '../types';
 import {
+  buildDemoSiteExplorerTree,
+  buildEmptySiteExplorerTree,
+} from '../../bricks/FileExplorerWindow/FileExplorerWindow.data';
+import type { ExplorerItem } from '../../bricks/FileExplorerWindow/types';
+import {
   MSW_DEFAULT_SETTINGS,
   MSW_SAMPLE_HOSTS,
   MSW_SAMPLE_PERMISSIONS,
@@ -192,6 +197,22 @@ export function createAdminApiHandlers(
   const failListPermissions = Boolean(options.failListPermissions);
   const failListRoles = Boolean(options.failListRoles);
   const failListUsers = Boolean(options.failListUsers);
+
+  /** In-memory explorer forests per site (Slice 2 Storybook). */
+  const explorerForests = new Map<number, ExplorerItem[]>();
+  let nextNodeId = 1000;
+
+  const forestForSite = (siteId: number): ExplorerItem[] => {
+    let forest = explorerForests.get(siteId);
+    if (!forest) {
+      const site = store.sites.find((row) => row.id === siteId);
+      forest = site
+        ? buildDemoSiteExplorerTree(site)
+        : buildEmptySiteExplorerTree({ id: siteId, name: 'Site' });
+      explorerForests.set(siteId, forest);
+    }
+    return forest;
+  };
 
   return [
     http.get('/admin/api/me', () => {
@@ -1248,6 +1269,283 @@ export function createAdminApiHandlers(
         );
       }
       return HttpResponse.json({ data: { ok: true } });
+    }),
+
+    http.get('/admin/api/sites/:siteId/explorer', ({ params }) => {
+      const siteId = Number(params.siteId);
+      if (!store.sites.some((row) => row.id === siteId)) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Site not found.' } },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json({ data: forestForSite(siteId) });
+    }),
+
+    http.get('/admin/api/sites/:siteId/trash', ({ params }) => {
+      const siteId = Number(params.siteId);
+      const forest = forestForSite(siteId);
+      const trash = forest.find((row) => row.role === 'trash');
+      return HttpResponse.json({
+        data: {
+          nodes: (trash?.children ?? [])
+            .filter((row) => row.role !== 'media-asset')
+            .map((row, index) => ({
+              id: index + 1,
+              siteId,
+              parentId: null,
+              tree: 'site',
+              kind: row.role === 'folder' ? 'folder' : 'document',
+              folderType: row.role === 'folder' ? 'normal' : null,
+              slug: row.id,
+              title: row.label,
+              body: null,
+              redirectTarget: null,
+              mediaAssetId: null,
+              publication: 'draft',
+              publishAt: null,
+              hidden: false,
+              sortOrder: index,
+              deletedAt: new Date().toISOString(),
+              originalParentId: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })),
+          media: [],
+        },
+      });
+    }),
+
+    http.post('/admin/api/sites/:siteId/nodes', async ({ params, request }) => {
+      const siteId = Number(params.siteId);
+      const forest = forestForSite(siteId);
+      const body = (await request.json()) as {
+        kind?: string;
+        title?: string;
+        slug?: string;
+        parentId?: number | null;
+        tree?: string;
+      };
+      const id = nextNodeId++;
+      const item: ExplorerItem = {
+        id: `node-${id}`,
+        label: body.title?.trim() || 'Untitled',
+        kind: body.kind === 'folder' ? 'folder' : 'file-document',
+        role: body.kind === 'folder' ? 'folder' : 'document',
+        typeLabel: body.kind === 'folder' ? 'Folder' : 'HTML Document',
+        children: body.kind === 'folder' ? [] : undefined,
+      };
+      const parentExplorerId =
+        body.parentId == null ? null : `node-${body.parentId}`;
+      const rootRole = body.tree === 'media' ? 'media-library' : 'site';
+      const root = forest.find((row) => row.role === rootRole);
+      const findNode = (nodes: ExplorerItem[]): ExplorerItem | null => {
+        for (const node of nodes) {
+          if (node.id === parentExplorerId) {
+            return node;
+          }
+          if (node.children) {
+            const hit = findNode(node.children);
+            if (hit) {
+              return hit;
+            }
+          }
+        }
+        return null;
+      };
+      const parent = parentExplorerId == null ? root : findNode(forest);
+      if (parent) {
+        parent.children = [...(parent.children ?? []), item];
+      }
+      explorerForests.set(siteId, forest);
+      return HttpResponse.json(
+        {
+          data: {
+            id,
+            siteId,
+            parentId: body.parentId ?? null,
+            tree: body.tree === 'media' ? 'media' : 'site',
+            kind: body.kind === 'folder' ? 'folder' : 'document',
+            folderType: body.kind === 'folder' ? 'normal' : null,
+            slug: body.slug ?? 'untitled',
+            title: item.label,
+            body: null,
+            redirectTarget: null,
+            mediaAssetId: null,
+            publication: 'draft',
+            publishAt: null,
+            hidden: false,
+            sortOrder: 0,
+            deletedAt: null,
+            originalParentId: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+        { status: 201 },
+      );
+    }),
+
+    http.patch('/admin/api/sites/:siteId/nodes/:id', async ({ params, request }) => {
+      const siteId = Number(params.siteId);
+      const nodeId = Number(params.id);
+      const forest = forestForSite(siteId);
+      const body = (await request.json()) as {
+        title?: string;
+        slug?: string;
+        parentId?: number | null;
+      };
+      const targetId = `node-${nodeId}`;
+      const findById = (nodes: ExplorerItem[], id: string): ExplorerItem | null => {
+        for (const node of nodes) {
+          if (node.id === id) {
+            return node;
+          }
+          if (node.children) {
+            const hit = findById(node.children, id);
+            if (hit) {
+              return hit;
+            }
+          }
+        }
+        return null;
+      };
+      const found = findById(forest, targetId);
+      if (!found) {
+        return HttpResponse.json(
+          { error: { code: 'not_found', message: 'Node not found.' } },
+          { status: 404 },
+        );
+      }
+      if (body.title) {
+        found.label = body.title;
+      }
+      explorerForests.set(siteId, forest);
+      return HttpResponse.json({
+        data: {
+          id: nodeId,
+          siteId,
+          parentId: body.parentId ?? null,
+          tree: 'site',
+          kind: found.role === 'folder' ? 'folder' : 'document',
+          folderType: found.role === 'folder' ? 'normal' : null,
+          slug: body.slug ?? 'item',
+          title: found.label,
+          body: null,
+          redirectTarget: null,
+          mediaAssetId: null,
+          publication: 'draft',
+          publishAt: null,
+          hidden: false,
+          sortOrder: 0,
+          deletedAt: null,
+          originalParentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
+    http.delete('/admin/api/sites/:siteId/nodes/:id', ({ params }) => {
+      const nodeId = Number(params.id);
+      return HttpResponse.json({
+        data: {
+          id: nodeId,
+          siteId: Number(params.siteId),
+          parentId: null,
+          tree: 'site',
+          kind: 'document',
+          folderType: null,
+          slug: 'deleted',
+          title: 'Deleted',
+          body: null,
+          redirectTarget: null,
+          mediaAssetId: null,
+          publication: 'draft',
+          publishAt: null,
+          hidden: false,
+          sortOrder: 0,
+          deletedAt: new Date().toISOString(),
+          originalParentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
+    http.post('/admin/api/sites/:siteId/nodes/:id/restore', ({ params }) => {
+      const nodeId = Number(params.id);
+      return HttpResponse.json({
+        data: {
+          id: nodeId,
+          siteId: Number(params.siteId),
+          parentId: null,
+          tree: 'site',
+          kind: 'document',
+          folderType: null,
+          slug: 'restored',
+          title: 'Restored',
+          body: null,
+          redirectTarget: null,
+          mediaAssetId: null,
+          publication: 'draft',
+          publishAt: null,
+          hidden: false,
+          sortOrder: 0,
+          deletedAt: null,
+          originalParentId: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
+    http.delete('/admin/api/sites/:siteId/nodes/:id/purge', ({ params }) => {
+      return HttpResponse.json({
+        data: { id: Number(params.id), purged: true },
+      });
+    }),
+
+    http.delete('/admin/api/sites/:siteId/media/:id', ({ params }) => {
+      return HttpResponse.json({
+        data: {
+          id: Number(params.id),
+          siteId: Number(params.siteId),
+          folderNodeId: null,
+          contentHash: '0'.repeat(64),
+          storageKey: 'msw',
+          mimeType: 'application/octet-stream',
+          byteSize: 0,
+          originalFilename: 'file.bin',
+          deletedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
+    http.post('/admin/api/sites/:siteId/media/:id/restore', ({ params }) => {
+      return HttpResponse.json({
+        data: {
+          id: Number(params.id),
+          siteId: Number(params.siteId),
+          folderNodeId: null,
+          contentHash: '0'.repeat(64),
+          storageKey: 'msw',
+          mimeType: 'application/octet-stream',
+          byteSize: 0,
+          originalFilename: 'file.bin',
+          deletedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }),
+
+    http.delete('/admin/api/sites/:siteId/media/:id/purge', ({ params }) => {
+      return HttpResponse.json({
+        data: { id: Number(params.id), purged: true },
+      });
     }),
   ];
 }
