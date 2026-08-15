@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import {
   Button,
   FieldRow,
+  Select,
   StatusBar,
   StatusBarField,
   TextBox,
@@ -15,19 +16,28 @@ import { playAdminSound } from '../../lib/playAdminSound';
 import { cn } from '../../../lib/cn';
 import { DocumentEditorCanvas } from './DocumentEditorCanvas';
 
+export type DocumentPublication = 'draft' | 'published' | 'scheduled';
+
+export type DocumentEditorSavePayload = {
+  title: string;
+  body: string;
+  publication: DocumentPublication;
+};
+
 export type DocumentEditorWindowProps = {
   title: string;
   /** Initial document title (editable). */
   documentTitle?: string;
   /** Lexical JSON body. */
   bodyJson?: string | null;
+  publication?: DocumentPublication;
   loading?: boolean;
   saving?: boolean;
   canEdit?: boolean;
   error?: string | null;
   statusMessage?: string | null;
   onClearStatusMessage?: () => void;
-  onSave?: (payload: { title: string; body: string }) => void;
+  onSave?: (payload: DocumentEditorSavePayload) => void;
   errorSoundUrl?: string;
   onAlertClose?: () => void;
   onClose: () => void;
@@ -49,6 +59,7 @@ export function DocumentEditorWindow({
   title,
   documentTitle: documentTitleProp = '',
   bodyJson = null,
+  publication: publicationProp = 'draft',
   loading = false,
   saving = false,
   canEdit = true,
@@ -70,6 +81,7 @@ export function DocumentEditorWindow({
   width,
 }: DocumentEditorWindowProps) {
   const [documentTitle, setDocumentTitle] = useState(documentTitleProp);
+  const [publication, setPublication] = useState<DocumentPublication>(publicationProp);
   const [draftBody, setDraftBody] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
@@ -77,10 +89,11 @@ export function DocumentEditorWindow({
 
   useEffect(() => {
     setDocumentTitle(documentTitleProp);
+    setPublication(publicationProp);
     setDraftBody(null);
     setDirty(false);
     setEditorKey((value) => value + 1);
-  }, [documentTitleProp, bodyJson]);
+  }, [documentTitleProp, bodyJson, publicationProp]);
 
   useEffect(() => {
     if (!error) {
@@ -90,7 +103,9 @@ export function DocumentEditorWindow({
     playAdminSound('chord', errorSoundUrl);
   }, [error, errorSoundUrl]);
 
-  const handleSave = () => {
+  const bodySnapshot = () => draftBody ?? bodyJson ?? '';
+
+  const persist = (nextPublication: DocumentPublication) => {
     if (!canEdit || !onSave || saving || loading) {
       return;
     }
@@ -100,10 +115,28 @@ export function DocumentEditorWindow({
       playAdminSound('chord', errorSoundUrl);
       return;
     }
-    const body = draftBody ?? bodyJson ?? '';
-    onSave({ title: trimmed, body });
+    onSave({
+      title: trimmed,
+      body: bodySnapshot(),
+      publication: nextPublication,
+    });
+    setPublication(nextPublication);
     setDirty(false);
   };
+
+  const handleSave = () => {
+    persist(publication);
+  };
+
+  const handlePublish = () => {
+    persist('published');
+  };
+
+  const handleUnpublish = () => {
+    persist('draft');
+  };
+
+  const isPublished = publication === 'published';
 
   return (
     <>
@@ -139,7 +172,11 @@ export function DocumentEditorWindow({
                     ? statusMessage
                     : dirty
                       ? 'Unsaved changes'
-                      : 'Ready'}
+                      : isPublished
+                        ? 'Published'
+                        : publication === 'scheduled'
+                          ? 'Scheduled'
+                          : 'Draft'}
             </StatusBarField>
             {statusMessage ? (
               <StatusBarField>
@@ -163,6 +200,22 @@ export function DocumentEditorWindow({
             }}
           />
         </FieldRow>
+        <FieldRow>
+          <label htmlFor="wh-doc-publication">Publication</label>
+          <Select
+            id="wh-doc-publication"
+            value={publication === 'scheduled' ? 'scheduled' : publication}
+            disabled={!canEdit || loading || saving}
+            onChange={(event) => {
+              setPublication(event.target.value as DocumentPublication);
+              setDirty(true);
+            }}
+          >
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="scheduled">Scheduled</option>
+          </Select>
+        </FieldRow>
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {loading ? (
             <p>Loading document…</p>
@@ -179,6 +232,23 @@ export function DocumentEditorWindow({
           )}
         </div>
         <FieldRow className="justify-end">
+          {isPublished ? (
+            <Button
+              type="button"
+              disabled={!canEdit || loading || saving || !onSave}
+              onClick={handleUnpublish}
+            >
+              Unpublish
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              disabled={!canEdit || loading || saving || !onSave}
+              onClick={handlePublish}
+            >
+              Publish
+            </Button>
+          )}
           <Button
             type="button"
             isDefault

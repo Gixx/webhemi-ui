@@ -162,6 +162,18 @@
   background-image: url("/assets/admin/icons/explorer/folder_gallery.svg");
 }
 
+.icon.folder-draft,
+.panel.info > .info-icon.folder-draft,
+.explorer-glyph.folder-draft {
+  background-image: url("/assets/admin/icons/explorer/folder_draft.svg");
+}
+
+.icon.folder-scheduled,
+.panel.info > .info-icon.folder-scheduled,
+.explorer-glyph.folder-scheduled {
+  background-image: url("/assets/admin/icons/explorer/folder_scheduled.svg");
+}
+
 .icon.file-document,
 .panel.info > .info-icon.file-document,
 .explorer-glyph.file-document {

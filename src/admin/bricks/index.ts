@@ -84,6 +84,8 @@ export {
   normalizeDocumentBodyJson,
   EMPTY_EDITOR_STATE_JSON,
   type DocumentEditorWindowProps,
+  type DocumentEditorSavePayload,
+  type DocumentPublication,
   type DocumentEditorCanvasProps,
   type AccordionItem,
   type SerializedAccordionNode,

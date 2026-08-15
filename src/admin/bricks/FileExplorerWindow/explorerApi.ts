@@ -45,6 +45,7 @@ function mapApiExplorerItem(item: AdminApiExplorerItem): ExplorerItem {
     sizeBytes: item.sizeBytes,
     modifiedAt: item.modifiedAt,
     hidden: item.hidden,
+    publication: item.publication,
     expandable: item.expandable,
     disabled: item.disabled,
     children: item.children?.map(mapApiExplorerItem),

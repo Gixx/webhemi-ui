@@ -30,6 +30,8 @@ export type ExplorerItem = {
   sizeBytes?: number;
   modifiedAt?: string;
   hidden?: boolean;
+  /** Site-tree content nodes (folder / document / …). */
+  publication?: 'draft' | 'published' | 'scheduled';
   /**
    * When false, never render as expandable tree branch (e.g. recycle bin),
    * even if `children` holds a flat listing for the content pane.
@@ -59,7 +61,9 @@ export function isExplorerFolder(item: ExplorerItem): boolean {
     item.kind === 'folder' ||
     item.kind === 'folder-open' ||
     item.kind === 'folder-documents' ||
-    item.kind === 'folder-gallery'
+    item.kind === 'folder-gallery' ||
+    item.kind === 'folder-draft' ||
+    item.kind === 'folder-scheduled'
   );
 }
 

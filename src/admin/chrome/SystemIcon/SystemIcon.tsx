@@ -24,6 +24,8 @@ export type SystemIconKind =
   | 'folder-open'
   | 'folder-documents'
   | 'folder-gallery'
+  | 'folder-draft'
+  | 'folder-scheduled'
   | 'file-document'
   | 'file-draft'
   | 'file-image'

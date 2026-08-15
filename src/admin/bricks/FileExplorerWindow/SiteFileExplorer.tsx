@@ -91,6 +91,11 @@ export type SiteFileExplorerProps = Omit<
   onOpenSiteSettings?: () => void;
   /** Called when a document leaf is opened (Lexical editor). */
   onOpenDocument?: (item: ExplorerItem) => void;
+  /**
+   * Bump to re-fetch the explorer forest (e.g. after document publish from
+   * another shell window). Ignored when `0` / undefined.
+   */
+  forestRefreshKey?: number;
   /** Shell minimize (Phase 5 taskbar). */
   onMinimize?: () => void;
   /** Shell maximize / restore. */
@@ -112,6 +117,7 @@ export function SiteFileExplorer({
   initialLocationId,
   onOpenSiteSettings,
   onOpenDocument,
+  forestRefreshKey = 0,
   onClose,
   onMinimize,
   onMaximize,
@@ -139,6 +145,7 @@ export function SiteFileExplorer({
   const [undoEntry, setUndoEntry] = useState<ExplorerUndo | null>(null);
   const [softDeleteUndo, setSoftDeleteUndo] = useState<SoftDeleteUndo | null>(null);
   const [propertiesItem, setPropertiesItem] = useState<ExplorerItem | null>(null);
+  const [propertiesSaving, setPropertiesSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [prompt, setPrompt] = useState<PromptKind | null>(null);
@@ -228,6 +235,23 @@ export function SiteFileExplorer({
       cancelled = true;
     };
   }, [live, reloadForest]);
+
+  useEffect(() => {
+    if (!live || forestRefreshKey <= 0) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setBusy(true);
+      await reloadForest();
+      if (!cancelled) {
+        setBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [forestRefreshKey, live, reloadForest]);
 
   const resolveCreateContext = () => {
     if (!location) {
@@ -662,6 +686,27 @@ export function SiteFileExplorer({
     ? (findExplorerParent(forest, propertiesItem.id)?.label ?? null)
     : null;
 
+  const handleSavePublication = async (
+    publication: 'draft' | 'published' | 'scheduled',
+  ) => {
+    if (!live || !api || siteId == null || !propertiesItem) {
+      return;
+    }
+    const ref = parseExplorerEntityId(propertiesItem.id);
+    if (ref?.type !== 'node') {
+      return;
+    }
+    setPropertiesSaving(true);
+    const result = await api.updateContentNode(siteId, ref.id, { publication });
+    setPropertiesSaving(false);
+    if (!result.ok) {
+      setErrorMessage(result.error.message);
+      return;
+    }
+    setPropertiesItem(null);
+    await reloadForest();
+  };
+
   const statusCountLabel =
     selectedIds.length > 0
       ? `${selectedIds.length} object(s) selected`
@@ -751,6 +796,11 @@ export function SiteFileExplorer({
           <ExplorerPropertiesDialog
             item={propertiesItem}
             parentLabel={propertiesParentLabel}
+            canEditPublication={live}
+            savingPublication={propertiesSaving}
+            onSavePublication={(publication) => {
+              void handleSavePublication(publication);
+            }}
             onClose={() => setPropertiesItem(null)}
           />
         </DesktopModal>

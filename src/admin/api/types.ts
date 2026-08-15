@@ -228,6 +228,8 @@ export type AdminApiExplorerItem = {
   sizeBytes?: number;
   modifiedAt?: string;
   hidden?: boolean;
+  /** Content nodes only — draft | published | scheduled. */
+  publication?: 'draft' | 'published' | 'scheduled';
   expandable?: boolean;
   disabled?: boolean;
   children?: AdminApiExplorerItem[];

@@ -425,6 +425,10 @@ export function AdminDesktop({
   const [documentStatusMessage, setDocumentStatusMessage] = useState<
     string | null
   >(null);
+  /** Bump per site so open explorers refetch after editor publish/rename. */
+  const [explorerForestRefreshBySite, setExplorerForestRefreshBySite] = useState<
+    Record<number, number>
+  >({});
   /** After Error modal OK — bounce to login when the API reported session loss. */
   const pendingLoginRedirectRef = useRef(false);
   const sitesStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1500,7 +1504,7 @@ export function AdminDesktop({
   const handleSaveDocument = async (
     siteId: number,
     nodeId: number,
-    payload: { title: string; body: string },
+    payload: { title: string; body: string; publication: 'draft' | 'published' | 'scheduled' },
   ) => {
     const key = documentCacheKey(siteId, nodeId);
     setDocumentSavingKey(key);
@@ -1508,6 +1512,7 @@ export function AdminDesktop({
     const result = await api.updateContentNode(siteId, nodeId, {
       title: payload.title,
       body: payload.body,
+      publication: payload.publication,
     });
     setDocumentSavingKey(null);
     if (!result.ok) {
@@ -1515,7 +1520,17 @@ export function AdminDesktop({
       return;
     }
     setDocumentsByKey((prev) => ({ ...prev, [key]: result.data }));
-    setDocumentStatusMessage('Document saved.');
+    setDocumentStatusMessage(
+      payload.publication === 'published'
+        ? 'Published.'
+        : payload.publication === 'draft'
+          ? 'Saved as draft.'
+          : 'Document saved.',
+    );
+    setExplorerForestRefreshBySite((prev) => ({
+      ...prev,
+      [siteId]: (prev[siteId] ?? 0) + 1,
+    }));
     setShell((prev) => ({
       ...prev,
       windows: prev.windows.map((win) =>
@@ -2482,6 +2497,7 @@ export function AdminDesktop({
               title={win.title}
               documentTitle={data?.title ?? win.title}
               bodyJson={data?.body ?? null}
+              publication={data?.publication ?? 'draft'}
               loading={documentLoadingKey === key}
               saving={documentSavingKey === key}
               canEdit={canEditDocuments}
@@ -2625,6 +2641,11 @@ export function AdminDesktop({
             siteId={typeof site.id === 'number' ? site.id : Number(site.id)}
             siteName={site.name}
             tree={explorerTreeForSite(site)}
+            forestRefreshKey={
+              explorerForestRefreshBySite[
+                typeof site.id === 'number' ? site.id : Number(site.id)
+              ] ?? 0
+            }
             onOpenSiteSettings={() => openSiteSettings(site)}
             onOpenDocument={(item) => {
               const ref = parseExplorerEntityId(item.id);

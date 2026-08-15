@@ -31,7 +31,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Empty: Story = {};
+export const Empty: Story = {
+  args: {
+    publication: 'draft',
+  },
+};
+
+export const Published: Story = {
+  args: {
+    publication: 'published',
+  },
+};
 
 export const Loading: Story = {
   args: {
@@ -42,5 +52,6 @@ export const Loading: Story = {
 export const ReadOnly: Story = {
   args: {
     canEdit: false,
+    publication: 'published',
   },
 };

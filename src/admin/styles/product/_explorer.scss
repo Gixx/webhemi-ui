@@ -425,3 +425,10 @@
   word-break: break-word;
 }
 
+.explorer-properties-publication {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+

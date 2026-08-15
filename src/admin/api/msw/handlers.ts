@@ -203,6 +203,11 @@ export function createAdminApiHandlers(
   let nextNodeId = 1000;
   /** Persisted document bodies keyed by `siteId:nodeId`. */
   const nodeBodies = new Map<string, string | null>();
+  /** Publication status keyed by `siteId:nodeId`. */
+  const nodePublications = new Map<
+    string,
+    'draft' | 'published' | 'scheduled'
+  >();
 
   /** Demo fixtures use string ids; API client expects `node-{id}` / `media-{id}`. */
   const withApiEntityIds = (items: ExplorerItem[]): ExplorerItem[] => {
@@ -1392,6 +1397,8 @@ export function createAdminApiHandlers(
       if (body.kind !== 'folder') {
         nodeBodies.set(`${siteId}:${id}`, null);
       }
+      nodePublications.set(`${siteId}:${id}`, 'draft');
+      item.publication = 'draft';
       return HttpResponse.json(
         {
           data: {
@@ -1460,7 +1467,8 @@ export function createAdminApiHandlers(
           body: nodeBodies.has(bodyKey) ? nodeBodies.get(bodyKey)! : null,
           redirectTarget: null,
           mediaAssetId: null,
-          publication: 'draft',
+          publication:
+            nodePublications.get(bodyKey) ?? found.publication ?? 'draft',
           publishAt: null,
           hidden: false,
           sortOrder: 0,
@@ -1481,6 +1489,7 @@ export function createAdminApiHandlers(
         slug?: string;
         parentId?: number | null;
         body?: string | null;
+        publication?: 'draft' | 'published' | 'scheduled';
       };
       const targetId = `node-${nodeId}`;
       const findById = (nodes: ExplorerItem[], id: string): ExplorerItem | null => {
@@ -1511,6 +1520,22 @@ export function createAdminApiHandlers(
       if (Object.prototype.hasOwnProperty.call(body, 'body')) {
         nodeBodies.set(bodyKey, body.body ?? null);
       }
+      if (body.publication) {
+        nodePublications.set(bodyKey, body.publication);
+        found.publication = body.publication;
+        if (found.role === 'document') {
+          found.kind =
+            body.publication === 'draft' ? 'file-draft' : 'file-document';
+        }
+        if (found.role === 'folder') {
+          found.kind =
+            body.publication === 'draft'
+              ? 'folder-draft'
+              : body.publication === 'scheduled'
+                ? 'folder-scheduled'
+                : 'folder';
+        }
+      }
       explorerForests.set(siteId, forest);
       return HttpResponse.json({
         data: {
@@ -1525,7 +1550,8 @@ export function createAdminApiHandlers(
           body: nodeBodies.has(bodyKey) ? nodeBodies.get(bodyKey)! : null,
           redirectTarget: null,
           mediaAssetId: null,
-          publication: 'draft',
+          publication:
+            nodePublications.get(bodyKey) ?? found.publication ?? 'draft',
           publishAt: null,
           hidden: false,
           sortOrder: 0,
