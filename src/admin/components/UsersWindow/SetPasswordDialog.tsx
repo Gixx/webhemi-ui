@@ -100,7 +100,16 @@ export function SetPasswordDialog({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (saving || !validate()) {
+    if (saving) {
+      return;
+    }
+    // Empty new password fields = no change (close without API / validation errors).
+    if (!password && !confirmPassword) {
+      setLocalErrors({});
+      onClose();
+      return;
+    }
+    if (!validate()) {
       return;
     }
     onSave({

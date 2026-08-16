@@ -88,6 +88,25 @@
   background-image: url("/assets/admin/icons/system/change_password.svg");
 }
 
+.user-form-dialog .info-icon.dialog-info {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  background-image: url("/assets/admin/icons/system/dialog_info.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.user-form-dialog .field-row.info-icon-row {
+  align-items: flex-start;
+}
+
+.user-form-dialog .field-row.info-icon-row > * + * {
+  margin-left: 12px;
+}
+
 .icon.roles,
 .panel.info > .info-icon.roles,
 .explorer-glyph.roles {

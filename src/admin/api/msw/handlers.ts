@@ -279,6 +279,113 @@ export function createAdminApiHandlers(
       });
     }),
 
+    http.get('/admin/api/me/profile', () => {
+      const actor =
+        store.users.find((row) => row.id === store.actorUserId) ??
+        store.users[0] ??
+        null;
+      if (!actor) {
+        return HttpResponse.json(
+          { error: { code: 'unauthorized', message: 'Not authenticated.' } },
+          { status: 401 },
+        );
+      }
+      return HttpResponse.json({
+        data: {
+          id: actor.id,
+          email: actor.email,
+          displayName: null,
+          telephone: null,
+          address: null,
+          zip: null,
+          city: null,
+          country: null,
+          bio: null,
+          avatarType: 'default',
+          avatarUrl: null,
+          links: [],
+        },
+      });
+    }),
+
+    http.patch('/admin/api/me/profile', async ({ request }) => {
+      const actor =
+        store.users.find((row) => row.id === store.actorUserId) ??
+        store.users[0] ??
+        null;
+      if (!actor) {
+        return HttpResponse.json(
+          { error: { code: 'unauthorized', message: 'Not authenticated.' } },
+          { status: 401 },
+        );
+      }
+      const body = (await request.json()) as {
+        email?: string;
+        displayName?: string | null;
+        telephone?: string | null;
+        address?: string | null;
+        zip?: string | null;
+        city?: string | null;
+        country?: string | null;
+        bio?: string | null;
+        avatarType?: string;
+        links?: Array<{ name: string; url: string }>;
+      };
+      if (body.email) {
+        actor.email = body.email.trim().toLowerCase();
+      }
+      return HttpResponse.json({
+        data: {
+          id: actor.id,
+          email: actor.email,
+          displayName: body.displayName ?? null,
+          telephone: body.telephone ?? null,
+          address: body.address ?? null,
+          zip: body.zip ?? null,
+          city: body.city ?? null,
+          country: body.country ?? null,
+          bio: body.bio ?? null,
+          avatarType: body.avatarType ?? 'default',
+          avatarUrl: null,
+          links: (body.links ?? []).map((link, index) => ({
+            id: index + 1,
+            name: link.name,
+            url: link.url,
+            position: index,
+          })),
+        },
+      });
+    }),
+
+    http.post('/admin/api/me/avatar', () => {
+      const actor =
+        store.users.find((row) => row.id === store.actorUserId) ??
+        store.users[0] ??
+        null;
+      if (!actor) {
+        return HttpResponse.json(
+          { error: { code: 'unauthorized', message: 'Not authenticated.' } },
+          { status: 401 },
+        );
+      }
+      return HttpResponse.json({
+        data: {
+          id: actor.id,
+          email: actor.email,
+          displayName: null,
+          telephone: null,
+          address: null,
+          zip: null,
+          city: null,
+          country: null,
+          bio: null,
+          avatarType: 'upload',
+          avatarUrl: '/admin/api/me/avatar',
+          links: [],
+        },
+      });
+    }),
+
     http.get('/admin/api/sites', () => {
       if (failListSites) {
         return HttpResponse.json(
@@ -965,12 +1072,22 @@ export function createAdminApiHandlers(
       const body = (await request.json()) as {
         email?: string;
         password?: string;
+        displayName?: string | null;
+        telephone?: string | null;
+        address?: string | null;
+        zip?: string | null;
+        city?: string | null;
+        country?: string | null;
         roleIds?: number[];
         siteAssignments?: { siteId: number; roleId: number }[];
       };
       const email = normalizeEmail(body.email ?? '');
       const password = body.password ?? '';
+      const displayName = (body.displayName ?? '').trim();
       const fields: Record<string, string> = {};
+      if (!displayName) {
+        fields.displayName = 'Name is required.';
+      }
       if (!email) {
         fields.email = 'Email is required.';
       } else if (!EMAIL_PATTERN.test(email)) {
@@ -1031,13 +1148,40 @@ export function createAdminApiHandlers(
         );
       }
       nextSiteAssignmentId = assignmentsResult.nextId;
+      let roleIds = rolesResult.roleIds;
+      let roles = rolesResult.roles;
+      if (roleIds.length === 0) {
+        const guest = store.roles.find((row) => row.name === 'ROLE_GUEST');
+        if (guest) {
+          roleIds = [guest.id];
+          roles = [{ id: guest.id, name: guest.name, label: guest.label }];
+        }
+      }
+      if (roleIds.length === 0) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'validation_failed',
+              message: 'User could not be created.',
+              fields: { roleIds: 'At least one role is required.' },
+            },
+          },
+          { status: 422 },
+        );
+      }
       const created: AdminApiUser = {
         id: Math.max(0, ...store.users.map((row) => row.id)) + 1,
         email,
-        roleIds: rolesResult.roleIds,
-        roles: rolesResult.roles,
+        displayName: displayName || email,
+        telephone: body.telephone?.trim() || null,
+        address: body.address?.trim() || null,
+        zip: body.zip?.trim() || null,
+        city: body.city?.trim() || null,
+        country: body.country?.trim() || null,
+        roleIds,
+        roles,
         siteAssignments: assignmentsResult.assignments,
-        roleCount: rolesResult.roleIds.length,
+        roleCount: roleIds.length,
         siteAssignmentCount: assignmentsResult.assignments.length,
       };
       store.users = [...store.users, created].sort((a, b) =>
@@ -1059,17 +1203,23 @@ export function createAdminApiHandlers(
       const body = (await request.json()) as {
         email?: string;
         password?: string;
+        displayName?: string | null;
+        telephone?: string | null;
+        address?: string | null;
+        zip?: string | null;
+        city?: string | null;
+        country?: string | null;
         roleIds?: number[];
         siteAssignments?: { siteId: number; roleId: number }[];
       };
-      if (body.password !== undefined) {
+      if (body.password !== undefined && body.password !== '' && body.password.length < 8) {
         return HttpResponse.json(
           {
             error: {
               code: 'validation_failed',
               message: 'User could not be updated.',
               fields: {
-                password: 'Password cannot be changed in this window.',
+                password: 'Password must be at least 8 characters.',
               },
             },
           },
@@ -1078,6 +1228,13 @@ export function createAdminApiHandlers(
       }
       if (
         body.email === undefined &&
+        (body.password === undefined || body.password === '') &&
+        body.displayName === undefined &&
+        body.telephone === undefined &&
+        body.address === undefined &&
+        body.zip === undefined &&
+        body.city === undefined &&
+        body.country === undefined &&
         body.roleIds === undefined &&
         body.siteAssignments === undefined
       ) {
@@ -1087,8 +1244,7 @@ export function createAdminApiHandlers(
               code: 'validation_failed',
               message: 'User could not be updated.',
               fields: {
-                _body:
-                  'At least one of email, roleIds, or siteAssignments is required.',
+                _body: 'At least one updatable field is required.',
               },
             },
           },
@@ -1197,6 +1353,25 @@ export function createAdminApiHandlers(
       const updated: AdminApiUser = {
         ...current,
         email,
+        displayName:
+          body.displayName !== undefined
+            ? body.displayName?.trim() || null
+            : current.displayName,
+        telephone:
+          body.telephone !== undefined
+            ? body.telephone?.trim() || null
+            : current.telephone,
+        address:
+          body.address !== undefined
+            ? body.address?.trim() || null
+            : current.address,
+        zip: body.zip !== undefined ? body.zip?.trim() || null : current.zip,
+        city:
+          body.city !== undefined ? body.city?.trim() || null : current.city,
+        country:
+          body.country !== undefined
+            ? body.country?.trim() || null
+            : current.country,
         roleIds,
         roles,
         siteAssignments,

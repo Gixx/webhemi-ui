@@ -170,7 +170,9 @@ html.is-window-resizing * {
 .title-bar-text.sites,
 .title-bar-text.settings,
 .title-bar-text.themes,
-.title-bar-text.folder {
+.title-bar-text.folder,
+.title-bar-text.external-link,
+.title-bar-text.my-account {
   padding-left: 22px;
   background-repeat: no-repeat;
   background-position: 2px center;
@@ -219,6 +221,14 @@ html.is-window-resizing * {
 
 .title-bar-text.folder {
   background-image: url("/assets/admin/icons/explorer/folder.svg");
+}
+
+.title-bar-text.external-link {
+  background-image: url("/assets/admin/icons/system/external_link.svg");
+}
+
+.title-bar-text.my-account {
+  background-image: url("/assets/admin/icons/system/my_account.svg");
 }
 
 .status-bar .status-bar-field {

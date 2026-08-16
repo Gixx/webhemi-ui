@@ -242,6 +242,10 @@
   background-image: url("/assets/admin/icons/system/users.svg");
 }
 
+#toolbar .task-buttons > .task.my-account {
+  background-image: url("/assets/admin/icons/system/my_account.svg");
+}
+
 #toolbar .task-buttons > .task > .task-title {
   display: block;
   min-width: 0;

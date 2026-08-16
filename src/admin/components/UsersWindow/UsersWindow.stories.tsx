@@ -7,6 +7,7 @@ const SAMPLE_ROLES: UserFormRoleOption[] = [
   { id: 1, name: 'ROLE_ADMIN', label: 'Administrator' },
   { id: 2, name: 'ROLE_SITE_ADMIN', label: 'Site Administrator' },
   { id: 3, name: 'ROLE_AUTHOR', label: 'Author' },
+  { id: 4, name: 'ROLE_GUEST', label: 'Guest' },
 ];
 
 const SAMPLE_SITES: UserFormSiteOption[] = [
@@ -18,6 +19,12 @@ const SAMPLE_USERS: UsersWindowUser[] = [
   {
     id: 1,
     email: 'admin@example.test',
+    displayName: 'Admin',
+    telephone: null,
+    address: null,
+    zip: null,
+    city: null,
+    country: null,
     roleIds: [1],
     roles: [{ id: 1, name: 'ROLE_ADMIN', label: 'Administrator' }],
     siteAssignments: [],
@@ -27,6 +34,12 @@ const SAMPLE_USERS: UsersWindowUser[] = [
   {
     id: 2,
     email: 'author@example.test',
+    displayName: 'Author',
+    telephone: null,
+    address: null,
+    zip: null,
+    city: null,
+    country: null,
     roleIds: [3],
     roles: [{ id: 3, name: 'ROLE_AUTHOR', label: 'Author' }],
     siteAssignments: [
@@ -66,6 +79,7 @@ const meta = {
     onDelete: fn(),
     onSetPassword: fn(),
     onAddRole: fn(),
+    onOpenMyAccount: fn(),
     onAlertClose: fn(),
     currentUserId: 1,
     capabilities: {

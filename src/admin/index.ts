@@ -95,6 +95,10 @@ export {
   type SetPasswordSavePayload,
 } from './components/UsersWindow/SetPasswordDialog';
 export {
+  MyAccountWindow,
+  type MyAccountWindowProps,
+} from './components/MyAccount/MyAccountWindow';
+export {
   HostFormDialog,
   type HostFormDialogProps,
   type HostFormMode,

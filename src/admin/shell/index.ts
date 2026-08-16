@@ -6,6 +6,7 @@ export {
   SETTINGS_WINDOW_ID,
   SITES_WINDOW_ID,
   USERS_WINDOW_ID,
+  MY_ACCOUNT_WINDOW_ID,
   siteWindowId,
   siteSettingsWindowId,
   documentEditorWindowId,

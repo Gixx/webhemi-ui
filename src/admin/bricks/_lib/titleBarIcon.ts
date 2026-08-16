@@ -10,7 +10,9 @@ export type TitleBarIconKind =
   | 'sites'
   | 'settings'
   | 'themes'
-  | 'folder';
+  | 'folder'
+  | 'external-link'
+  | 'my-account';
 
 /** Storybook select options: `none` maps to no `titleIcon`. */
 export const TITLE_BAR_ICON_OPTIONS = [
@@ -26,6 +28,8 @@ export const TITLE_BAR_ICON_OPTIONS = [
   'settings',
   'themes',
   'folder',
+  'external-link',
+  'my-account',
 ] as const satisfies ReadonlyArray<'none' | TitleBarIconKind>;
 
 export type TitleBarIconOption = (typeof TITLE_BAR_ICON_OPTIONS)[number];

@@ -103,6 +103,12 @@ export type AdminApiUserSiteAssignment = {
 export type AdminApiUser = {
   id: number;
   email: string;
+  displayName: string;
+  telephone: string | null;
+  address: string | null;
+  zip: string | null;
+  city: string | null;
+  country: string | null;
   roleIds: number[];
   roles: AdminApiUserRoleRef[];
   siteAssignments: AdminApiUserSiteAssignment[];
@@ -124,6 +130,30 @@ export type AdminApiMe = {
   email?: string | null;
   roles: string[];
   capabilities?: AdminApiUserCapabilities;
+};
+
+export type AdminApiUserAvatarType = 'default' | 'gravatar' | 'upload';
+
+export type AdminApiUserLink = {
+  id: number;
+  name: string;
+  url: string;
+  position: number;
+};
+
+export type AdminApiUserProfile = {
+  id: number;
+  email: string;
+  displayName: string | null;
+  telephone: string | null;
+  address: string | null;
+  zip: string | null;
+  city: string | null;
+  country: string | null;
+  bio: string | null;
+  avatarType: AdminApiUserAvatarType;
+  avatarUrl: string | null;
+  links: AdminApiUserLink[];
 };
 
 /** DELETE /hosts/{id} — sessionEnded when domain access was forced back to path. */

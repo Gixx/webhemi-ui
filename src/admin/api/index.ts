@@ -17,6 +17,9 @@ export type {
   AdminApiUserSiteAssignment,
   AdminApiUserCapabilities,
   AdminApiMe,
+  AdminApiUserProfile,
+  AdminApiUserLink,
+  AdminApiUserAvatarType,
   AdminApiSuccess,
   AdminApiFailure,
 } from './types';

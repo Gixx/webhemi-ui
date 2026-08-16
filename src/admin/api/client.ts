@@ -15,6 +15,7 @@ import type {
   AdminApiSiteSettings,
   AdminApiTrashPayload,
   AdminApiUser,
+  AdminApiUserProfile,
   AdminApiFailure,
 } from './types';
 
@@ -92,14 +93,41 @@ export type CreateUserSiteAssignmentBody = {
 export type CreateUserBody = {
   email: string;
   password: string;
+  displayName?: string | null;
+  telephone?: string | null;
+  address?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  country?: string | null;
   roleIds?: number[];
   siteAssignments?: CreateUserSiteAssignmentBody[];
 };
 
 export type UpdateUserBody = {
   email?: string;
+  password?: string;
+  displayName?: string | null;
+  telephone?: string | null;
+  address?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  country?: string | null;
   roleIds?: number[];
   siteAssignments?: CreateUserSiteAssignmentBody[];
+};
+
+
+export type UpdateUserProfileBody = {
+  email?: string;
+  displayName?: string | null;
+  telephone?: string | null;
+  address?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  country?: string | null;
+  bio?: string | null;
+  avatarType?: 'default' | 'gravatar' | 'upload';
+  links?: Array<{ name: string; url: string }>;
 };
 
 export type SetUserPasswordBody = {
@@ -419,6 +447,17 @@ export function createAdminApiClient(options: AdminApiClientOptions = {}) {
         body: JSON.stringify(body),
       }),
     getMe: () => request<AdminApiMe>('/me'),
+    getMyProfile: () => request<AdminApiUserProfile>('/me/profile'),
+    updateMyProfile: (body: UpdateUserProfileBody) =>
+      request<AdminApiUserProfile>('/me/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      }),
+    uploadMyAvatar: (file: Blob, filename = 'avatar.jpg') => {
+      const form = new FormData();
+      form.append('file', file, filename);
+      return requestMultipart<AdminApiUserProfile>('/me/avatar', form);
+    },
 
     getExplorerForest: (siteId: number) =>
       request<AdminApiExplorerItem[]>(`/sites/${siteId}/explorer`),

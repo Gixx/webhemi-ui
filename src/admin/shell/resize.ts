@@ -28,6 +28,8 @@ export const DEFAULT_WINDOW_SIZE = {
   roles: { width: 640, height: 480 },
   /** Height is unused for Users (content-sized shell); width is applied. */
   users: { width: 480, height: 420 },
+  /** Height unused (content-sized); width matches My Account dialog. */
+  'my-account': { width: 520, height: 480 },
 } as const;
 
 export type ShellBounds = {

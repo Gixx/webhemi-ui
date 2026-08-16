@@ -40,6 +40,7 @@ function taskClassName(
     win.kind === 'permissions' && 'permissions',
     win.kind === 'roles' && 'roles',
     win.kind === 'users' && 'users',
+    win.kind === 'my-account' && 'my-account',
     active && 'active',
   );
 }

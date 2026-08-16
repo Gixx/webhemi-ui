@@ -124,12 +124,27 @@ export const MSW_SAMPLE_ROLES: AdminApiRole[] = [
     permissionIds: [1, 2],
     permissionCount: 2,
   },
+  {
+    id: 4,
+    name: 'ROLE_GUEST',
+    label: 'Guest',
+    description: 'Default role for every user.',
+    protected: true,
+    permissionIds: [],
+    permissionCount: 0,
+  },
 ];
 
 export const MSW_SAMPLE_USERS: AdminApiUser[] = [
   {
     id: 1,
     email: 'admin@example.test',
+    displayName: 'Admin',
+    telephone: null,
+    address: null,
+    zip: null,
+    city: null,
+    country: null,
     roleIds: [1],
     roles: [{ id: 1, name: 'ROLE_ADMIN', label: 'Admin' }],
     siteAssignments: [],
@@ -139,6 +154,12 @@ export const MSW_SAMPLE_USERS: AdminApiUser[] = [
   {
     id: 2,
     email: 'author@example.test',
+    displayName: 'Author',
+    telephone: null,
+    address: null,
+    zip: null,
+    city: null,
+    country: null,
     roleIds: [3],
     roles: [{ id: 3, name: 'ROLE_AUTHOR', label: 'Author' }],
     siteAssignments: [

@@ -40,6 +40,12 @@ import {
 export type UsersWindowUser = {
   id: number;
   email: string;
+  displayName?: string | null;
+  telephone?: string | null;
+  address?: string | null;
+  zip?: string | null;
+  city?: string | null;
+  country?: string | null;
   roleIds: number[];
   roles: { id: number; name: string; label: string }[];
   siteAssignments: {
@@ -75,7 +81,19 @@ export type UsersWindowProps = {
   loading?: boolean;
   error?: string | null;
   fieldErrors?: Partial<
-    Record<'email' | 'password' | 'roleIds' | 'siteAssignments', string>
+    Record<
+      | 'email'
+      | 'password'
+      | 'displayName'
+      | 'telephone'
+      | 'address'
+      | 'zip'
+      | 'city'
+      | 'country'
+      | 'roleIds'
+      | 'siteAssignments',
+      string
+    >
   >;
   formError?: string | null;
   passwordFieldErrors?: Partial<
@@ -92,6 +110,8 @@ export type UsersWindowProps = {
   onDelete?: (user: UsersWindowUser) => void;
   onSetPassword?: (payload: SetPasswordSavePayload) => void;
   onAddRole?: () => void;
+  /** Opens My Account when editing self from Change Settings. */
+  onOpenMyAccount?: () => void;
   errorSoundUrl?: string;
   dingSoundUrl?: string;
   onAlertClose?: () => void;
@@ -112,9 +132,16 @@ type FormState =
       open: true;
       mode: 'new' | 'edit';
       readOnly: boolean;
+      isSelf: boolean;
       userId?: number;
       email: string;
       password: string;
+      displayName: string;
+      telephone: string;
+      address: string;
+      zip: string;
+      city: string;
+      country: string;
       roleIds: number[];
       siteAssignments: { siteId: number; roleId: number }[];
       title?: string;
@@ -130,13 +157,33 @@ type ConfirmDeleteState = { user: UsersWindowUser } | null;
 function formatSaveErrors(
   formError: string | null | undefined,
   fieldErrors:
-    | Partial<Record<'email' | 'password' | 'roleIds' | 'siteAssignments', string>>
+    | Partial<
+        Record<
+          | 'email'
+          | 'password'
+          | 'displayName'
+          | 'telephone'
+          | 'address'
+          | 'zip'
+          | 'city'
+          | 'country'
+          | 'roleIds'
+          | 'siteAssignments',
+          string
+        >
+      >
     | undefined,
 ): string | null {
   const parts = [
     formError,
     fieldErrors?.email,
     fieldErrors?.password,
+    fieldErrors?.displayName,
+    fieldErrors?.telephone,
+    fieldErrors?.address,
+    fieldErrors?.zip,
+    fieldErrors?.city,
+    fieldErrors?.country,
     fieldErrors?.roleIds,
     fieldErrors?.siteAssignments,
   ].filter((part): part is string => Boolean(part && part.trim()));
@@ -189,6 +236,7 @@ export function UsersWindow({
   onDelete,
   onSetPassword,
   onAddRole,
+  onOpenMyAccount,
   errorSoundUrl,
   dingSoundUrl,
   onAlertClose,
@@ -369,14 +417,22 @@ export function UsersWindow({
     if (!canCreate) {
       return;
     }
+    const guestRole = roles.find((row) => row.name === 'ROLE_GUEST');
     setShowFormErrors(false);
     setForm({
       open: true,
       mode: 'new',
       readOnly: false,
+      isSelf: false,
       email: '',
       password: '',
-      roleIds: [],
+      displayName: '',
+      telephone: '',
+      address: '',
+      zip: '',
+      city: '',
+      country: '',
+      roleIds: guestRole ? [guestRole.id] : [],
       siteAssignments: [],
       title: 'New User',
     });
@@ -400,17 +456,24 @@ export function UsersWindow({
       open: true,
       mode: 'edit',
       readOnly,
+      isSelf: self,
       userId: user.id,
       email: user.email,
       password: '',
+      displayName: user.displayName ?? '',
+      telephone: user.telephone ?? '',
+      address: user.address ?? '',
+      zip: user.zip ?? '',
+      city: user.city ?? '',
+      country: user.country ?? '',
       roleIds: [...user.roleIds],
       siteAssignments: user.siteAssignments.map((row) => ({
         siteId: row.siteId,
         roleId: row.roleId,
       })),
       title: readOnly
-        ? `User Settings — ${user.email}`
-        : `Change Settings — ${user.email}`,
+        ? `User Settings — ${user.displayName?.trim() || user.email}`
+        : `Change Settings — ${user.displayName?.trim() || user.email}`,
     });
   };
 
@@ -520,18 +583,32 @@ export function UsersWindow({
                 ) : users.length === 0 ? (
                   <p style={{ margin: 8 }}>No users yet.</p>
                 ) : (
-                  <Table aria-label="Users">
+                  <Table aria-label="Users" className="users-list-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Roles</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {users.map((user) => (
-                        <TableRow
-                          key={user.id}
-                          highlighted={selectedId === user.id}
-                          onClick={() => selectUser(user.id)}
-                          onDoubleClick={() => openChangeSettings(user)}
-                        >
-                          <td>{user.email}</td>
-                        </TableRow>
-                      ))}
+                      {users.map((user) => {
+                        const name =
+                          user.displayName?.trim() || user.email;
+                        const roleNames = user.roles
+                          .map((role) => role.name)
+                          .join(', ');
+                        return (
+                          <TableRow
+                            key={user.id}
+                            highlighted={selectedId === user.id}
+                            onClick={() => selectUser(user.id)}
+                            onDoubleClick={() => openChangeSettings(user)}
+                          >
+                            <td title={name}>{name}</td>
+                            <td title={roleNames}>{roleNames || '—'}</td>
+                          </TableRow>
+                        );
+                      })}
                     </tbody>
                   </Table>
                 )}
@@ -601,13 +678,20 @@ export function UsersWindow({
         {form.open ? (
           <DesktopModal dingSoundUrl={dingSoundUrl}>
             <UserFormDialog
-              key={`${form.mode}-${form.userId ?? 'new'}-${form.readOnly}`}
+              key={`${form.mode}-${form.userId ?? 'new'}-${form.readOnly}-${form.isSelf}`}
               mode={form.mode}
               readOnly={form.readOnly}
+              isSelf={form.isSelf}
               initial={{
                 userId: form.userId,
                 email: form.email,
                 password: form.password,
+                displayName: form.displayName,
+                telephone: form.telephone,
+                address: form.address,
+                zip: form.zip,
+                city: form.city,
+                country: form.country,
                 roleIds: form.roleIds,
                 siteAssignments: form.siteAssignments,
                 title: form.title,
@@ -619,6 +703,14 @@ export function UsersWindow({
               onSave={(payload) => onSave?.(payload)}
               onError={showErrorAlert}
               onClose={closeForm}
+              onOpenMyAccount={
+                form.isSelf && onOpenMyAccount
+                  ? () => {
+                      closeForm();
+                      onOpenMyAccount();
+                    }
+                  : undefined
+              }
               onAddRole={form.readOnly ? undefined : onAddRole}
             />
           </DesktopModal>

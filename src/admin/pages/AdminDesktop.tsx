@@ -42,12 +42,8 @@ import type { SiteFormHostOption } from '../components/SitesWindow/SiteFormDialo
 import type { PermissionFormSavePayload } from '../components/PermissionsWindow/PermissionFormDialog';
 import type { RoleFormSavePayload } from '../components/RolesWindow/RoleFormDialog';
 import type { UserFormSavePayload } from '../components/UsersWindow/UserFormDialog';
-import {
-  SetPasswordDialog,
-  type SetPasswordSavePayload,
-} from '../components/UsersWindow/SetPasswordDialog';
-import { DesktopModal } from '../bricks/DesktopModal';
-import { MessageDialog } from '../bricks/MessageDialog';
+import { type SetPasswordSavePayload } from '../components/UsersWindow/SetPasswordDialog';
+import { MyAccountWindow } from '../components/MyAccount/MyAccountWindow';
 import {
   createAdminApiClient,
   isUnauthorizedResult,
@@ -80,6 +76,7 @@ import {
   PERMISSIONS_WINDOW_ID,
   ROLES_WINDOW_ID,
   USERS_WINDOW_ID,
+  MY_ACCOUNT_WINDOW_ID,
   savePersistedDesktop,
   siteWindowId,
   siteSettingsWindowId,
@@ -126,6 +123,8 @@ export type AdminDesktopProps = {
   errorSoundUrl?: string;
   /** Digested ding.mp3 — click blocked owner while a modal is open. */
   dingSoundUrl?: string;
+  /** Digested default avatar SVG (`asset('admin/system/avatar_default.svg')`). */
+  defaultAvatarUrl?: string;
   /** Override API base URL (default `/admin/api`). */
   apiBaseUrl?: string;
   /** Injected `fetch` for Storybook / tests. */
@@ -211,10 +210,24 @@ function toWindowRole(role: AdminApiRole): RolesWindowRole {
   };
 }
 
+function toUserFormRoleOption(role: {
+  id: number;
+  name: string;
+  label: string;
+}): { id: number; name: string; label: string } {
+  return { id: role.id, name: role.name, label: role.label };
+}
+
 function toWindowUser(user: AdminApiUser): UsersWindowUser {
   return {
     id: user.id,
     email: user.email,
+    displayName: user.displayName || user.email,
+    telephone: user.telephone,
+    address: user.address,
+    zip: user.zip,
+    city: user.city,
+    country: user.country,
     roleIds: [...user.roleIds],
     roles: user.roles.map((role) => ({ ...role })),
     siteAssignments: user.siteAssignments.map((row) => ({ ...row })),
@@ -262,6 +275,7 @@ export function AdminDesktop({
   apiCsrfToken,
   errorSoundUrl,
   dingSoundUrl,
+  defaultAvatarUrl,
   apiBaseUrl,
   apiFetch,
   sitesApi,
@@ -359,7 +373,21 @@ export function AdminDesktop({
   const [usersError, setUsersError] = useState<string | null>(null);
   const [usersFormError, setUsersFormError] = useState<string | null>(null);
   const [usersFieldErrors, setUsersFieldErrors] = useState<
-    Partial<Record<'email' | 'password' | 'roleIds' | 'siteAssignments', string>>
+    Partial<
+      Record<
+        | 'email'
+        | 'password'
+        | 'displayName'
+        | 'telephone'
+        | 'address'
+        | 'zip'
+        | 'city'
+        | 'country'
+        | 'roleIds'
+        | 'siteAssignments',
+        string
+      >
+    >
   >({});
   const [usersStatusMessage, setUsersStatusMessage] = useState<string | null>(
     null,
@@ -372,18 +400,8 @@ export function AdminDesktop({
     Partial<Record<'currentPassword' | 'password' | 'confirmPassword', string>>
   >({});
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [userCapabilities, setUserCapabilities] =
     useState<AdminApiUserCapabilities | null>(null);
-  const [myAccountOpen, setMyAccountOpen] = useState(false);
-  const [myAccountSaving, setMyAccountSaving] = useState(false);
-  const [myAccountFormError, setMyAccountFormError] = useState<string | null>(
-    null,
-  );
-  const [myAccountFieldErrors, setMyAccountFieldErrors] = useState<
-    Partial<Record<'currentPassword' | 'password' | 'confirmPassword', string>>
-  >({});
-  const [myAccountAlert, setMyAccountAlert] = useState<string | null>(null);
   const [hostsRows, setHostsRows] = useState<HostsWindowHost[]>([]);
   const [hostsLoading, setHostsLoading] = useState(false);
   const [hostsCreating, setHostsCreating] = useState(false);
@@ -727,9 +745,6 @@ export function AdminDesktop({
       setCurrentUserId(
         typeof result.data.id === 'number' ? result.data.id : null,
       );
-      setCurrentUserEmail(
-        typeof result.data.email === 'string' ? result.data.email : null,
-      );
       if (result.data.capabilities) {
         setUserCapabilities(result.data.capabilities);
       }
@@ -841,6 +856,7 @@ export function AdminDesktop({
       }
       pendingLoginRedirectRef.current = false;
       setRolesRows(rolesResult.data.map(toWindowRole));
+      setUsersRoleOptions(rolesResult.data.map(toUserFormRoleOption));
       if (permissionsResult.ok) {
         setRolesPermissionOptions(
           permissionsResult.data.map((row) => ({
@@ -884,13 +900,8 @@ export function AdminDesktop({
       pendingLoginRedirectRef.current = false;
       setUsersRows(usersResult.data.map(toWindowUser));
       if (rolesResult.ok) {
-        setUsersRoleOptions(
-          rolesResult.data.map((row) => ({
-            id: row.id,
-            name: row.name,
-            label: row.label,
-          })),
-        );
+        setRolesRows(rolesResult.data.map(toWindowRole));
+        setUsersRoleOptions(rolesResult.data.map(toUserFormRoleOption));
       }
       if (sitesResult.ok) {
         setUsersSiteOptions(
@@ -1863,6 +1874,7 @@ export function AdminDesktop({
     const list = await api.listRoles();
     if (list.ok) {
       setRolesRows(list.data.map(toWindowRole));
+      setUsersRoleOptions(list.data.map(toUserFormRoleOption));
       return;
     }
 
@@ -1870,6 +1882,11 @@ export function AdminDesktop({
     setRolesRows((prev) =>
       [...prev.filter((row) => row.id !== saved.id), saved].sort((a, b) =>
         a.name.localeCompare(b.name),
+      ),
+    );
+    setUsersRoleOptions((prev) =>
+      [...prev.filter((row) => row.id !== saved.id), toUserFormRoleOption(saved)].sort(
+        (a, b) => a.name.localeCompare(b.name),
       ),
     );
   };
@@ -1891,8 +1908,10 @@ export function AdminDesktop({
     const list = await api.listRoles();
     if (list.ok) {
       setRolesRows(list.data.map(toWindowRole));
+      setUsersRoleOptions(list.data.map(toUserFormRoleOption));
     } else {
       setRolesRows((prev) => prev.filter((row) => row.id !== role.id));
+      setUsersRoleOptions((prev) => prev.filter((row) => row.id !== role.id));
     }
   };
 
@@ -1902,17 +1921,32 @@ export function AdminDesktop({
     setUsersFormError(null);
     setUsersFieldErrors({});
 
+    const profileFields =
+      payload.displayName !== undefined
+        ? {
+            displayName: payload.displayName || null,
+            telephone: payload.telephone || null,
+            address: payload.address || null,
+            zip: payload.zip || null,
+            city: payload.city || null,
+            country: payload.country || null,
+          }
+        : {};
+
     const result =
       payload.mode === 'new'
         ? await api.createUser({
             email: payload.email,
             password: payload.password ?? '',
+            ...profileFields,
             roleIds: payload.roleIds,
             siteAssignments: payload.siteAssignments,
           })
         : payload.userId != null
           ? await api.updateUser(payload.userId, {
               email: payload.email,
+              ...(payload.password ? { password: payload.password } : {}),
+              ...profileFields,
               roleIds: payload.roleIds,
               siteAssignments: payload.siteAssignments,
             })
@@ -1930,6 +1964,12 @@ export function AdminDesktop({
         setUsersFieldErrors({
           email: result.error.fields.email,
           password: result.error.fields.password,
+          displayName: result.error.fields.displayName,
+          telephone: result.error.fields.telephone,
+          address: result.error.fields.address,
+          zip: result.error.fields.zip,
+          city: result.error.fields.city,
+          country: result.error.fields.country,
           roleIds: result.error.fields.roleIds,
           siteAssignments: result.error.fields.siteAssignments,
         });
@@ -2006,44 +2046,16 @@ export function AdminDesktop({
     flashUsersStatus('Password updated.');
   };
 
-  const openMyAccount = useCallback(() => {
-    setMyAccountFormError(null);
-    setMyAccountFieldErrors({});
-    setMyAccountAlert(null);
-    setMyAccountOpen(true);
-  }, []);
-
-  const closeMyAccount = useCallback(() => {
-    setMyAccountOpen(false);
-    setMyAccountFormError(null);
-    setMyAccountFieldErrors({});
-  }, []);
-
-  const handleMyAccountPassword = async (payload: SetPasswordSavePayload) => {
-    setMyAccountSaving(true);
-    setMyAccountFormError(null);
-    setMyAccountFieldErrors({});
-
-    const result = await api.setUserPassword(payload.userId, {
-      currentPassword: payload.currentPassword ?? '',
-      password: payload.password,
-      confirmPassword: payload.password,
-    });
-    setMyAccountSaving(false);
-
-    if (!result.ok) {
-      if (result.error.fields) {
-        setMyAccountFieldErrors({
-          currentPassword: result.error.fields.currentPassword,
-          password: result.error.fields.password,
-          confirmPassword: result.error.fields.confirmPassword,
-        });
-      }
-      handleApiFailure(result, setMyAccountFormError);
+  const openMyAccount = () => {
+    if (currentUserId == null) {
       return;
     }
-
-    closeMyAccount();
+    openOrRaiseWindow(
+      MY_ACCOUNT_WINDOW_ID,
+      'my-account',
+      'My Account',
+      DEFAULT_WINDOW_SIZE['my-account'],
+    );
   };
 
   const handleSaveHost = async (payload: HostFormSavePayload) => {
@@ -2642,6 +2654,7 @@ export function AdminDesktop({
               onDelete={handleDeleteUser}
               onSetPassword={handleSetUserPassword}
               onAddRole={openRoles}
+              onOpenMyAccount={openMyAccount}
               errorSoundUrl={errorSoundUrl}
               dingSoundUrl={dingSoundUrl}
               onAlertClose={dismissUsersAlert}
@@ -2650,6 +2663,27 @@ export function AdminDesktop({
               onMinimize={() => minimizeWindow(win.id)}
               onActivate={() => activateWindow(win.id)}
               width={win.width}
+            />,
+            { resizable: false },
+          );
+        }
+
+        if (win.kind === 'my-account') {
+          if (currentUserId == null) {
+            return null;
+          }
+          return shellFrame(
+            <MyAccountWindow
+              key={`my-account-${currentUserId}`}
+              api={api}
+              userId={currentUserId}
+              defaultAvatarUrl={defaultAvatarUrl}
+              errorSoundUrl={errorSoundUrl}
+              dingSoundUrl={dingSoundUrl}
+              inactive={!active}
+              onClose={() => closeWindow(win.id)}
+              onMinimize={() => minimizeWindow(win.id)}
+              onActivate={() => activateWindow(win.id)}
             />,
             { resizable: false },
           );
@@ -2715,36 +2749,6 @@ export function AdminDesktop({
           />
         }
       />
-
-      {myAccountOpen && currentUserId != null && currentUserEmail ? (
-        <DesktopModal dingSoundUrl={dingSoundUrl}>
-          <SetPasswordDialog
-            key={`my-account-${currentUserId}`}
-            userId={currentUserId}
-            userEmail={currentUserEmail}
-            mode="self"
-            fieldErrors={myAccountFieldErrors}
-            saving={myAccountSaving}
-            onSave={handleMyAccountPassword}
-            onError={(message) => setMyAccountAlert(message)}
-            onClose={closeMyAccount}
-          />
-        </DesktopModal>
-      ) : null}
-
-      {myAccountAlert || myAccountFormError ? (
-        <DesktopModal layer="alert" dingSoundUrl={dingSoundUrl}>
-          <MessageDialog
-            type="error"
-            title="Error"
-            message={myAccountAlert ?? myAccountFormError ?? ''}
-            onClose={() => {
-              setMyAccountAlert(null);
-              setMyAccountFormError(null);
-            }}
-          />
-        </DesktopModal>
-      ) : null}
     </div>
   );
 }

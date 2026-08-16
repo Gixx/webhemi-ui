@@ -179,6 +179,15 @@ textarea:disabled {
   background-color: var(--surface);
 }
 
+/* File picker path: white when enabled (still readonly); gray when disabled. */
+.file-input-path:not(:disabled) {
+  background-color: var(--button-highlight);
+}
+
+.file-input-path:disabled {
+  background-color: var(--surface);
+}
+
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -315,4 +324,33 @@ a {
 
 a:focus {
   outline: 1px dotted var(--link-blue);
+}
+
+/* Retro file picker (path + Browse…). */
+.file-input-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.file-input-row {
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.file-input-path {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.file-input-label {
+  display: block;
+  margin-bottom: var(--grouped-element-spacing);
 }

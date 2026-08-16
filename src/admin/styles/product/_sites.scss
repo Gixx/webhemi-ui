@@ -74,6 +74,27 @@
   background-size: 32px 32px;
 }
 
+.users-window .users-list-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.users-window .users-list-table th:nth-child(1),
+.users-window .users-list-table td:nth-child(1) {
+  width: 38%;
+}
+
+.users-window .users-list-table th:nth-child(2),
+.users-window .users-list-table td:nth-child(2) {
+  width: 62%;
+}
+
+.users-window .users-list-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Host / parent-modal dim while a DesktopModal is open. */
 .modal-blocker {
   position: absolute;
@@ -187,10 +208,10 @@
 .permission-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label,
 .role-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label,
 .user-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
-  flex: 0 0 6.5em;
+  flex: 0 0 7em;
   box-sizing: border-box;
-  width: 6.5em;
-  min-width: 6.5em;
+  width: 7em;
+  min-width: 7em;
 }
 
 .site-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input,
@@ -249,6 +270,46 @@
 }
 
 .set-password-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+/* My Account: aligned label column + equal-width controls. */
+.my-account-window .my-account-fields .field-box:not(.field-box-control-first):not(.field-box-above),
+.my-account-window .my-account-security-fields .field-box:not(.field-box-control-first):not(.field-box-above),
+.link-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.my-account-window .my-account-fields .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 7em;
+  box-sizing: border-box;
+  width: 7em;
+  min-width: 7em;
+}
+
+.my-account-window .my-account-security-fields .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 11em;
+  box-sizing: border-box;
+  width: 11em;
+  min-width: 11em;
+}
+
+.link-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 4em;
+  box-sizing: border-box;
+  width: 4em;
+  min-width: 4em;
+}
+
+.my-account-window .my-account-fields .field-box:not(.field-box-control-first):not(.field-box-above) > input,
+.my-account-window .my-account-security-fields .field-box:not(.field-box-control-first):not(.field-box-above) > input,
+.link-form-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input {
   flex: 1 1 auto;
   min-width: 0;
   width: 100%;

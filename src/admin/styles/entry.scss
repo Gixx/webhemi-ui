@@ -49,3 +49,6 @@ html[data-wh-theme="admin"] {
   @include meta.load-css("product/explorer");
   @include meta.load-css("product/sites");
 }
+
+/* react-image-crop styles (outside theme nest so selectors stay global class names) */
+@include meta.load-css("vendor/react-image-crop");

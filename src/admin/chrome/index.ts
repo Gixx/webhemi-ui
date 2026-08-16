@@ -1,5 +1,6 @@
 export { Button, VerticalBar, type ButtonProps } from './Button';
 export { TextBox, type TextBoxProps, type FieldLabelPosition } from './TextBox';
+export { FileInput, type FileInputProps } from './FileInput/FileInput';
 export { TextArea, type TextAreaProps, type TextAreaResizable } from './TextArea';
 export { Checkbox, type CheckboxProps } from './Checkbox';
 export { Radio, type RadioProps } from './Radio';

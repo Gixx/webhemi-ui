@@ -652,6 +652,12 @@ function createMockAdminApi(
       const created: AdminApiUser = {
         id: Math.max(0, ...userRows.map((row) => row.id)) + 1,
         email,
+        displayName: body.displayName?.trim() || null,
+        telephone: body.telephone?.trim() || null,
+        address: body.address?.trim() || null,
+        zip: body.zip?.trim() || null,
+        city: body.city?.trim() || null,
+        country: body.country?.trim() || null,
         roleIds: roles.map((row) => row.id),
         roles,
         siteAssignments,
@@ -711,6 +717,25 @@ function createMockAdminApi(
       const updated: AdminApiUser = {
         ...existing,
         email,
+        displayName:
+          body.displayName !== undefined
+            ? body.displayName?.trim() || null
+            : existing.displayName,
+        telephone:
+          body.telephone !== undefined
+            ? body.telephone?.trim() || null
+            : existing.telephone,
+        address:
+          body.address !== undefined
+            ? body.address?.trim() || null
+            : existing.address,
+        zip: body.zip !== undefined ? body.zip?.trim() || null : existing.zip,
+        city:
+          body.city !== undefined ? body.city?.trim() || null : existing.city,
+        country:
+          body.country !== undefined
+            ? body.country?.trim() || null
+            : existing.country,
         roleIds: roles.map((row) => row.id),
         roles,
         siteAssignments,

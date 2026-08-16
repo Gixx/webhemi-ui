@@ -27,6 +27,12 @@ export type UserFormSiteAssignment = {
 export type UserFormValues = {
   email: string;
   password?: string;
+  displayName?: string;
+  telephone?: string;
+  address?: string;
+  zip?: string;
+  city?: string;
+  country?: string;
   roleIds: number[];
   siteAssignments: UserFormSiteAssignment[];
 };
@@ -58,14 +64,30 @@ export type UserFormDialogProps = {
   /** Sites available for siteAssignments. */
   sites?: UserFormSiteOption[];
   fieldErrors?: Partial<
-    Record<'email' | 'password' | 'roleIds' | 'siteAssignments', string>
+    Record<
+      | 'email'
+      | 'password'
+      | 'displayName'
+      | 'telephone'
+      | 'address'
+      | 'zip'
+      | 'city'
+      | 'country'
+      | 'roleIds'
+      | 'siteAssignments',
+      string
+    >
   >;
   saving?: boolean;
   /** View-only (user.view without edit). */
   readOnly?: boolean;
+  /** Editing the signed-in user — General tab redirects to My Account. */
+  isSelf?: boolean;
   onSave: (payload: UserFormSavePayload) => void;
   onError?: (message: string) => void;
   onClose: () => void;
+  /** Opens My Account (self General tab). */
+  onOpenMyAccount?: () => void;
   /** Opens Roles window (optional). */
   onAddRole?: () => void;
   className?: string;
@@ -77,7 +99,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * New / Edit User modal: General + Roles + Sites tabs.
- * Password only on New. Global roles exclude ROLE_SITE_ADMIN; site roles exclude ROLE_ADMIN.
+ * Self edit: General shows My Account redirect. Others/New: profile fields + password.
+ * Global roles exclude ROLE_SITE_ADMIN; site roles exclude ROLE_ADMIN.
  */
 export function UserFormDialog({
   mode,
@@ -87,20 +110,34 @@ export function UserFormDialog({
   fieldErrors,
   saving = false,
   readOnly = false,
+  isSelf = false,
   onSave,
   onError,
   onClose,
+  onOpenMyAccount,
   onAddRole,
   className,
 }: UserFormDialogProps) {
+  const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
+  const telId = useId();
+  const addressId = useId();
+  const zipId = useId();
+  const cityId = useId();
+  const countryId = useId();
   const assignRoleSelectId = useId();
   const assignSiteSelectId = useId();
   const assignSiteRoleSelectId = useId();
   const [tab, setTab] = useState<FormTab>('general');
+  const [displayName, setDisplayName] = useState(initial?.displayName ?? '');
   const [email, setEmail] = useState(initial?.email ?? '');
   const [password, setPassword] = useState(initial?.password ?? '');
+  const [telephone, setTelephone] = useState(initial?.telephone ?? '');
+  const [address, setAddress] = useState(initial?.address ?? '');
+  const [zip, setZip] = useState(initial?.zip ?? '');
+  const [city, setCity] = useState(initial?.city ?? '');
+  const [country, setCountry] = useState(initial?.country ?? '');
   const [roleIds, setRoleIds] = useState<number[]>(initial?.roleIds ?? []);
   const [siteAssignments, setSiteAssignments] = useState<UserFormSiteAssignment[]>(
     initial?.siteAssignments ?? [],
@@ -111,7 +148,7 @@ export function UserFormDialog({
   const [assignSiteId, setAssignSiteId] = useState<number | null>(null);
   const [assignSiteRoleId, setAssignSiteRoleId] = useState<number | null>(null);
   const [localErrors, setLocalErrors] = useState<
-    Partial<Record<'email' | 'password', string>>
+    Partial<Record<'email' | 'password' | 'displayName' | 'roleIds', string>>
   >({});
 
   const globalRoleOptions = useMemo(
@@ -217,7 +254,8 @@ export function UserFormDialog({
     !busy &&
     !readOnly &&
     selectedRoleId != null &&
-    roleIds.includes(selectedRoleId);
+    roleIds.includes(selectedRoleId) &&
+    roleIds.length > 1;
   const canAssignSite =
     !busy &&
     !readOnly &&
@@ -232,7 +270,20 @@ export function UserFormDialog({
     siteAssignments.some((row) => row.siteId === selectedSiteId);
 
   const validate = (): boolean => {
-    const next: Partial<Record<'email' | 'password', string>> = {};
+    if (isSelf) {
+      setLocalErrors({});
+      if (roleIds.length < 1) {
+        setTab('roles');
+        onError?.('At least one role is required.');
+        return false;
+      }
+      return true;
+    }
+    const next: Partial<Record<'email' | 'password' | 'displayName' | 'roleIds', string>> = {};
+    const trimmedName = displayName.trim();
+    if (!trimmedName) {
+      next.displayName = 'Name is required.';
+    }
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
       next.email = 'Email is required.';
@@ -246,9 +297,16 @@ export function UserFormDialog({
         next.password = 'Password must be at least 8 characters.';
       }
     }
+    if (roleIds.length < 1) {
+      next.roleIds = 'At least one role is required.';
+    }
     setLocalErrors(next);
     if (Object.keys(next).length > 0) {
-      setTab('general');
+      if (next.roleIds && !next.displayName && !next.email && !next.password) {
+        setTab('roles');
+      } else {
+        setTab('general');
+      }
       onError?.(Object.values(next).join('\n'));
       return false;
     }
@@ -260,10 +318,29 @@ export function UserFormDialog({
     if (readOnly || saving || !validate()) {
       return;
     }
+    if (isSelf) {
+      onSave({
+        mode,
+        userId: initial?.userId,
+        email: (initial?.email ?? email).trim().toLowerCase(),
+        roleIds: [...roleIds],
+        siteAssignments: siteAssignments.map((row) => ({
+          siteId: row.siteId,
+          roleId: row.roleId,
+        })),
+      });
+      return;
+    }
     onSave({
       mode,
       userId: initial?.userId,
       email: email.trim().toLowerCase(),
+      displayName: displayName.trim(),
+      telephone: telephone.trim(),
+      address: address.trim(),
+      zip: zip.trim(),
+      city: city.trim(),
+      country: country.trim(),
       ...(mode === 'new' ? { password } : {}),
       roleIds: [...roleIds],
       siteAssignments: siteAssignments.map((row) => ({
@@ -366,8 +443,40 @@ export function UserFormDialog({
         <TabPanel>
           <WindowBody>
             {tab === 'general' ? (
-              <>
-                <FieldRow>
+              isSelf ? (
+                <>
+                  <FieldRow className="info-icon-row">
+                    <span className="info-icon dialog-info" aria-hidden />
+                    <p style={{ margin: 0, flex: '1 1 auto' }}>
+                      Your personal profile (name, email, avatar, password, and
+                      more) is edited in <strong>My Account</strong>. Use the
+                      button below to open it. Roles and Sites on the other tabs
+                      still apply here.
+                    </p>
+                  </FieldRow>
+                  <FieldRow style={{ marginTop: 12 }}>
+                    <Button
+                      type="button"
+                      accessKey="m"
+                      disabled={!onOpenMyAccount}
+                      onClick={() => onOpenMyAccount?.()}
+                    >
+                      My Account…
+                    </Button>
+                  </FieldRow>
+                </>
+              ) : (
+                <div className="stack user-form-general-fields" style={{ gap: 8 }}>
+                  <TextBox
+                    id={nameId}
+                    label="Name:"
+                    accessKey="n"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.displayName) || undefined}
+                    disabled={busy}
+                    autoFocus
+                  />
                   <TextBox
                     id={emailId}
                     label="Email:"
@@ -377,11 +486,8 @@ export function UserFormDialog({
                     onChange={(event) => setEmail(event.target.value)}
                     aria-invalid={Boolean(mergedErrors.email) || undefined}
                     disabled={busy}
-                    autoFocus
                   />
-                </FieldRow>
-                {mode === 'new' ? (
-                  <FieldRow>
+                  {mode === 'new' ? (
                     <TextBox
                       id={passwordId}
                       label="Password:"
@@ -392,14 +498,49 @@ export function UserFormDialog({
                       aria-invalid={Boolean(mergedErrors.password) || undefined}
                       disabled={busy}
                     />
-                  </FieldRow>
-                ) : (
-                  <p style={{ marginTop: 0, marginBottom: 0 }}>
-                    To change the password, use Set Password… on the Users
-                    window.
-                  </p>
-                )}
-              </>
+                  ) : null}
+                  <TextBox
+                    id={telId}
+                    label="Telephone:"
+                    value={telephone}
+                    onChange={(event) => setTelephone(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.telephone) || undefined}
+                    disabled={busy}
+                  />
+                  <TextBox
+                    id={addressId}
+                    label="Address:"
+                    value={address}
+                    onChange={(event) => setAddress(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.address) || undefined}
+                    disabled={busy}
+                  />
+                  <TextBox
+                    id={zipId}
+                    label="ZIP:"
+                    value={zip}
+                    onChange={(event) => setZip(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.zip) || undefined}
+                    disabled={busy}
+                  />
+                  <TextBox
+                    id={cityId}
+                    label="City:"
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.city) || undefined}
+                    disabled={busy}
+                  />
+                  <TextBox
+                    id={countryId}
+                    label="Country:"
+                    value={country}
+                    onChange={(event) => setCountry(event.target.value)}
+                    aria-invalid={Boolean(mergedErrors.country) || undefined}
+                    disabled={busy}
+                  />
+                </div>
+              )
             ) : tab === 'roles' ? (
               <>
                 <p style={{ marginTop: 0, marginBottom: 8 }}>

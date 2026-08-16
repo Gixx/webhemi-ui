@@ -27,6 +27,7 @@ export default defineConfig({
   noExternal: [
     'clsx',
     'lexical',
+    'react-image-crop',
     /^@lexical\//,
     /^@floating-ui\//,
   ],

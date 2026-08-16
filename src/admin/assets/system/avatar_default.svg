@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Generic user pictogram for My Account default avatar -->
+  <rect width="64" height="64" fill="#C0C0C0"/>
+  <rect x="1" y="1" width="62" height="62" fill="#FFFFFF" stroke="#808080" stroke-width="1"/>
+  <circle cx="32" cy="24" r="12" fill="#808080"/>
+  <path d="M12 56c0-11.046 8.954-20 20-20s20 8.954 20 20" fill="#808080"/>
+</svg>
