@@ -2,6 +2,7 @@
 export type TitleBarIconKind =
   | 'control-panel'
   | 'site'
+  | 'site-main'
   | 'users'
   | 'roles'
   | 'permissions'
@@ -16,6 +17,7 @@ export const TITLE_BAR_ICON_OPTIONS = [
   'none',
   'control-panel',
   'site',
+  'site-main',
   'users',
   'roles',
   'permissions',

@@ -64,6 +64,12 @@
   background-image: url("/assets/admin/icons/system/site.svg");
 }
 
+.icon.site-main,
+.panel.info > .info-icon.site-main,
+.explorer-glyph.site-main {
+  background-image: url("/assets/admin/icons/system/site_main.svg");
+}
+
 .icon.users,
 .panel.info > .info-icon.users,
 .explorer-glyph.users {

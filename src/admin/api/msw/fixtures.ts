@@ -16,7 +16,7 @@ export const MSW_SAMPLE_SITES: AdminApiSite[] = [
     themeId: 'default',
     enabled: true,
     protected: false,
-    hostCount: 2,
+    hostCount: 2, faviconMediaId: null,
   },
   {
     id: 2,
@@ -25,7 +25,7 @@ export const MSW_SAMPLE_SITES: AdminApiSite[] = [
     themeId: 'default',
     enabled: true,
     protected: false,
-    hostCount: 1,
+    hostCount: 1, faviconMediaId: null,
   },
 ];
 

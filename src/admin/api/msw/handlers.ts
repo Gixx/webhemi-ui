@@ -347,6 +347,7 @@ export function createAdminApiHandlers(
         enabled: body.enabled ?? true,
         protected: false,
         hostCount: 0,
+        faviconMediaId: null,
       };
       store.sites = [...store.sites, created];
       return HttpResponse.json({ data: created }, { status: 201 });

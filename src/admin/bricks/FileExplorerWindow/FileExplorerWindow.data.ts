@@ -12,7 +12,7 @@ import type { ExplorerItem } from './types';
 export const EXPLORER_FIXTURE_SITE = {
   id: 'site-acme',
   name: 'Acme Website',
-  /** Default site glyph until favicon support exists. */
+  /** Default site glyph until a custom favicon is set. */
   titleIcon: 'site' as const,
 };
 
@@ -181,6 +181,8 @@ export const EXPLORER_FIXTURE_ITEMS: ExplorerItem[] =
 export type SiteExplorerIdentity = {
   id: string | number;
   name: string;
+  /** When `main`, empty/demo forests use the `site-main` glyph. */
+  slug?: string;
 };
 
 /**
@@ -193,7 +195,7 @@ export function buildEmptySiteExplorerTree(site: SiteExplorerIdentity): Explorer
     {
       id: prefix,
       label: site.name,
-      kind: 'site',
+      kind: site.slug === 'main' ? 'site-main' : 'site',
       role: 'site',
       typeLabel: 'Website',
       children: [],
@@ -245,6 +247,7 @@ export function buildDemoSiteExplorerTree(site: SiteExplorerIdentity): ExplorerI
       ...siteRoot,
       id: prefix,
       label: site.name,
+      kind: site.slug === 'main' ? 'site-main' : 'site',
       children: siteRoot.children ? remap(siteRoot.children, prefix) : [],
     },
     {

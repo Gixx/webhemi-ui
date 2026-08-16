@@ -10,6 +10,7 @@ import { cn } from '../../../lib/cn';
 export type SystemIconKind =
   | 'control-panel'
   | 'site'
+  | 'site-main'
   | 'users'
   | 'roles'
   | 'permissions'
@@ -41,6 +42,8 @@ export type SystemIconProps = Omit<HTMLAttributes<HTMLDivElement>, 'onClick'> & 
   label: ReactNode;
   /** Label text color tone (not inferred from parent CSS). Default: `light`. */
   labelTone?: SystemIconLabelTone;
+  /** Override CSS glyph with a custom image URL (e.g. site favicon). */
+  iconUrl?: string;
   href?: string;
   draggable?: boolean;
   /** Activate (single click / Enter). Double-click also fires this then `onOpen`. */
@@ -59,6 +62,7 @@ export function SystemIcon({
   kind,
   label,
   labelTone = 'light',
+  iconUrl,
   href = '#',
   draggable = false,
   onActivate,
@@ -66,6 +70,7 @@ export function SystemIcon({
   className,
   linkProps,
   onDoubleClick,
+  style,
   ...rest
 }: SystemIconProps) {
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -93,6 +98,9 @@ export function SystemIcon({
       className={cn('icon', kind, `label-tone-${labelTone}`, className)}
       draggable={draggable}
       onDoubleClick={handleDoubleClick}
+      style={
+        iconUrl ? { ...style, backgroundImage: `url("${iconUrl}")` } : style
+      }
       {...rest}
     >
       <a href={href} {...linkProps} onClick={handleClick}>

@@ -4,9 +4,9 @@ import { SitesWindow, type SitesWindowSite } from './SitesWindow';
 import type { SiteFormHostOption } from './SiteFormDialog';
 
 const SAMPLE_SITES: SitesWindowSite[] = [
-  { id: 1, name: 'Main site', slug: 'main', enabled: true, protected: true, hostCount: 2 },
-  { id: 2, name: 'Blog', slug: 'blog', enabled: true, protected: false, hostCount: 1 },
-  { id: 3, name: 'Archive', slug: 'archive', enabled: false, protected: false, hostCount: 0 },
+  { id: 1, name: 'Main site', slug: 'main', enabled: true, protected: true, hostCount: 2, faviconMediaId: null },
+  { id: 2, name: 'Blog', slug: 'blog', enabled: true, protected: false, hostCount: 1, faviconMediaId: null },
+  { id: 3, name: 'Archive', slug: 'archive', enabled: false, protected: false, hostCount: 0, faviconMediaId: null },
 ];
 
 const SAMPLE_HOSTS: SiteFormHostOption[] = [

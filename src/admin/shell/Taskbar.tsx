@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 import type { ShellWindowState } from './types';
 import { TaskbarClock } from './TaskbarClock';
@@ -12,14 +12,26 @@ export type TaskbarProps = {
   menuExpanded?: boolean;
   /** Optional Start menu panel (rendered above the toolbar body). */
   startMenu?: ReactNode;
+  /** Per-site task glyph (`site` / `site-main`) when window kind is `site`. */
+  siteTaskGlyphById?: Record<number, string>;
+  /** Per-site custom favicon URL for task buttons. */
+  siteTaskIconUrlById?: Record<number, string | undefined>;
   className?: string;
 };
 
-function taskClassName(win: ShellWindowState, active: boolean): string {
+function taskClassName(
+  win: ShellWindowState,
+  active: boolean,
+  siteTaskGlyphById?: Record<number, string>,
+): string {
+  const siteGlyph =
+    win.kind === 'site' && win.siteId != null
+      ? (siteTaskGlyphById?.[win.siteId] ?? 'site')
+      : null;
   return cn(
     'task',
     win.kind === 'control-panel' && 'control-panel',
-    win.kind === 'site' && 'site',
+    siteGlyph,
     win.kind === 'site-settings' && 'settings',
     win.kind === 'document-editor' && 'folder',
     win.kind === 'sites' && 'sites',
@@ -43,6 +55,8 @@ export function Taskbar({
   onMenuClick,
   menuExpanded = false,
   startMenu,
+  siteTaskGlyphById,
+  siteTaskIconUrlById,
   className,
 }: TaskbarProps) {
   return (
@@ -62,11 +76,19 @@ export function Taskbar({
         <div className="task-buttons">
           {windows.map((win) => {
             const pressed = win.id === activeId && !win.minimized;
+            const iconUrl =
+              win.kind === 'site' && win.siteId != null
+                ? siteTaskIconUrlById?.[win.siteId]
+                : undefined;
+            const style: CSSProperties | undefined = iconUrl
+              ? { backgroundImage: `url("${iconUrl}")` }
+              : undefined;
             return (
               <button
                 key={win.id}
                 type="button"
-                className={taskClassName(win, pressed)}
+                className={taskClassName(win, pressed, siteTaskGlyphById)}
+                style={style}
                 data-window={win.id}
                 aria-pressed={pressed}
                 title={win.title}

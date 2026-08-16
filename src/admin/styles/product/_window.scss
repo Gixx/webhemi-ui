@@ -162,6 +162,7 @@ html.is-window-resizing * {
 
 .title-bar-text.control-panel,
 .title-bar-text.site,
+.title-bar-text.site-main,
 .title-bar-text.users,
 .title-bar-text.roles,
 .title-bar-text.permissions,
@@ -182,6 +183,10 @@ html.is-window-resizing * {
 
 .title-bar-text.site {
   background-image: url("/assets/admin/icons/system/site.svg");
+}
+
+.title-bar-text.site-main {
+  background-image: url("/assets/admin/icons/system/site_main.svg");
 }
 
 .title-bar-text.users {

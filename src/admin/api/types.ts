@@ -29,6 +29,8 @@ export type AdminApiSite = {
   enabled: boolean;
   protected: boolean;
   hostCount: number;
+  /** Custom favicon media id; null → default `site` / `site-main` glyph. */
+  faviconMediaId: number | null;
 };
 
 export type AdminApiHost = {

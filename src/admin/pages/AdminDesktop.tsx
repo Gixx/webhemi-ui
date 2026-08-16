@@ -16,6 +16,7 @@ import {
 import { DocumentEditorWindow } from '../bricks/DocumentEditor';
 import { SystemIcon } from '../chrome/SystemIcon';
 import { ControlPanel } from '../components/ControlPanel/ControlPanel';
+import { siteFaviconFileUrl, siteGlyphKind } from '../lib/siteIcon';
 import {
   SitesWindow,
   type SitesWindowSite,
@@ -104,6 +105,8 @@ export type DesktopSite = {
   name: string;
   slug?: string;
   enabled?: boolean;
+  /** When set, desktop / title-bar use this media blob instead of the default glyph. */
+  faviconMediaId?: number | null;
 };
 
 export type AdminDesktopProps = {
@@ -169,6 +172,8 @@ function toDesktopSite(site: AdminApiSite | SitesWindowSite): DesktopSite {
     name: site.name,
     slug: site.slug,
     enabled: site.enabled,
+    faviconMediaId:
+      'faviconMediaId' in site ? (site.faviconMediaId ?? null) : null,
   };
 }
 
@@ -181,6 +186,7 @@ function toWindowSite(site: AdminApiSite): SitesWindowSite {
     themeId: site.themeId,
     protected: site.protected,
     hostCount: site.hostCount,
+    faviconMediaId: site.faviconMediaId ?? null,
   };
 }
 
@@ -245,7 +251,7 @@ function toSiteFormHostOption(host: AdminApiHost | HostsWindowHost): SiteFormHos
 }
 
 /**
- * Admin desktop: site icons + Control Panel; openable shell windows.
+ * Admin desktop: site icons; Control Panel via Start menu; openable shell windows.
  * Phase 6: Sites + Hosts via `/admin/api`.
  */
 export function AdminDesktop({
@@ -692,6 +698,20 @@ export function AdminDesktop({
       })),
     [desktopSites],
   );
+  const siteTaskGlyphById = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const site of desktopSites) {
+      map[site.id] = siteGlyphKind(site.slug);
+    }
+    return map;
+  }, [desktopSites]);
+  const siteTaskIconUrlById = useMemo(() => {
+    const map: Record<number, string | undefined> = {};
+    for (const site of desktopSites) {
+      map[site.id] = siteFaviconFileUrl(site.id, site.faviconMediaId, apiBaseUrl);
+    }
+    return map;
+  }, [desktopSites, apiBaseUrl]);
 
   useEffect(() => {
     setDesktopSites(sites);
@@ -1401,13 +1421,19 @@ export function AdminDesktop({
     }
     setSiteSettingsById((prev) => ({ ...prev, [siteId]: result.data }));
     setSiteSettingsStatusMessage('Settings saved.');
-    // Keep desktop site label in sync when name changes.
+    // Keep desktop site label / favicon in sync.
+    setDesktopSites((prev) =>
+      prev.map((row) =>
+        row.id === siteId
+          ? {
+              ...row,
+              name: result.data.name,
+              faviconMediaId: result.data.faviconMediaId ?? null,
+            }
+          : row,
+      ),
+    );
     if (patch.name) {
-      setDesktopSites((prev) =>
-        prev.map((row) =>
-          row.id === siteId ? { ...row, name: result.data.name } : row,
-        ),
-      );
       setShell((prev) => ({
         ...prev,
         windows: prev.windows.map((win) => {
@@ -2242,21 +2268,24 @@ export function AdminDesktop({
   return (
     <div ref={dashboardRef} className={cn('dashboard', className)}>
       <div className="icon-list">
-        {desktopSites.map((site) => (
-          <SystemIcon
-            key={site.id}
-            kind="site"
-            label={site.name}
-            labelTone="light"
-            onOpen={() => openSite(site)}
-          />
-        ))}
-        <SystemIcon
-          kind="control-panel"
-          label="Control Panel"
-          labelTone="light"
-          onOpen={openControlPanel}
-        />
+        {desktopSites.map((site) => {
+          const glyph = siteGlyphKind(site.slug);
+          const iconUrl = siteFaviconFileUrl(
+            site.id,
+            site.faviconMediaId,
+            apiBaseUrl,
+          );
+          return (
+            <SystemIcon
+              key={site.id}
+              kind={glyph}
+              iconUrl={iconUrl}
+              label={site.name}
+              labelTone="light"
+              onOpen={() => openSite(site)}
+            />
+          );
+        })}
       </div>
 
       {shell.windows.map((win) => {
@@ -2630,21 +2659,27 @@ export function AdminDesktop({
           id: win.siteId ?? 0,
           name: win.title,
         };
+        const siteIdNum = typeof site.id === 'number' ? site.id : Number(site.id);
+        const siteTitleIcon = siteGlyphKind(site.slug);
+        const siteTitleIconUrl = siteFaviconFileUrl(
+          siteIdNum,
+          site.faviconMediaId,
+          apiBaseUrl,
+        );
 
         return shellFrame(
           <SiteFileExplorer
             className={cn(win.maximized && 'is-maximized')}
             inactive={!active}
             title={win.title}
-            titleIcon="site"
+            titleIcon={siteTitleIcon}
+            titleIconUrl={siteTitleIconUrl}
             api={canEditSites ? api : undefined}
-            siteId={typeof site.id === 'number' ? site.id : Number(site.id)}
+            siteId={siteIdNum}
             siteName={site.name}
             tree={explorerTreeForSite(site)}
             forestRefreshKey={
-              explorerForestRefreshBySite[
-                typeof site.id === 'number' ? site.id : Number(site.id)
-              ] ?? 0
+              explorerForestRefreshBySite[siteIdNum] ?? 0
             }
             onOpenSiteSettings={() => openSiteSettings(site)}
             onOpenDocument={(item) => {
@@ -2668,6 +2703,8 @@ export function AdminDesktop({
         onTaskClick={handleTaskClick}
         onMenuClick={toggleStartMenu}
         menuExpanded={startMenuOpen}
+        siteTaskGlyphById={siteTaskGlyphById}
+        siteTaskIconUrlById={siteTaskIconUrlById}
         startMenu={
           <StartMenu
             open={startMenuOpen}

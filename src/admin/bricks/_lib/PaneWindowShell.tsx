@@ -14,6 +14,8 @@ export type PaneWindowShellProps = HTMLAttributes<HTMLDivElement> & {
   title: ReactNode;
   /** Optional 16px glyph before the title (admin98 `.title-bar-text.*`). */
   titleIcon?: TitleBarIconKind;
+  /** Override title-bar glyph with a custom image URL (e.g. site favicon). */
+  titleIconUrl?: string;
   /** When omitted, a Close control is rendered. Pass `null` for no controls. */
   titleBarControls?: ReactNode | null;
   inactive?: boolean;
@@ -36,6 +38,7 @@ export type PaneWindowShellProps = HTMLAttributes<HTMLDivElement> & {
 export function PaneWindowShell({
   title,
   titleIcon,
+  titleIconUrl,
   titleBarControls,
   inactive = false,
   statusBar,
@@ -62,7 +65,16 @@ export function PaneWindowShell({
   return (
     <Window className={cn(resizable && 'resizable', className)} style={mergedStyle} {...rest}>
       <TitleBar inactive={inactive}>
-        <TitleBarText className={titleIcon}>{title}</TitleBarText>
+        <TitleBarText
+          className={titleIcon}
+          style={
+            titleIconUrl
+              ? { backgroundImage: `url("${titleIconUrl}")` }
+              : undefined
+          }
+        >
+          {title}
+        </TitleBarText>
         {controls}
       </TitleBar>
       <WindowBody className={bodyClassName}>{children}</WindowBody>

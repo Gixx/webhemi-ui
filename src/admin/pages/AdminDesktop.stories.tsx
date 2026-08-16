@@ -10,14 +10,22 @@ import {
 } from '../api/msw';
 import { AdminDesktop } from './AdminDesktop';
 
+
+async function openControlPanelFromStartMenu(
+  canvas: ReturnType<typeof within>,
+) {
+  await userEvent.click(canvas.getByRole('button', { name: 'Menu' }));
+  await userEvent.click(canvas.getByRole('menuitem', { name: 'Control Panel' }));
+}
+
 const SAMPLE_SITES = [
   { id: 1, name: 'Example Site', slug: 'example', enabled: true },
   { id: 2, name: 'Docs', slug: 'docs', enabled: true },
 ];
 
 const SAMPLE_API_SITES: AdminApiSite[] = [
-  { id: 1, name: 'Example Site', slug: 'example', themeId: 'default', enabled: true, protected: false, hostCount: 2 },
-  { id: 2, name: 'Docs', slug: 'docs', themeId: 'default', enabled: true, protected: false, hostCount: 1 },
+  { id: 1, name: 'Example Site', slug: 'example', themeId: 'default', enabled: true, protected: false, hostCount: 2, faviconMediaId: null },
+  { id: 2, name: 'Docs', slug: 'docs', themeId: 'default', enabled: true, protected: false, hostCount: 1, faviconMediaId: null },
 ];
 
 const SAMPLE_API_HOSTS: AdminApiHost[] = [
@@ -123,7 +131,7 @@ function createMockAdminApi(
         themeId: 'default',
         enabled: body.enabled ?? true,
         protected: false,
-        hostCount: 0,
+        hostCount: 0, faviconMediaId: null,
       };
       siteRows = [...siteRows, created];
       return { ok: true, status: 201, data: created };
@@ -993,7 +1001,7 @@ export const EmptySites: Story = {
 export const OpenControlPanel: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await expect(canvas.getByText('Control Panel', { selector: '.title-bar-text' })).toBeVisible();
     await expect(canvas.getByRole('link', { name: 'Sites' })).toBeVisible();
   },
@@ -1005,7 +1013,7 @@ export const OpenSitesWindow: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
 
     const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
@@ -1028,7 +1036,7 @@ export const OpenHostsWindow: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Hosts' }));
 
     const hostsHost = canvasElement.querySelector('#hosts') as HTMLElement;
@@ -1065,7 +1073,7 @@ export const ActiveInactive: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Example Site' }));
 
     const controlPanel = canvasElement.querySelector('#control-panel') as HTMLElement;
@@ -1089,7 +1097,7 @@ export const ActiveInactive: Story = {
 export const TitleBarDrag: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const titleBar = host.querySelector('.title-bar') as HTMLElement;
@@ -1106,7 +1114,7 @@ export const TitleBarDrag: Story = {
 export const TaskbarMinimize: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const task = canvas.getByRole('button', { name: 'Control Panel', pressed: true });
@@ -1150,7 +1158,7 @@ export const StartMenuControlPanel: Story = {
 export const MaximizeRestore: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     await expect(host).not.toHaveClass('is-maximized');
@@ -1170,7 +1178,7 @@ export const MaximizeRestore: Story = {
 export const ResizeHandle: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const handle = host.querySelector('.window-resize-handle[data-edge="se"]') as HTMLElement;
@@ -1197,7 +1205,7 @@ export const Persistence: Story = {
   play: async ({ canvasElement }) => {
     localStorage.removeItem(PERSISTENCE_STORY_KEY);
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
 
     const host = canvasElement.querySelector('#control-panel') as HTMLElement;
     const titleBar = host.querySelector('.title-bar') as HTMLElement;
@@ -1341,7 +1349,7 @@ export const MswOpenSitesWindow: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
 
     const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
@@ -1362,7 +1370,7 @@ export const MswCreateSite: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
 
     const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
@@ -1392,7 +1400,7 @@ export const MswSitesListEmpty: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
 
     const sitesHost = canvasElement.querySelector('#sites') as HTMLElement;
@@ -1409,7 +1417,7 @@ export const MswSitesListError: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Sites' }));
 
     await expect(
@@ -1427,7 +1435,7 @@ export const MswOpenPermissionsWindow: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Permissions' }));
 
     const permissionsHost = canvasElement.querySelector('#permissions') as HTMLElement;
@@ -1449,7 +1457,7 @@ export const MswOpenRolesWindow: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.dblClick(canvas.getByRole('link', { name: 'Control Panel' }));
+    await openControlPanelFromStartMenu(canvas);
     await userEvent.dblClick(canvas.getByRole('link', { name: 'Roles' }));
 
     const rolesHost = canvasElement.querySelector('#roles') as HTMLElement;

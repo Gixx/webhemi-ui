@@ -4,6 +4,7 @@ import { SystemIcon, type SystemIconKind, type SystemIconLabelTone } from './Sys
 const KINDS: SystemIconKind[] = [
   'control-panel',
   'site',
+  'site-main',
   'users',
   'roles',
   'permissions',

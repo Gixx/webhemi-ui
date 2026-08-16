@@ -32,6 +32,7 @@ export type SitesWindowSite = {
   /** Installer/seed Main site — not deletable/disableable; slug locked. */
   protected?: boolean;
   hostCount: number;
+  faviconMediaId?: number | null;
 };
 
 /** @deprecated Prefer {@link SiteFormSavePayload} via `onSave`. */
