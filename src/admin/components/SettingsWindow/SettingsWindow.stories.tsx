@@ -3,7 +3,7 @@ import { fn } from 'storybook/test';
 import { SettingsWindow } from './SettingsWindow';
 
 const meta = {
-  title: 'Admin/Product/SettingsWindow',
+  title: 'Admin/Components/SettingsWindow',
   component: SettingsWindow,
   args: {
     onClose: fn(),

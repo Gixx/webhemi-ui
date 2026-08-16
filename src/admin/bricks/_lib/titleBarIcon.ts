@@ -11,6 +11,7 @@ export type TitleBarIconKind =
   | 'settings'
   | 'themes'
   | 'folder'
+  | 'file-document'
   | 'external-link'
   | 'my-account';
 
@@ -28,6 +29,7 @@ export const TITLE_BAR_ICON_OPTIONS = [
   'settings',
   'themes',
   'folder',
+  'file-document',
   'external-link',
   'my-account',
 ] as const satisfies ReadonlyArray<'none' | TitleBarIconKind>;

@@ -1,11 +1,14 @@
 import { useId, useState } from 'react';
 import { Button, FieldRow, TextBox, TitleBarControl, TitleBarControls } from '../../chrome';
+import type { TitleBarIconKind } from '../_lib/titleBarIcon';
 import { DesktopModal } from '../DesktopModal';
 import { DialogWindow } from '../DialogWindow';
 
 export type ExplorerPromptDialogProps = {
   title: string;
   label: string;
+  /** Title-bar glyph; New Folder/Rename folder → folder, New Page/Rename page → file-document. */
+  titleIcon?: TitleBarIconKind;
   initialValue?: string;
   confirmLabel?: string;
   onConfirm: (value: string) => void;
@@ -16,6 +19,7 @@ export type ExplorerPromptDialogProps = {
 export function ExplorerPromptDialog({
   title,
   label,
+  titleIcon = 'folder',
   initialValue = '',
   confirmLabel = 'OK',
   onConfirm,
@@ -35,28 +39,29 @@ export function ExplorerPromptDialog({
   return (
     <DesktopModal>
       <DialogWindow
+        className="explorer-prompt-dialog"
         title={title}
-        titleIcon="folder"
+        titleIcon={titleIcon}
         titleBarControls={
           <TitleBarControls>
             <TitleBarControl action="Close" onClick={onCancel} />
           </TitleBarControls>
         }
         actions={
-          <>
+          <FieldRow className="justify-end">
             <Button type="button" onClick={submit}>
               {confirmLabel}
             </Button>
             <Button type="button" onClick={onCancel}>
               Cancel
             </Button>
-          </>
+          </FieldRow>
         }
       >
         <FieldRow>
-          <label htmlFor={inputId}>{label}</label>
           <TextBox
             id={inputId}
+            label={label}
             value={value}
             autoFocus
             onChange={(event) => setValue(event.target.value)}

@@ -386,6 +386,29 @@
   max-width: 100%;
 }
 
+/* New Folder / New Page / Rename: name field fills the dialog width. */
+.explorer-prompt-dialog .field-row {
+  width: 100%;
+  min-width: 0;
+}
+
+.explorer-prompt-dialog .field-box:not(.field-box-control-first):not(.field-box-above) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.explorer-prompt-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > label {
+  flex: 0 0 auto;
+}
+
+.explorer-prompt-dialog .field-box:not(.field-box-control-first):not(.field-box-above) > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
 .explorer-properties-identity {
   display: flex;
   flex-direction: row;

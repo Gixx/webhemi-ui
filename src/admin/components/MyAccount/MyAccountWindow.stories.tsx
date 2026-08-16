@@ -4,7 +4,7 @@ import { createAdminApiClient } from '../../api';
 import { MyAccountWindow } from './MyAccountWindow';
 
 const meta = {
-  title: 'Admin/Windows/MyAccount',
+  title: 'Admin/Components/MyAccountWindow',
   component: MyAccountWindow,
   parameters: {
     layout: 'centered',

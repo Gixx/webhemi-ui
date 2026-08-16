@@ -176,9 +176,10 @@ export function SiteFileExplorer({
     selectedItems.length > 0 &&
     selectedItems.every((item) => canDeleteExplorerItem(forest, item));
   const canCutCopy = canCutOrCopyExplorerItems(forest, selectedMovable);
+  // API paste is cut/move only; local Storybook fixtures still support copy+paste.
   const canPaste =
     Boolean(clipboard) &&
-    clipboard?.mode === 'cut' &&
+    (clipboard?.mode === 'cut' || (!live && clipboard?.mode === 'copy')) &&
     canPasteIntoExplorerLocation(forest, locationId, clipboard);
   const canProperties = selectedItems.length === 1;
   const canSelectAll = items.length > 0;
@@ -813,6 +814,12 @@ export function SiteFileExplorer({
               : prompt === 'new-page'
                 ? 'New Page'
                 : 'Rename'
+          }
+          titleIcon={
+            prompt === 'new-page' ||
+            (prompt === 'rename' && primarySelected && isExplorerDocument(primarySelected))
+              ? 'file-document'
+              : 'folder'
           }
           label={prompt === 'rename' ? 'New name:' : 'Name:'}
           initialValue={prompt === 'rename' ? (primarySelected?.label ?? '') : ''}

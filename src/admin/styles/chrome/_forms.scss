@@ -179,12 +179,13 @@ textarea:disabled {
   background-color: var(--surface);
 }
 
-/* File picker path: white when enabled (still readonly); gray when disabled. */
-.file-input-path:not(:disabled) {
+/* File picker path: white when enabled (still readonly); gray when disabled.
+ * Must beat `input[type="text"]:read-only` → `--surface`. */
+input[type="text"].file-input-path:read-only:not(:disabled) {
   background-color: var(--button-highlight);
 }
 
-.file-input-path:disabled {
+input[type="text"].file-input-path:disabled {
   background-color: var(--surface);
 }
 

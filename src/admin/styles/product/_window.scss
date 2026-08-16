@@ -171,6 +171,7 @@ html.is-window-resizing * {
 .title-bar-text.settings,
 .title-bar-text.themes,
 .title-bar-text.folder,
+.title-bar-text.file-document,
 .title-bar-text.external-link,
 .title-bar-text.my-account {
   padding-left: 22px;
@@ -221,6 +222,10 @@ html.is-window-resizing * {
 
 .title-bar-text.folder {
   background-image: url("/assets/admin/icons/explorer/folder.svg");
+}
+
+.title-bar-text.file-document {
+  background-image: url("/assets/admin/icons/explorer/file_document.svg");
 }
 
 .title-bar-text.external-link {
